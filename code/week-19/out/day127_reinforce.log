@@ -1,0 +1,8 @@
+grad estimate at init, baseline=none: mean per-parameter std over 20 episodes 0.436
+grad estimate at init, baseline=constant baseline (mean G): mean per-parameter std over 20 episodes 0.324
+REINFORCE no baseline, seed 0: mean ep length 1-50 18.2, 251-300 159.9; 17397 env steps; greedy eval (20 eps, cap 500) 125.3; 3 s
+REINFORCE no baseline, seed 1: mean ep length 1-50 25.6, 251-300 89.8; 19571 env steps; greedy eval (20 eps, cap 500) 176.6; 2 s
+REINFORCE no baseline, seed 2: mean ep length 1-50 27.4, 251-300 29.1; 8383 env steps; greedy eval (20 eps, cap 500) 29.2; 1 s
+REINFORCE + value baseline, seed 0: mean ep length 1-50 19.4, 251-300 218.6; 46125 env steps; greedy eval (20 eps, cap 500) 127.0; 4 s
+REINFORCE + value baseline, seed 1: mean ep length 1-50 25.0, 251-300 411.2; 45666 env steps; greedy eval (20 eps, cap 500) 478.9; 4 s
+REINFORCE + value baseline, seed 2: mean ep length 1-50 30.9, 251-300 368.2; 48298 env steps; greedy eval (20 eps, cap 500) 308.8; 4 s

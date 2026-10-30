@@ -1,0 +1,15 @@
+  torch.onnx.export(m, (torch.zeros(1, 30),), p, input_names=["x"], output_names=["logits"], dynamic_axes={"x": {0: "batch"}}, dynamo=False)
+onnx 1.23.2, onnxruntime 1.31.1; exported 9622 bytes; checker OK
+max |logit diff| torch vs onnx on 143 rows: 0.00e+00; same predictions True
+  batch    1: torch     21.5 us, onnxruntime      5.1 us per call  (speed-up 4.2x; 1 thread each)
+  batch   64: torch     23.8 us, onnxruntime      9.7 us per call  (speed-up 2.4x; 1 thread each)
+  batch 1024: torch     80.6 us, onnxruntime     75.1 us per call  (speed-up 1.1x; 1 thread each)
+== HTTP serving (uvicorn, 1 worker, localhost) + load test
+ backend torch: health {'status': 'ok', 'backend': 'torch', 'model_version': '53df326a18b85c38'}; bad shape -> {'error': 'expected rows of 30 features, got shape [1, 2]'}; bad type -> HTTP 422
+   300 requests, concurrency  1,  1 rows/request: p50 1.6 ms, p95 2.2 ms, p99 2.5 ms, 567 req/s (567 rows/s)
+   600 requests, concurrency 16,  1 rows/request: p50 18.1 ms, p95 55.1 ms, p99 77.0 ms, 678 req/s (678 rows/s)
+   300 requests, concurrency 16, 64 rows/request: p50 33.6 ms, p95 78.2 ms, p99 109.4 ms, 402 req/s (25697 rows/s)
+ backend onnx: health {'status': 'ok', 'backend': 'onnx', 'model_version': '53df326a18b85c38'}; bad shape -> {'error': 'expected rows of 30 features, got shape [1, 2]'}; bad type -> HTTP 422
+   300 requests, concurrency  1,  1 rows/request: p50 1.4 ms, p95 2.1 ms, p99 2.2 ms, 650 req/s (650 rows/s)
+   600 requests, concurrency 16,  1 rows/request: p50 17.7 ms, p95 52.5 ms, p99 77.9 ms, 705 req/s (705 rows/s)
+   300 requests, concurrency 16, 64 rows/request: p50 29.9 ms, p95 135.8 ms, p99 189.1 ms, 390 req/s (24991 rows/s)

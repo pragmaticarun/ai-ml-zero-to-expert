@@ -1,0 +1,6 @@
+DQN with target net, seed 0: 307 training episodes, mean length last 20 274.9; greedy eval mean at 10k/20k/30k steps [165.2, 500.0, 176.8]; 18 s
+DQN with target net, seed 1: 411 training episodes, mean length last 20 75.5; greedy eval mean at 10k/20k/30k steps [85.5, 85.2, 167.1]; 19 s
+DQN with target net, seed 2: 332 training episodes, mean length last 20 249.8; greedy eval mean at 10k/20k/30k steps [102.6, 177.9, 116.7]; 18 s
+DQN WITHOUT target net, seed 0: 2801 training episodes, mean length last 20 9.8; greedy eval mean at 10k/20k/30k steps [9.3, 9.3, 9.3]; 18 s
+DQN WITHOUT target net, seed 1: 2809 training episodes, mean length last 20 9.8; greedy eval mean at 10k/20k/30k steps [9.4, 9.4, 9.4]; 18 s
+DQN WITHOUT target net, seed 2: 2805 training episodes, mean length last 20 9.2; greedy eval mean at 10k/20k/30k steps [9.4, 9.4, 9.4]; 17 s

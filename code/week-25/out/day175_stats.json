@@ -1,0 +1,62 @@
+{
+  "tests_passed": 10,
+  "tests_n": 10,
+  "tests": [
+    {
+      "name": "health",
+      "pass": true,
+      "detail": "{'status': 'ok', 'service': 'course-assistant'}"
+    },
+    {
+      "name": "metrics",
+      "pass": true,
+      "detail": "keys=['eval', 'version']"
+    },
+    {
+      "name": "ask_calc",
+      "pass": true,
+      "detail": "{'blocked': False, 'trace': [['calc', '12*11', {'result': '132'}]], 'answer': '132'}"
+    },
+    {
+      "name": "ask_inject_blocked",
+      "pass": true,
+      "detail": "{'blocked': True, 'reason': 'blocked: injection pattern', 'answer': None}"
+    },
+    {
+      "name": "ask_rag",
+      "pass": true,
+      "detail": "ans_len=52"
+    },
+    {
+      "name": "gate_recall",
+      "pass": true,
+      "detail": "0.72"
+    },
+    {
+      "name": "gate_grounded",
+      "pass": true,
+      "detail": "1.0"
+    },
+    {
+      "name": "gate_inject",
+      "pass": true,
+      "detail": "1.0"
+    },
+    {
+      "name": "gate_status",
+      "pass": true,
+      "detail": "PASS"
+    },
+    {
+      "name": "retrieve_k3",
+      "pass": true,
+      "detail": "['week-14.md#0-0', 'week-14.md#4-0', 'week-12.md#5-800']"
+    }
+  ],
+  "exam_questions": 20,
+  "exam_path": "/workspace/ai-ml-course/code/week-25/out/day175_exam.md",
+  "service": "http://127.0.0.1:8765",
+  "day173_status": "PASS",
+  "recall_at_3": 0.72,
+  "grounded": 1.0
+}

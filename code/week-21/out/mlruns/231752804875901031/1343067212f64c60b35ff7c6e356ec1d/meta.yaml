@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/1343067212f64c60b35ff7c6e356ec1d/artifacts
+end_time: 1793301876613
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 1343067212f64c60b35ff7c6e356ec1d
+run_name: clumsy-snail-171
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301876609
+status: 3
+tags: []
+user_id: box

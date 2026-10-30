@@ -1,0 +1,14 @@
+Instruct chat template renders as:
+<|im_start|>system
+You are a helpful AI assistant named SmolLM, trained by Hugging Face<|im_end|>
+<|im_start|>user
+Reverse the order of these words: red fish blue<|im_end|>
+<|im_start|>assistant
+
+base model, zero-shot with chat template: exact match 0.00 on 40 held-out prompts
+SmolLM2-135M-Instruct, zero-shot: exact match 0.00
+example: 48 tokens, of which 6 are answer tokens counted in the masked loss
+SFT LoRA r=16, 250 steps x 8, prompt masked=True: 135 s, held-out exact match 1.00, first-words match 1.00
+sample: 'window tiger coffee'
+SFT LoRA r=16, 250 steps x 8, prompt masked=False: 132 s, held-out exact match 1.00, first-words match 1.00
+rc=0

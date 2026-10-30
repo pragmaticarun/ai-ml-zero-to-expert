@@ -1,0 +1,1 @@
+greedy 0.17 | best-of-8 by policy logp 0.15 | by DPO implicit reward 0.00 | oracle verifier (pass@8) 0.20 | mean distinct samples 5.4

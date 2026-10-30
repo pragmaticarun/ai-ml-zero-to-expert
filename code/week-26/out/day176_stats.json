@@ -1,0 +1,49 @@
+{
+  "tests_passed": 7,
+  "tests_n": 7,
+  "tests": [
+    {
+      "name": "empty_not_crash",
+      "pass": true,
+      "detail": "{'blocked': False, 'trace': [('course_search', '   ', {'hits': [{'id': 'week-24."
+    },
+    {
+      "name": "overlong_blocked",
+      "pass": true,
+      "detail": "blocked: too long"
+    },
+    {
+      "name": "calc_deterministic",
+      "pass": true,
+      "detail": "256"
+    },
+    {
+      "name": "unicode_benign_ok",
+      "pass": true,
+      "detail": "blocked=False len=208"
+    },
+    {
+      "name": "injection_still_blocked",
+      "pass": true,
+      "detail": "blocked: injection pattern"
+    },
+    {
+      "name": "svc_health",
+      "pass": true,
+      "detail": "{'status': 'ok', 'service': 'course-assistant'}"
+    },
+    {
+      "name": "svc_calc",
+      "pass": true,
+      "detail": "81"
+    }
+  ],
+  "freeze_copied": [
+    "day171_stats.json",
+    "day172_stats.json",
+    "day173_stats.json",
+    "day174_stats.json",
+    "day175_stats.json"
+  ],
+  "recall_freeze": 0.72
+}

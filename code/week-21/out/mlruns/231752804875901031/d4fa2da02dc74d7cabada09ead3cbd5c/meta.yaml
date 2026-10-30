@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/d4fa2da02dc74d7cabada09ead3cbd5c/artifacts
+end_time: 1793301877170
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: d4fa2da02dc74d7cabada09ead3cbd5c
+run_name: inquisitive-boar-494
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301877166
+status: 3
+tags: []
+user_id: box

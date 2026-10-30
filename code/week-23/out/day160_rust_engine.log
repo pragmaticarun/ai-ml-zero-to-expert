@@ -1,0 +1,12 @@
+(1) Rust fp32: max|diff| vs torch 1.14e-05; acc 0.9741; weights 1204 kB
+(2) Rust int8: max|diff| vs NumPy same-algorithm 0.00e+00; serial==parallel True; max|dlogit| vs fp32 0.162; acc 0.9741; argmax agree with fp32 1.0000; weights 308 kB
+    Rust int8 vs ORT dynamic int8 logits: max|diff| 0.180 (different activation quantization scheme from ORT's DynamicQuantizeMatMul, so not bit-identical)
+(3) median latency, us/call:
+    torch eager fp32 (1 thread)    b1     30.1   b256     782.9
+    ORT fp32 (1 thread)            b1     14.7   b256     683.8
+    ORT dynamic int8 (1 thread)    b1     10.8   b256     212.8
+    Rust fp32 serial               b1     17.0   b256    4279.5
+    Rust int8 serial               b1     31.3   b256    8058.8
+    Rust fp32 rayon (8 threads)    b1     16.9   b256     642.7
+    Rust int8 rayon (8 threads)    b1     31.3   b256    1072.4
+note: the Rust engine does one row at a time (matrix-vector); torch/ORT call a blocked GEMM for b256 (weights reused from cache across rows).

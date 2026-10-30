@@ -1,0 +1,7 @@
+loaded Day 108 DPO adapter (0 unexpected keys)
+wording original              : exact 0.17  normalised 0.20  contains 0.20
+wording lowercase+colon-less  : exact 0.07  normalised 0.07  contains 0.07
+wording paraphrase            : exact 0.12  normalised 0.12  contains 0.12
+bootstrap 95% CI for exact match on n=40: [0.07, 0.30] (point 0.17)
+contamination: identical test prompts in train 0/40; test word SETS seen in train (other order) 0/40
+answer-bigram overlap: 29/40 test answers have every bigram in the training answers

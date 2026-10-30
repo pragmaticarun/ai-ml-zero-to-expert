@@ -1,0 +1,8 @@
+Bradley-Terry: true w [2.0, -1.0, 0.5, 0.0, 1.5] | fitted [1.92, -1.0, 0.47, 0.05, 1.46]
+held-out: fitted reward ranks pairs like the true reward in 0.996 of pairs; train loss 0.299
+reward is identifiable only up to a constant: adding +10 to every reward changes the BT loss by 0.0e+00
+beta 0.05: optimal pi [0.964, 0.035, 0.0, 0.0, 0.0], expected reward 0.993, KL to ref 2.816
+beta 0.20: optimal pi [0.45, 0.331, 0.148, 0.049, 0.021], expected reward 0.799, KL to ref 1.193
+beta 1.00: optimal pi [0.097, 0.158, 0.235, 0.261, 0.249], expected reward 0.393, KL to ref 0.053
+beta 5.00: optimal pi [0.058, 0.111, 0.208, 0.294, 0.33], expected reward 0.309, KL to ref 0.002
+REINFORCE with KL penalty (beta 0.2, 3000 steps x 64 samples): pi [0.45, 0.331, 0.148, 0.049, 0.021] vs closed form [0.45, 0.331, 0.148, 0.049, 0.021]

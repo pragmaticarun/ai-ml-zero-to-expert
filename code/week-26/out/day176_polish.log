@@ -1,0 +1,14 @@
+(1) freeze snapshot of Week 25 scorecards → capstone/out/freeze/
+    copied 5: ['day171_stats.json', 'day172_stats.json', 'day173_stats.json', 'day174_stats.json', 'day175_stats.json']
+(2) polish checks on agent
+    [PASS] empty_not_crash {'blocked': False, 'trace': [('course_search', '   ', {'hits': [{'id': 'week-24.
+    [PASS] overlong_blocked blocked: too long
+    [PASS] calc_deterministic 256
+    [PASS] unicode_benign_ok blocked=False len=109
+    [PASS] injection_still_blocked blocked: injection pattern
+(3) service smoke after polish
+    [PASS] svc_health {'status': 'ok', 'service': 'course-assistant'}
+    [PASS] svc_calc 81
+(4) polish 7/7
+[saved] /workspace/ai-ml-course/code/week-26/out/day176_stats.json
+(5) status PASS

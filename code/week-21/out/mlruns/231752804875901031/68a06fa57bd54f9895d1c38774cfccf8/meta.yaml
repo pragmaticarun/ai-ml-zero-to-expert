@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/68a06fa57bd54f9895d1c38774cfccf8/artifacts
+end_time: 1793301878662
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 68a06fa57bd54f9895d1c38774cfccf8
+run_name: enchanting-kite-290
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301878657
+status: 3
+tags: []
+user_id: box

@@ -1,0 +1,15 @@
+params 134,515,008; fp32 weights+grads+Adam(2) ~= 2.00 GiB
+before: val ppl 26.29
+step   0 train loss 3.671
+step  10 train loss 3.628
+step  20 train loss 3.264
+step  30 train loss 3.460
+step  40 train loss 3.005
+step  50 train loss 3.261
+step  60 train loss 3.150
+step  70 train loss 3.166
+step  80 train loss 3.212
+step  90 train loss 3.748
+step  99 train loss 3.073
+100 steps (batch 4 x 128 tokens) in 88 s (0.88 s/step); after: val ppl 21.38 (was 26.29)
+sample: "ROMEO:\nI will find you again.\n\nLADY CAPULET:\nThat's well: 'tis not I, as I have been heard say,\nThat 'tis a common thing"

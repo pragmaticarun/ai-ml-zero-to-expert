@@ -1,0 +1,100 @@
+What is an MDP?,"States, actions, transition probabilities P(s'|s,a), rewards and a discount γ; the next state depends only on the current state and action.",m5 d121
+Return G_t?,Discounted sum of future rewards: r_{t+1} + γ r_{t+2} + γ² r_{t+3} + ...,m5 d121
+Bellman expectation equation for V^π?,"V^π(s) = Σ_a π(a|s) Σ_s' P(s'|s,a)[r + γ V^π(s')].",m5 d121
+Bellman optimality vs expectation?,Optimality replaces the average over the policy's actions with a max over actions.,m5 d121
+Why does value iteration converge for γ<1?,"The Bellman optimality operator is a γ-contraction in the max norm, so it has a unique fixed point.",m5 d122
+Policy iteration in two steps?,"Evaluate the current policy fully, then improve it greedily; repeat until the policy stops changing.",m5 d122
+"DP result on FrozenLake 8x8, γ=0.99?","V(start) 0.415 from our own environment table, which matched gymnasium's.",m5 d122
+Day 122 vs Day 126 success of the same DP policy?,0.632 vs 0.643 on different evaluation seeds: noise about ±0.01.,m5 d122
+What does DP need that model-free RL does not?,The full transition and reward model.,m5 d122
+Monte Carlo vs TD target?,"MC uses the full observed return; TD(0) uses r + γV(s'), bootstrapping from its own estimate.",m5 d123
+Q-learning vs SARSA?,Q-learning is off-policy (target uses max_a' Q); SARSA is on-policy (target uses the action actually taken).,m5 d123
+Why does SARSA take the safer cliff path?,"Its targets include exploratory actions, so states near the cliff look worse under ε-greedy.",m5 d123
+Bias/variance of MC vs TD?,"MC: unbiased, high variance. TD: biased by bootstrapping, lower variance.",m5 d123
+Why function approximation?,Tables cannot cover large or continuous state spaces; features or networks generalise across states.,m5 d124
+The deadly triad?,Function approximation + bootstrapping + off-policy learning together can diverge.,m5 d124
+What made linear Q solve CartPole on Day 124?,"Fourier features, but only with narrow (low-order) features: 500/500 on 3 seeds.",m5 d124
+Two DQN stabilisers?,Experience replay (decorrelates samples) and a target network (stops the target moving every step).,m5 d125
+DQN result on CartPole?,"With a target net it learned but was unstable (85-500); without it, it collapsed.",m5 d125
+Why clip or use Huber loss in DQN?,To limit huge gradients from large TD errors.,m5 d125
+Project W18 headline?,Tabular Q/SARSA reached at most 0.623 success on FrozenLake 8x8 vs the DP optimum 0.643.,m5 d126
+Why compare model-free agents to DP?,"DP gives the true optimum, so you can measure how far learning falls short.",m5 d126
+REINFORCE gradient?,E[G_t ∇ log π(a_t|s_t)]: raise log-probability of actions in proportion to return.,m5 d127
+Why a baseline in REINFORCE?,It reduces variance without bias; on Day 127 gradient std fell 0.436 → 0.324.,m5 d127
+Why is a state-dependent baseline unbiased?,"Σ_a ∇π(a|s) = 0, so E[b(s) ∇ log π] = 0.",m5 d127
+Actor-critic idea?,"A learned critic V(s) supplies the baseline/advantage, so the actor updates from TD errors instead of full returns.",m5 d128
+Advantage?,"A(s,a) = Q(s,a) − V(s): how much better an action is than the policy's average.",m5 d128
+A2C instability seen on Day 128?,"With n=1 step, seed 2 collapsed mid-run.",m5 d128
+PPO clipped objective?,"min(r·A, clip(r, 1−ε, 1+ε)·A) with r = π_new/π_old: stops large policy steps.",m5 d129
+PPO without clipping on Day 129?,KL max reached 2.35-2.79 across seeds and evaluations kept collapsing.,m5 d129
+GAE?,Exponentially weighted sum of TD errors (λ) trading bias for variance in the advantage.,m5 d129
+UCB1 idea?,Pick argmax of mean + an optimism bonus that shrinks with visit count.,m5 d130
+Thompson sampling?,Sample from each arm's posterior and act greedily on the sample.,m5 d130
+Bandit result on Day 130?,Thompson had the best regret (30.5); UCB1 did worse than ε-greedy in that run.,m5 d130
+LinUCB?,A contextual bandit: linear reward model per arm with a confidence bonus from its covariance.,m5 d130
+Reward hacking?,"The agent optimises the reward as written, not as intended (e.g. looping to farm a shaping bonus).",m5 d131
+Safe shaping?,Potential-based shaping F = γΦ(s') − Φ(s) preserves optimal policies.,m5 d131
+Naive shaping on Day 131?,Made value iteration's policy loop instead of reaching the goal.,m5 d131
+Why a KL penalty in RLHF?,Keeps the policy close to the reference model so it cannot exploit the reward model or lose fluency.,m5 d132
+DPO in one line?,A classification-style loss on preference pairs using the policy/reference log-ratio as an implicit reward; no separate reward model.,m5 d132
+GRPO?,"Policy gradient with group-relative advantages (normalise rewards within a group of samples for the same prompt), no critic.",m5 d132
+Day 132 toy result?,REINFORCE-KL and PPO-KL reached the closed-form optimal policy exactly; DPO was close (TV 0.03-0.08).,m5 d132
+Project W19 at 50k steps?,"PPO reached 500 on 5/5 seeds, A2C 4/5, REINFORCE 3/5.",m5 d133
+Why compare RL algorithms at an equal step budget?,"Otherwise the comparison measures compute, not sample efficiency.",m5 d133
+Agent loop?,"Model proposes an action (tool call), the runtime executes it, the observation is fed back, repeat until a final answer.",m5 d134
+Why JSON schemas for tools?,They define valid arguments so calls can be validated before execution.,m5 d134
+SmolLM2-135M tool calling on Day 134?,"0/18 zero-shot, 6/18 with 3 examples.",m5 d134
+ReAct?,Interleave reasoning text and actions with observations in the prompt.,m5 d135
+ReAct with the 135M model?,"0/24; Days 136-140 therefore used scripted policies, stated openly.",m5 d135
+Retries on flaky tools (p=0.3 failure)?,Success rose 0.401 → 0.924 on Day 136.,m5 d136
+Memory pitfall seen on Day 136?,Top-1 memory retrieval returned stale facts after updates.,m5 d136
+Why sandbox a code tool?,"Model-written code is untrusted; limit CPU, memory, time, filesystem and network.",m5 d137
+Day 137 sandbox lesson?,rlimits alone still leaked filesystem access; resource limits are not isolation.,m5 d137
+pass^k?,Success in all k trials: a reliability metric (noisy pass^8 was 0.458 on Day 138).,m5 d138
+Why a failure taxonomy?,"Counting failure types (bad args, wrong tool, loop, hallucinated result) tells you what to fix.",m5 d138
+Indirect prompt injection?,Instructions hidden in retrieved documents or tool outputs that the model then follows.,m5 d139
+Injection result on Day 139?,"Undefended, it queued 22/24 emails; with an allow-list and approval gate, 0.",m5 d139
+Constrained decoding on Day 139?,"24/24 outputs valid JSON, but only 18/24 correct: valid is not right.",m5 d139
+Project W20 lesson?,"Defences that do not depend on detecting the attack (allow-lists, approval gates) are the reliable ones.",m5 d140
+First baseline in an ML product?,A simple rule; on Day 141 a rule scored 0.804 vs the MLP's 0.965.,m5 d141
+Why pick a threshold by cost?,"Errors cost different amounts; the metric should be the business cost, not accuracy.",m5 d141
+Reproducibility check on Day 142?,Same seed gave identical weight hashes.,m5 d142
+Lucky-seed selection?,Picking the best of many seeds overstates performance; report the spread.,m5 d142
+Experiment tracking stores?,"Parameters, metrics, artifacts and code/data versions for each run (MLflow on Day 143).",m5 d143
+ONNX Runtime speed-up on Day 144?,"4.2× per call, but only about 1.15× over HTTP, where overhead dominates.",m5 d144
+Training/serving skew causes?,"Different preprocessing code, stale or leaked features, different library versions or dtypes.",m5 d144
+PSI?,Σ (a − e)·ln(a/e) over bins of reference e and current a: a drift score.,m5 d145
+Fixed PSI>0.2 vs Bonferroni-KS on Day 145?,PSI>0.2 raised 48/50 false alarms; Bonferroni-corrected KS 2/50.,m5 d145
+Label-error loop result?,Fixing flagged labels raised accuracy 0.909 → 0.958.,m5 d145
+Does drift always hurt accuracy?,No; on Day 145 a detected drift did not hurt accuracy. Alert ≠ harm.,m5 d145
+Peeking at an A/B test?,Stopping when p<0.05 inflates false positives (FPR 0.191 on Day 146).,m5 d146
+Batch vs online inference cost?,Batch was about 1000× cheaper under assumed prices on Day 146.,m5 d146
+Project W21 service p95?,21.7 ms on localhost.,m5 d147
+What is a model card?,"A document of intended use, data, metrics, limits and ethical notes, shipped with the model.",m5 d147
+Why content-hash prompts?,"An eval result is then tied to exact prompt text, not a reusable name.",m5 d148
+Day 148 prompt results (of 24)?,"v1 zero-shot 0, v2 3-shot 7, v3 4-shot 13, v4 (v3 reworded) 13.",m5 d148
+Why did v2→v3 fail the gate?,"v3 lost 3 cases v2 passed (1024/16, 99/3, 45%7) despite 13 vs 7 overall; McNemar p=0.146.",m5 d148
+Why McNemar for prompts?,Both prompts answer the same cases; only discordant cases carry information.,m5 d148
+When is a generation cache safe?,"Deterministic decoding and a key with prompt hash, input, model and settings (24 hits, identical results on Day 148).",m5 d148
+Seen vs held-out cases?,"Tune on seen; held-out shows whether gains generalise (v3: seen 9/18, held-out 4/6).",m5 d148
+What is a span?,"One traced step (name, duration, attributes) nested under a request.",m5 d149
+Day 149 latency split?,"guard_in p50 0.04 ms, llm p50 641.70 ms, tool p50 0.01 ms: the model is everything.",m5 d149
+Where did the assumed cost come from?,"Input tokens, 85% (mean 421 in vs 24 out); cheapest fix is a shorter or cached prompt.",m5 d149
+Honest reading of 8/10 attacks blocked?,"6 by the input regex, 2 were schema failures; the model never called send_email; 4 paraphrases evaded the regex.",m5 d149
+Which guard stops paraphrased injections?,The output guard: allow-list and approval for side-effect tools.,m5 d149
+Why redact PII before the model?,"So it never enters prompts, logs or third-party APIs.",m5 d149
+Why was the capstone release blocked?,recall@3 0.53 < 0.60 and one notes question misrouted to tools by the word 'compute'.,m5 d150
+Why distrust iteration 2's recall@3 0.60?,256/64 chunking was chosen on the gate's own eval set.,m5 d150
+Per-query low-confidence flag result?,8% flagged in-domain and 8% for all-new topics: useless.,m5 d150
+Window PSI result on Day 150?,0.165 in-domain vs threshold 1.027; 1.491 half-new; 3.263 all-new.,m5 d150
+Out-of-scope behaviour on Day 150?,13 of 14 new-topic questions got confident wrong citations: needs an abstain path.,m5 d150
+Why keep a test that asserts a known bug?,It documents behaviour and forces a deliberate change when fixed.,m5 d150
+Capstone latency?,"Notes path p50 1.8 ms, tool path p50 643.1 ms.",m5 d150
+How was the PSI threshold chosen?,99th percentile of PSI over 200 resampled in-domain windows of 40.,m5 d150
+Tool accuracy and side effects in the capstone?,0.50 of 12 tool tasks; 0 side effects from 5 attacks.,m5 d150
+Capstone test suite?,"7 pytest tests passed, including router and paraphrase known-bug tests.",m5 d150
+Why bootstrapped critics lower variance?,"They replace the noisy full return with r + γV(s'), at the cost of bias from V's errors.",m5 d128
+"Why audit agent behaviour, not just reward?",High reward can come from exploits; only inspecting trajectories reveals hacking.,m5 d131
+Retrieval-as-a-tool recall@1 on Day 137?,0.48.,m5 d137
+Why log the data version with a run?,A metric is only reproducible with the exact data that produced it.,m5 d143
+Lesson from ORT over HTTP?,"Profile before optimising the model: HTTP, JSON and Python dominated a ~1.5 ms request.",m5 d144

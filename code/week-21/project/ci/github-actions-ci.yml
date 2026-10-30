@@ -1,0 +1,17 @@
+# UNTESTED: never run on GitHub; shown as an example of the workflow shape. Copy to .github/workflows/ in a real repo.
+name: w21-model-ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: pip install -r requirements.txt fastapi uvicorn httpx onnx onnxruntime onnxscript pytest
+      - name: Build artifacts, run tests, load test, write model card
+        run: cd code/week-21 && python day147_project.py
+      - name: Unit tests (release gate)
+        run: python -m pytest -q code/week-21/project
+      - uses: actions/upload-artifact@v4
+        with: {name: model-card, path: code/week-21/project/MODEL_CARD.md}

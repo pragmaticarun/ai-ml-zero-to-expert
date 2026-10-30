@@ -1,0 +1,11 @@
+210 Linear layers, 106.2M weights (embeddings/tied lm_head kept fp32; total model 134.5M params)
+fp32: ppl 26.29, linear weights 424.7 MB
+outliers: layers.0.mlp.down_proj max|w| 2.875 vs mean|w| 0.1441 (ratio 20x)
+int8 per-tensor     : rel weight err 0.0364, size 106.2 MB, ppl    28.55  (0.9 s)
+int8 per-channel    : rel weight err 0.0085, size 106.5 MB, ppl    26.50  (0.9 s)
+int4 per-tensor     : rel weight err 0.5832, size  53.1 MB, ppl 1561367.93  (0.9 s)
+int4 per-channel    : rel weight err 0.1547, size  53.4 MB, ppl    64.84  (0.9 s)
+int4 group-64       : rel weight err 0.1128, size  56.4 MB, ppl    36.89  (0.9 s)
+int4 group-32       : rel weight err 0.1006, size  59.7 MB, ppl    33.27  (0.9 s)
+int4 group-64 asym  : rel weight err 0.0941, size  59.7 MB, ppl    33.69  (0.9 s)
+int3 group-64       : rel weight err 0.2623, size  43.1 MB, ppl   231.67  (0.9 s)

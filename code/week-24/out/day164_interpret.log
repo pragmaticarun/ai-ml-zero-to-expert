@@ -1,0 +1,33 @@
+(1) permutation importance (acc drop, 3 repeats, 3000 test rows; base acc 0.8517):
+    marital-status   +0.0592 (sd 0.0017)
+    capital-gain     +0.0341 (sd 0.0032)
+    education-num    +0.0308 (sd 0.0037)
+    occupation       +0.0137 (sd 0.0018)
+    relationship     +0.0118 (sd 0.0019)
+    age              +0.0072 (sd 0.0017)
+    sex              +0.0068 (sd 0.0015)
+    capital-loss     +0.0064 (sd 0.0008)
+    hours-per-week   +0.0064 (sd 0.0010)
+    workclass        +0.0046 (sd 0.0019)
+    education        +0.0024 (sd 0.0010)
+    native-country   +0.0021 (sd 0.0006)
+    race             +0.0011 (sd 0.0011)
+    fnlwgt           +0.0010 (sd 0.0000)
+(2) sampled Shapley (300 permutations, 18.8 s) for the test row with highest P(>50K): f(x) 34.562, E[f(bg)] -2.063, sum phi 36.625 (efficiency: should be ~ f(x)-E f = 36.625)
+    capital-gain     +31.866  (x = 99999)
+    marital-status   +1.534  (x = Married-civ-spouse)
+    education-num    +1.287  (x = 15)
+    hours-per-week   +0.575  (x = 60)
+    age              +0.571  (x = 63)
+    occupation       +0.454  (x = Prof-specialty)
+(3) LIME-style surrogate coefficients (same row; 1000 perturbations): capital-gain +29.299, marital-status +1.358, education-num +1.291, hours-per-week +0.776, capital-loss -0.408, occupation +0.363
+    top-3 agreement Shapley vs LIME: 3/3
+(4) Month 3 CNN test acc 0.7420 on 2500 CIFAR-10-small test images
+    gradient saliency: share of saliency in the central 16x16 (25% of pixels): mean 0.369
+    occlusion of 10% pixels (set to mean 0): conf 0.775 -> top-saliency 0.406 vs random 0.382
+(5) linear probe (animal vs vehicle; train 3000 / test 2500 val images):
+    pixels  dim  3072: probe acc 0.7648
+    block1  dim  8192: probe acc 0.8932
+    block2  dim  4096: probe acc 0.9332
+    block3  dim  2048: probe acc 0.9416
+    majority baseline 0.5948

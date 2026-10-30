@@ -1,0 +1,9 @@
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights:   0%|          | 1/272 [00:00<00:41,  6.50it/s]Loading weights:  67%|██████▋   | 182/272 [00:00<00:00, 874.44it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 842.36it/s]
+HuggingFaceTB/SmolLM2-135M: 134,515,008 params; layers 30, d_model 576, heads 9, kv heads 3, vocab 49152, max positions 8192, rope_theta {'rope_theta': 100000, 'rope_type': 'default'}
+tied embeddings: True | bos/eos: <|endoftext|> <|endoftext|>
+10 tokens: ['The', 'Ġquick', 'Ġbrown', 'Ġfox', 'Ġjumps', 'Ġover', 'Ġthe', 'Ġlazy', 'Ġdog', '.']
+next-token top-5: [(' the', 0.262), (' Paris', 0.094), (' located', 0.073), (' called', 0.044), (' a', 0.039)]
+greedy 30 tokens in 0.38 s: ' the capital of the country.\n\nThe capital of France is the capital of the country.\n\nThe capital of France is the capital of the'
+sampled (T 0.8, top-k 50, seed 0): ' the city of Paris, and the name derives from the Latin word for city. This is where the French language is spoken. Paris was the first French'
+Shakespeare in SmolLM tokens: train 305,111, val 35,983
+SmolLM2-135M val perplexity (16 windows of 256) 24.42 (loss 3.196 nats/token)

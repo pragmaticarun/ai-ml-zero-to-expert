@@ -1,0 +1,14 @@
+(1) count of >50K in train = 8181
+    eps  0.1: Laplace scale 10.0; 1000 releases: mean abs error 9.85, 95th pct 30.98
+    eps  1.0: Laplace scale 1.0; 1000 releases: mean abs error 1.06, 95th pct 3.14
+    eps 10.0: Laplace scale 0.1; 1000 releases: mean abs error 0.10, 95th pct 0.29
+(2) DP-SGD logistic regression, N 34189, D 108, batch L 256 (Poisson q 0.00749), 5 epochs, clip C 1.0, delta 1e-05
+    non-private SGD (same loop, no clip/noise): test acc 0.8512, steps 667
+    sigma 0.6: test acc 0.8481 (sd 0.0004, 3 seeds); eps 7.176 (own RDP, classic conversion) | 6.221 (own, Balle et al. 2020 conversion) | 6.167 (Opacus RDPAccountant)
+    sigma 1.0: test acc 0.8481 (sd 0.0005, 3 seeds); eps 1.831 (own RDP, classic conversion) | 1.438 (own, Balle et al. 2020 conversion) | 1.436 (Opacus RDPAccountant)
+    sigma 2.0: test acc 0.8479 (sd 0.0002, 3 seeds); eps 0.533 (own RDP, classic conversion) | 0.407 (own, Balle et al. 2020 conversion) | 0.407 (Opacus RDPAccountant)
+    sigma 4.0: test acc 0.8467 (sd 0.0003, 3 seeds); eps 0.243 (own RDP, classic conversion) | 0.178 (own, Balle et al. 2020 conversion) | 0.181 (Opacus RDPAccountant)
+(3) loss-threshold MIA AUC (0.5 = no leakage): Adult logreg 0.4989
+    Month 3 CNN (2500 train members vs 2500 test non-members): train acc 0.7940, mean loss in 0.605 / out 0.726, MIA AUC 0.5297
+    overfit MLP on 500 Adult rows: train acc 0.9960, test acc 0.8140, MIA AUC 0.5678
+    DP-SGD logreg (sigma 1.0): MIA AUC 0.4981

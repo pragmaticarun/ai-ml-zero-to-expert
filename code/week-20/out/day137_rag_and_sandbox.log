@@ -1,0 +1,16 @@
+== (2) sandbox probes (run first; no model needed)
+  benign: sum of squares      : rc=0, 0.03 s, output '332833500'
+  exception                   : rc=1, 0.03 s, output '[stderr] ZeroDivisionError: division by zero'
+  infinite loop               : rc=-9, 2.01 s, output ''
+  sleep (wall clock, no CPU)  : rc=None, 5.01 s, output '[killed: wall-clock timeout 5 s]'
+  memory bomb 2 GB            : rc=1, 0.03 s, output '[stderr] MemoryError'
+  write 5 MB file in cwd      : rc=1, 0.03 s, output '[stderr] OSError: [Errno 27] File too large'
+  read env vars               : rc=0, 0.02 s, output '1 env vars'
+  read a file outside cwd     : rc=0, 0.02 s, output 'gro...'
+  write outside cwd           : rc=0, 0.02 s, output 'escaped write ok'
+  (removed /tmp/w20_escape_test.txt again)
+== (1) search_notes tool over the Month-4 RAG index
+  index: 1037 chunks from 112 days, 9.4 s
+  bad call: ('error', '$.k: 50 > maximum 10')
+  58 held-out questions via the tool: recall@1 0.48, recall@3 0.74; 189 ms/call
+  out-of-index query (PPO is Week 19, not indexed): top day 106, text 'Day 106 RLHF overview: preferences, Bradley-Terry and the KL-regularised objective: a mode'

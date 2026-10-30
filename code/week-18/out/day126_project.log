@@ -1,0 +1,13 @@
+DP optimum (value iteration, gamma 0.99): V(start) 0.415; greedy success in gymnasium 0.643
+Q-learning, 5000 episodes, seed 0: learned max Q(start) 0.391 (DP 0.415); online success last 1000 eps 0.645; greedy action optimal (ties allowed) in 79% of non-terminal states; greedy success in gymnasium 0.611; 4.0 s
+Q-learning, 5000 episodes, seed 1: learned max Q(start) 0.382 (DP 0.415); online success last 1000 eps 0.600; greedy action optimal (ties allowed) in 77% of non-terminal states; greedy success in gymnasium 0.552; 4.1 s
+Q-learning, 5000 episodes, seed 2: learned max Q(start) 0.409 (DP 0.415); online success last 1000 eps 0.649; greedy action optimal (ties allowed) in 81% of non-terminal states; greedy success in gymnasium 0.513; 4.5 s
+SARSA, 5000 episodes, seed 0: learned max Q(start) 0.260 (DP 0.415); online success last 1000 eps 0.640; greedy action optimal (ties allowed) in 66% of non-terminal states; greedy success in gymnasium 0.484; 3.9 s
+SARSA, 5000 episodes, seed 1: learned max Q(start) 0.249 (DP 0.415); online success last 1000 eps 0.582; greedy action optimal (ties allowed) in 60% of non-terminal states; greedy success in gymnasium 0.322; 4.0 s
+SARSA, 5000 episodes, seed 2: learned max Q(start) 0.249 (DP 0.415); online success last 1000 eps 0.602; greedy action optimal (ties allowed) in 79% of non-terminal states; greedy success in gymnasium 0.551; 4.0 s
+Q-learning, 20000 episodes, seed 0: learned max Q(start) 0.407 (DP 0.415); online success last 1000 eps 0.661; greedy action optimal (ties allowed) in 74% of non-terminal states; greedy success in gymnasium 0.376; 15.3 s
+Q-learning, 20000 episodes, seed 1: learned max Q(start) 0.398 (DP 0.415); online success last 1000 eps 0.639; greedy action optimal (ties allowed) in 75% of non-terminal states; greedy success in gymnasium 0.593; 15.5 s
+Q-learning, 20000 episodes, seed 2: learned max Q(start) 0.397 (DP 0.415); online success last 1000 eps 0.601; greedy action optimal (ties allowed) in 85% of non-terminal states; greedy success in gymnasium 0.623; 15.5 s
+SARSA, 20000 episodes, seed 0: learned max Q(start) 0.289 (DP 0.415); online success last 1000 eps 0.641; greedy action optimal (ties allowed) in 85% of non-terminal states; greedy success in gymnasium 0.571; 14.8 s
+SARSA, 20000 episodes, seed 1: learned max Q(start) 0.283 (DP 0.415); online success last 1000 eps 0.624; greedy action optimal (ties allowed) in 74% of non-terminal states; greedy success in gymnasium 0.466; 14.9 s
+SARSA, 20000 episodes, seed 2: learned max Q(start) 0.287 (DP 0.415); online success last 1000 eps 0.664; greedy action optimal (ties allowed) in 81% of non-terminal states; greedy success in gymnasium 0.565; 15.4 s

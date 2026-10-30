@@ -1,0 +1,100 @@
+What does loss.backward() compute?,"Gradients of the scalar loss with respect to every tensor with requires_grad=True, accumulated into .grad.",m3 d64
+Why call optimizer.zero_grad() each step?,"PyTorch accumulates gradients; without zeroing, each step uses the sum of all previous gradients.",m3 d64
+The five lines of a PyTorch training step?,"zero_grad; forward (logits = model(x)); loss = loss_fn(logits, y); loss.backward(); optimizer.step().",m3 d64
+What does torch.no_grad() do?,"Disables graph recording, for evaluation and inference: less memory, faster.",m3 d64
+model.train() vs model.eval()?,Switches dropout and batch norm between training behaviour and inference behaviour; it does not disable gradients.,m3 d64
+What does a DataLoader add to a Dataset?,"Batching, shuffling, optional parallel workers and collation into tensors.",m3 d65
+Why shuffle training data but not test data?,Shuffling decorrelates consecutive batches for SGD; evaluation order does not matter.,m3 d65
+Why pin_memory and non_blocking matter on GPUs?,Page-locked host memory allows asynchronous host-to-device copies that overlap with compute.,m3 d65
+Xavier/Glorot init variance?,Var(w) = 2/(fan_in + fan_out); keeps activation variance roughly constant for tanh-like layers.,m3 d66
+He/Kaiming init variance?,Var(w) = 2/fan_in; compensates for ReLU zeroing half the activations.,m3 d66
+Symptom of too-small initial weights in a deep net?,Activations and gradients shrink layer by layer (vanishing); early layers barely learn.,m3 d66
+Momentum update?,v ← βv + g; w ← w − ηv. Smooths noisy gradients and speeds up along consistent directions.,m3 d67
+What does Adam keep per parameter?,"Moving averages of the gradient (m) and of its square (v), with bias correction; step ∝ m/√v.",m3 d67
+AdamW vs Adam with L2?,"AdamW decouples weight decay from the adaptive step, applying it directly to the weights.",m3 d67
+What is a OneCycle schedule?,LR warms up to a maximum and then anneals to near zero within one training run.,m3 d67
+Inverted dropout at training time?,Zero each unit with probability p and scale survivors by 1/(1−p) so the expected activation is unchanged.,m3 d68
+Early stopping in one sentence?,Keep the checkpoint with the best validation score and stop after it has not improved for 'patience' epochs.,m3 d68
+Weight decay effect?,"Shrinks weights towards zero each step, an L2 penalty that limits model complexity.",m3 d68
+What does batch norm normalise over in a CNN?,"Each channel, over the batch and spatial dimensions; then applies learned scale γ and shift β.",m3 d69
+BN at inference uses?,Running averages of mean and variance collected during training (model.eval()).,m3 d69
+Layer norm normalises over?,"The features of each example separately; independent of batch size, standard in transformers.",m3 d69
+Why drop conv bias before BN?,"BN's shift β does the same job, so the bias is redundant.",m3 d69
+What belongs in an experiment log row?,"Config (model, optimiser, LR, regularisation, seed), train and val metrics, time, and a note.",m3 d70
+Conv output size formula?,⌊(n + 2p − k)/s⌋ + 1.,m3 d71
+"Conv2d(3, 16, 3) parameters?","448 = 16·3·3·3 + 16 (an equivalent dense layer for 3×32×32 → 16×30×30 would need 44,251,200).",m3 d71
+What is im2col?,Copy each k×k×C patch into a column so the convolution becomes one matrix multiply.,m3 d71
+Loops vs im2col vs torch for the Day-71 conv?,"About 213-244 ms, 2-3 ms and well under the loop time for torch (timings vary with load); same results to about 1e-14.",m3 d71
+Receptive field of three stacked 3×3 convs (stride 1)?,7 × 7.,m3 d71
+Do frameworks compute convolution or cross-correlation?,Cross-correlation (no kernel flip); they call it convolution.,m3 d71
+Why two 3×3 convs instead of one 5×5?,"Same 5×5 receptive field, 18C² vs 25C² weights, and an extra non-linearity.",m3 d72
+Residual block formula?,y = F(x) + x (with a 1×1 strided projection on the skip when shapes change).,m3 d72
+"Day-72 plain vs residual at depth 10 (Fashion-MNIST, short training)?",Residual 0.7145 vs plain 0.6120 test accuracy; at depth 2 there was no gain.,m3 d72
+What is the degradation problem?,"Deeper plain networks get higher training error: an optimisation failure, not overfitting.",m3 d72
+Global average pooling?,"Average each final feature map to one number; tiny head, any input size.",m3 d72
+Day-73 CNN+BN vs MLP on CIFAR-10-small (10 epochs)?,"Val accuracy 0.7444 vs 0.5020; the MLP had 1,578,506 parameters vs 308,394.",m3 d73
+Augmentations suitable for CIFAR-10?,Horizontal flip and random crop after 4-pixel padding; not vertical flips.,m3 d73
+Why did flip/crop not raise val accuracy in 10 epochs on Day 73?,It narrowed the train-val gap (0.19 → 0.07) but needs longer training to pay off.,m3 d73
+Three transfer-learning strategies?,Frozen features + linear model; fine-tune the top stage; fine-tune everything with small LRs.,m3 d74
+"Day-74 results with 2,000 CIFAR images?","From scratch 0.3852, frozen ResNet-18 features + LR 0.6424, fine-tune layer4+fc 0.6856.",m3 d74
+Why must preprocessing match the pretrained weights?,"The network expects inputs distributed as in its training (resize, ImageNet mean/std).",m3 d74
+Expected initial cross-entropy for C balanced classes?,ln C (2.303 for 10 classes).,m3 d75
+Overfit-one-batch test?,"Train on ~32 examples; loss should approach 0. If not, the model/loss/optimiser is broken.",m3 d75
+Shuffled-label sanity check?,Train on permuted labels; test accuracy must fall to chance (0.0889 on Day 75). Higher means leakage.,m3 d75
+Symptom of softmax before cross_entropy?,Training still works but much worse (0.6497 vs 0.8381 test on Day 75).,m3 d75
+Why is view wrong for NHWC → NCHW?,"view reinterprets memory and mixes channels; use permute(0, 3, 1, 2).",m3 d75
+"STFT bin width and count for fs 8 kHz, n_fft 256?","31.25 Hz, 129 bins (n_fft/2 + 1).",m3 d76
+Why log-magnitude spectrograms?,Compresses dynamic range; closer to perceived loudness; stabler CNN inputs.,m3 d76
+What is SpecAugment?,Masking random frequency bands and time spans of the spectrogram during training.,m3 d76
+Why did the time-averaged baseline fail on Day 76?,"Averaging over time removes the difference between tones, beeps and chirps (0.7500 vs CNN 0.8775-0.8850).",m3 d76
+Define expected calibration error (ECE).,Bin predictions by confidence; average |accuracy − confidence| over bins weighted by bin size.,m3 d77
+Day-77 Fashion-MNIST test accuracy and worst class?,0.8910 (cnn16); Shirt at 0.624.,m3 d77
+Share of Day-77 errors in the top 4 confused pairs?,"0.58, all upper-body garments (T-shirt/Shirt 203, Coat/Shirt 153, ...).",m3 d77
+Why is the gradient of W_h in an RNN a sum over time?,W_h is reused at every step; the total derivative adds all paths.,m3 d78
+BPTT backward step for the hidden state?,∂L/∂h_{t−1} = W_hᵀ (diag(1 − h_t²) ∂L/∂h_t) + direct terms.,m3 d78
+Day-78 |∂L/∂h_0| with W_h spectral radius 0.51 (T = 50)?,1.01e-19: the gradient vanished.,m3 d78
+Gradient clipping by norm?,"If ||g|| > c, rescale g ← g · c/||g||.",m3 d78
+Truncated BPTT?,Backpropagate only k steps; carry the hidden state forward but detach it.,m3 d78
+LSTM cell update?,c_t = f ⊙ c_{t−1} + i ⊙ g; h_t = o ⊙ tanh(c_t).,m3 d79
+∂c_t/∂c_{t−1} along the LSTM cell path?,"f_t element-wise: no weight matrix, so gradients can survive many steps.",m3 d79
+"Parameters of RNN / GRU / LSTM with I = 10, H = 32?","1,408 / 4,224 / 5,632 (gate multiples 1, 3, 4).",m3 d79
+Effect of forget-gate bias 1 on Day 79?,LSTM at T = 20 rose from 0.7520 to 1.0; at T = 50 all models stayed near chance.,m3 d79
+SGNS loss for one pair and k negatives?,−log σ(u_c·v) − Σ_k log σ(−u_k·v).,m3 d80
+Why subsample frequent words?,They create many low-information pairs that dominate training.,m3 d80
+"What is anisotropy in embeddings, and the fix?","All vectors share a direction, inflating cosines; subtract the mean vector.",m3 d80
+Day-80 nearest neighbours of 'thou'?,"wouldst, dost, livest, art, hast: a syntactic cluster from co-occurrence.",m3 d80
+The seq2seq bottleneck?,The whole input is squeezed into one fixed-size encoder state.,m3 d81
+Attention context vector?,"Softmax of scores between decoder state and every encoder state, then the weighted sum of encoder states.",m3 d81
+"Day-81 exact-match at length 16, without vs with attention?",0.000 vs 0.292.,m3 d81
+"What is teacher forcing, and its side effect?",Feed true previous tokens in training; causes exposure bias at inference.,m3 d81
+fp16 vs bf16 layout?,"fp16: 5 exponent, 10 mantissa (max 65,504); bf16: 8 exponent, 7 mantissa (fp32 range).",m3 d82
+Why loss scaling for fp16?,"Small gradients underflow: 1e-8 → 0 in fp16; scaled by 65,536 it survives and unscales to 9.997e-9.",m3 d82
+Why keep fp32 master weights?,Small updates would round to zero against larger weights in 16-bit.,m3 d82
+Day-82 profiler top op for the MNIST CNN on CPU?,"mkldnn_convolution, about 22% of time; conv backward about 17%.",m3 d82
+What does .item() cost in a GPU loop?,A device synchronisation every call.,m3 d82
+"jax.grad, jax.jit, jax.vmap?",Gradient function; trace-and-compile with XLA; vectorise over a batch axis.,m3 d83
+Why did a Python print run once in 3 jitted calls?,It runs only during tracing; later calls use compiled code.,m3 d83
+Day-83 first-call jit time vs per-call?,About 101 ms compile vs about 3-4 ms per jitted call (eager 8-10 ms).,m3 d83
+Bits per character from loss in nats?,bits = nats / ln 2.,m3 d84
+Day-84 val bits/char: trigram vs GRU LM?,"2.984 vs 2.159 after 1,500 steps (uniform 6.022).",m3 d84
+Effect of sampling temperature?,"Logits / τ: τ < 1 more conservative, τ > 1 more random.",m3 d84
+How to split text for LM validation?,"By position (a contiguous held-out block), not random windows.",m3 d84
+Why random search beats grid search with few important hyperparameters?,Each trial tries a new value of every hyperparameter instead of repeating grid values.,m3 d85
+Search learning rate on which scale?,"Log scale (e.g. 10^uniform(−3, −0.5)).",m3 d85
+Why measure seed noise before comparing configs?,Differences smaller than seed-to-seed variation are not evidence.,m3 d85
+First thing to report in a capstone?,"Baselines (majority class, simple linear model) so the model's gain is measurable.",m3 d86
+What goes in a checkpoint?,Model state_dict plus config and normalisation statistics needed to reproduce predictions.,m3 d86
+What is an ablation?,"Remove or change one component of the full system and measure the effect, all else fixed.",m3 d87
+Why use the same epochs and seed in ablations?,"So differences come from the component, not the budget or the luck of the seed.",m3 d87
+Bias vs variance from train/val/test accuracy?,High train error = bias (underfit); large train-val gap = variance (overfit).,m3 d88
+What is test-time augmentation (TTA)?,Average predictions over augmented copies (e.g. the flipped image) at inference.,m3 d88
+Abstention / selective prediction?,Refuse to predict below a confidence threshold; trade coverage for accuracy.,m3 d88
+Why tag a sample of errors by hand?,To estimate which error category is largest and worth fixing first.,m3 d88
+Params of a 784-128-10 MLP?,"101,770.",m3 d89
+Gradient accumulation over k micro-batches?,"Sum (or average) gradients over k backward passes, then one optimiser step: same as a k× larger batch.",m3 d89
+What must a model report contain?,"Data and split, baselines, final metrics on test once, curves, ablations, error analysis, limitations.",m3 d90
+Scaled dot-product attention?,softmax(QKᵀ/√d_k) V.,m4 d91
+Why divide by √d_k?,q·k has std ≈ √d_k for unit-variance inputs (Day 91: 2.00/8.39/31.25 for d_k 4/64/1024); scaling restores ≈1.,m4 d91
+Causal mask?,Set scores for future positions to −inf before softmax so position t sees only ≤ t.,m4 d91
+Is self-attention without positions order-aware?,"No, it is permutation-equivariant; positional encodings add order.",m4 d91
+Parameters of multi-head attention projections (no bias) with model width D?,"4D² (Q, K, V and output projections); 1,024 for D = 16.",m4 d91

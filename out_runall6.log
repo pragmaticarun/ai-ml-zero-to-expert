@@ -1,0 +1,52 @@
+=== code/week-22/day151_profiling.py
+USDT:2026-10-29 22:22:46 270028:270028 SyncActivityProfilerHandler.cpp:39] profiler_start
+USDT:2026-10-29 22:22:46 270028:270028 SyncActivityProfilerHandler.cpp:46] profiler_stop
+    ok [3 s]
+=== code/week-22/day152_roofline.py
+    ok [5 s]
+=== code/week-22/day153_rust_kernels.py
+    ok [6 s]
+=== code/week-22/day154_project.py
+    ok [4 s]
+=== code/week-23/day155_onnx_ort.py
+[0;93m2026-10-29 22:23:03.101408806 [W:onnxruntime:, inference_session.cc:3240 operator()] Serializing optimized model with Graph Optimization level greater than ORT_ENABLE_EXTENDED and the NchwcTransformer enabled. The generated model may contain hardware specific optimizations, and should only be used in the same environment the model was optimized in.[m
+    ok [2 s]
+=== code/week-23/day156_quantize.py
+WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider pre-processing before quantization. See https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider pre-processing before quantization. See https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider pre-processing before quantization. See https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+    ok [3 s]
+=== code/week-23/day157_prune_distill.py
+    ok [44 s]
+=== code/week-23/day158_memory_kv.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1029 22:23:54.076000 271095 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1029 22:23:54.099000 271095 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights:  78%|███████▊  | 211/272 [00:00<00:00, 2020.46it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 2114.46it/s]
+    ok [10 s]
+=== code/week-23/day159_android_export.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1029 22:24:04.473000 271253 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[cpuinfo_utils.cpp:71] Reading file /sys/devices/soc0/image_version
+[cpuinfo_utils.cpp:87] Failed to open midr file /sys/devices/soc0/image_version
+[cpuinfo_utils.cpp:100] Reading file /sys/devices/system/cpu/cpu0/regs/identification/midr_el1
+[cpuinfo_utils.cpp:109] Failed to open midr file /sys/devices/system/cpu/cpu0/regs/identification/midr_el1
+[cpuinfo_utils.cpp:125] CPU info and manual query on # of cpus dont match.
+    ok [9 s]
+=== code/week-23/day160_rust_engine.py
+    ok [3 s]
+=== code/week-23/day161_project.py
+WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+WARNING:root:Please consider to run pre-processing before quantization. Refer to example: https://github.com/microsoft/onnxruntime-inference-examples/blob/main/quantization/image_classification/cpu/ReadMe.md 
+    ok [23 s]
+ALL OK
+
+real	1m52.445s
+user	2m27.820s
+sys	0m9.737s

@@ -1,0 +1,18 @@
+===== beta 0.1, lr 0.0001, 60 steps =====
+
+reference log-probs for 240 train + 40 test pairs in 12 s; mean train logp chosen -19.9, rejected -7.2
+before DPO: exact match 0.00  e.g. 'Reverse the order of these words: spring orange lemon cloud' -> 'To reverse the order of these words, I will first identify the words that are'
+step  40 loss 0.000 reward margin 9.15 pref acc 1.00  dlogp chosen -4.3 rejected -95.8
+trained 60 steps x 4 pairs (beta 0.1, lr 0.0001) in 44 s
+held-out: implicit-reward pref acc 1.00, mean margin 9.31, dlogp chosen +10.4, rejected -82.7
+after DPO: exact match 0.23  e.g. 'Reverse the order of these words: spring orange lemon cloud' -> 'clouds orange spring'
+Shakespeare val ppl (8 windows) after DPO: 32.35 (instruct reference: 32.05 in week-15 logs)
+===== beta 0.5, lr 0.0001, 60 steps =====
+
+reference log-probs for 240 train + 40 test pairs in 14 s; mean train logp chosen -19.9, rejected -7.2
+before DPO: exact match 0.00  e.g. 'Reverse the order of these words: spring orange lemon cloud' -> 'To reverse the order of these words, I will first identify the words that are'
+step  40 loss 0.000 reward margin 11.46 pref acc 1.00  dlogp chosen +12.0 rejected -10.9
+trained 60 steps x 4 pairs (beta 0.5, lr 0.0001) in 35 s
+held-out: implicit-reward pref acc 1.00, mean margin 11.30, dlogp chosen +12.4, rejected -10.2
+after DPO: exact match 0.20  e.g. 'Reverse the order of these words: spring orange lemon cloud' -> 'cloud orange lemon spring'
+Shakespeare val ppl (8 windows) after DPO: 32.14 (instruct reference: 32.05 in week-15 logs)

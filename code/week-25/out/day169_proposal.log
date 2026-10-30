@@ -1,0 +1,25 @@
+corpus: 26 week files -> 1467 chunks
+total chunk chars: 1075590
+embed 64 chunks: 0.605 s (9.4 ms/chunk); dim 384
+SmolLM2 params: 134,515,008
+generate 38 tokens: 0.524 s (13.8 ms/tok)
+[saved] /workspace/ai-ml-course/code/week-25/out/day169_budget.json
+[saved] /workspace/ai-ml-course/code/week-25/../capstone/out/budget.json
+BUDGET TABLE:
+  RAM for MiniLM + SmolLM2 fp32            | <= 4 GiB process RSS growth
+  LoRA rank                                | r<=8, target modules q_proj/v_proj
+  max_new_tokens                           | 40 default / 80 hard
+  retrieval top_k                          | 3
+  tools                                    | calc, course_search, get_day_title
+SUCCESS METRICS:
+  retrieval_recall_at_3: >= 0.70 on a 20-question hand-labelled set
+  grounded_answer_rate: >= 0.60 (answer cites a retrieved chunk id)
+  tool_success_rate: >= 0.80 on allow-listed tool tasks
+  injection_block_rate: >= 0.80 on a 10-prompt attack set (0 FP on 10 benign)
+  p50_rag_latency_s: <= 8.0 (retrieve+generate 40 toks, CPU)
+  embed_index_build_s: <= 120
+  lora_train_minutes: <= 15
+  int8_score_speedup_vs_numpy: >= 1.5x at batch 256
+  eval_gate: FAIL release if recall@3 drops >10% relative or injection block <0.70
+  rai: model card + audit report filed; no real-user deployment claim
+BASELINES: {'n_chunks': 1467, 'chunk_chars': 1075590, 'embed_64_s': 0.605, 'embed_ms_per_chunk': 9.4, 'embed_full_est_s': 13.9, 'smol_params': 134515008, 'gen_40tok_s': 0.524, 'ms_per_tok': 13.8}

@@ -1,0 +1,61 @@
+=== code/week-01/day01_python_refresher.py
+    ok [0 s]
+=== code/week-01/day02_numpy_basics.py
+/workspace/ai-ml-course/code/week-01/day02_numpy_basics.py:20: RuntimeWarning: overflow encountered in scalar add
+  i8 = np.array([100, 120], dtype=np.int8); print("int8 overflow 100+120 ->", (i8[0] + i8[1]))
+    ok [1 s]
+=== code/week-01/day03_vectorisation_benchmark.py
+    ok [0 s]
+=== code/week-01/day04_pandas_basics.py
+    ok [1 s]
+=== code/week-01/day05_matplotlib_eda.py
+    ok [1 s]
+=== code/week-01/day06_splits_reproducibility.py
+    ok [1 s]
+=== code/week-01/day07_week_project.py
+    ok [1 s]
+=== code/week-02/day08_vectors_dot.py
+    ok [0 s]
+=== code/week-02/day09_matmul.py
+    ok [0 s]
+=== code/week-02/day10_linear_systems.py
+    ok [0 s]
+=== code/week-02/day11_eigen.py
+    ok [0 s]
+=== code/week-02/day12_svd_pca.py
+    ok [1 s]
+=== code/week-02/day13_norms_projections.py
+    ok [0 s]
+=== code/week-02/day14_week_project_svd_compress.py
+    ok [1 s]
+=== code/week-03/day15_derivatives.py
+    ok [0 s]
+=== code/week-03/day16_gradients.py
+    ok [0 s]
+=== code/week-03/day17_chain_rule_autograd.py
+    ok [0 s]
+=== code/week-03/day18_gradient_descent.py
+    ok [1 s]
+=== code/week-03/day19_probability_bayes.py
+    ok [0 s]
+=== code/week-03/day20_distributions_clt.py
+    ok [0 s]
+=== code/week-03/day21_mle_project.py
+    ok [1 s]
+=== code/week-04/day22_linreg_cost.py
+    ok [0 s]
+=== code/week-04/day23_gd_linreg.py
+    ok [1 s]
+=== code/week-04/day24_multivar_linreg.py
+    ok [1 s]
+=== code/week-04/day25_feature_scaling.py
+    ok [4 s]
+=== code/week-04/day26_logistic_regression.py
+    ok [1 s]
+=== code/week-04/day27_evaluation.py
+    ok [1 s]
+=== code/week-04/day28_week_project.py
+    ok [1 s]
+ALL OK
+EXIT:0
+END_MONTH1 2026-10-29T23:04:19+05:30

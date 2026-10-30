@@ -1,0 +1,6 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+[project]
+name = "rust_gd"
+version = "0.1.0"

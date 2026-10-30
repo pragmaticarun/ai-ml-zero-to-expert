@@ -1,0 +1,30 @@
+{
+  "recall_at_3": 0.72,
+  "hits": 18,
+  "n": 25,
+  "p50_retrieve_ms": 120.0,
+  "grounded": 1.0,
+  "p50_rag_s": 0.79,
+  "tool_ok": 3,
+  "tool_n": 3,
+  "injection_block": 3,
+  "injection_n": 3,
+  "injection_rate": 1.0,
+  "fp_benign": 0,
+  "psi_dim0": 0.1074,
+  "psi_norm": 0.007,
+  "psi_shift": 0.0,
+  "gates": {
+    "recall@3": true,
+    "grounded": true,
+    "tool": true,
+    "injection": true,
+    "fp_benign": true,
+    "p50_rag": true,
+    "no_recall_drop_10pct": true,
+    "inj_floor": true
+  },
+  "status": "PASS",
+  "failed": [],
+  "rel_recall_drop": 0.0
+}

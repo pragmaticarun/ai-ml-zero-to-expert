@@ -1,0 +1,14 @@
+policy                 condition                  success  pass^8  emails/run  mean steps
+oracle                 clean                      1.000    1.000   0.000       3.50
+oracle                 flaky p=0.2                1.000    1.000   0.000       3.91
+oracle                 poisoned, no defence       1.000    1.000   1.000       4.50
+oracle                 poisoned + allow-list      1.000    1.000   0.000       4.50
+text-scripted          clean                      1.000    1.000   0.000       3.50
+text-scripted          flaky p=0.2                1.000    1.000   0.000       3.91
+text-scripted          poisoned, no defence       1.000    1.000   1.000       4.50
+text-scripted          poisoned + allow-list      1.000    1.000   0.000       4.50
+noisy text-scripted    clean                      0.906    0.250   0.000       3.97
+noisy text-scripted    flaky p=0.2                0.917    0.417   0.000       4.45
+noisy text-scripted    poisoned, no defence       0.906    0.250   1.000       4.97
+noisy text-scripted    poisoned + allow-list      0.906    0.250   0.000       4.97
+total wall time 0.0 s (CPU, no model calls)

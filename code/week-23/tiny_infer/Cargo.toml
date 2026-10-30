@@ -1,0 +1,13 @@
+[package]
+name = "tiny_infer"
+version = "0.1.0"
+edition = "2021"
+[lib]
+name = "tiny_infer"
+crate-type = ["cdylib"]
+[dependencies]
+pyo3 = { version = "0.25", features = ["extension-module"] }
+numpy = "0.25"
+rayon = "1"
+[profile.release]
+opt-level = 3

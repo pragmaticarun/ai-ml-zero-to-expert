@@ -1,0 +1,21 @@
+config: hidden 576, layers 30, heads 9 (kv heads 3, head_dim 64), intermediate 1536, vocab 49152, tied True, max_pos 8192
+(1) params from formula: per layer 3,540,096 (attn 884,736, mlp 2,654,208); embeddings 28,311,552 (21% of total); total 134,515,008
+(2) weight bytes: fp32 513 MiB; bf16/fp16 257 MiB; int8 (+~0 scales) 128 MiB; 4-bit + fp16 scale per 32 (4.5 bits) 72 MiB
+(3) KV bytes/token: GQA 3 kv heads fp16 = 23,040 B (22.5 KiB); hypothetical MHA 9 heads = 69,120 B (3x); int8 KV = 11,520 B
+    ctx   512: KV fp16   11.2 MiB (batch 1) | MHA   33.8 MiB | fp32   22.5 MiB
+    ctx  2048: KV fp16   45.0 MiB (batch 1) | MHA  135.0 MiB | fp32   90.0 MiB
+    ctx  8192: KV fp16  180.0 MiB (batch 1) | MHA  540.0 MiB | fp32  360.0 MiB
+(4) measured: loaded fp32 in 1.4 s; model.parameters() 134,515,008 (formula diff +0); RSS 390 -> 1020 MiB (+630; fp32 weights alone 513 MiB)
+    prefill ctx  256: KV tensors   11.2 MiB (per layer K shape (1, 3, 256, 64), torch.float32); formula fp32   11.2 MiB; RSS after 1096 MiB (+76 incl. activations/logits 48 MiB)
+    prefill ctx 1024: KV tensors   45.0 MiB (per layer K shape (1, 3, 1024, 64), torch.float32); formula fp32   45.0 MiB; RSS after 1350 MiB (+302 incl. activations/logits 192 MiB)
+    prefill ctx 2048: KV tensors   90.0 MiB (per layer K shape (1, 3, 2048, 64), torch.float32); formula fp32   90.0 MiB; RSS after 1627 MiB (+468 incl. activations/logits 384 MiB)
+(5) budget for ASSUMED app memory budgets (weights + KV fp16 at batch 1; activations/runtime overhead NOT included; set budgets from your own device tests):
+    budget  256 MiB, weights bf16      257 MiB -> max ctx does not fit (KV fp16)
+    budget  256 MiB, weights int8      128 MiB -> max ctx         5812 (KV fp16)
+    budget  256 MiB, weights 4.5-bit    72 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]
+    budget  512 MiB, weights bf16      257 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]
+    budget  512 MiB, weights int8      128 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]
+    budget  512 MiB, weights 4.5-bit    72 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]
+    budget 1024 MiB, weights bf16      257 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]
+    budget 1024 MiB, weights int8      128 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]
+    budget 1024 MiB, weights 4.5-bit    72 MiB -> max ctx         8192 (KV fp16) [capped at max_pos]

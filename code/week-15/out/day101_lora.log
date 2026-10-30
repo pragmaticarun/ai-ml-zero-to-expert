@@ -1,0 +1,6 @@
+my LoRA r=8 on q,v: trainable 460,800 of 134,975,808 (0.34%); logits change at init (B=0): 0.0e+00
+my LoRA: 100 steps in 47 s (0.47 s/step), val ppl 26.29 -> 23.19
+after merging into W: max logit diff 7.4e-05; params 134,515,008
+peft LoRA r=8 trainable 460,800 (mine 460,800, equal: True)
+peft: 100 steps in 63 s, val ppl -> 23.16
+peft merged model type: LlamaForCausalLM

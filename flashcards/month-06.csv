@@ -1,0 +1,111 @@
+Front,Back,Tags
+What did Day 151 profiling find first?,Hot spots before micro-opts: profile → sparse path ~34× in the measured lab.,m6 d151
+Why profile before rewriting kernels?,Otherwise you optimise the wrong 90% and invent speedups you cannot measure.,m6 d151
+tracemalloc role Day 151?,Track Python allocations while profiling so RAM regressions show up beside CPU hot spots.,m6 d151
+bf16/AMX peak observed Day 152?,"About 11,843.7 GFLOP/s at n=2048 with 8 threads on this CPU (box-specific).",m6 d152
+Online softmax vs baseline on CPU Day 152?,Online softmax was slower (18.7 vs 10.4 ms) — fusion is not free on this box.,m6 d152
+When is kernel fusion worthless?,When the fused op is memory-bound or the framework already fuses better — measure both.,m6 d152
+Rust 16-accumulator dot vs naive?,About 5–6× over naive; ties numpy when bandwidth-bound.,m6 d153
+Why mention bandwidth-bound?,"Once memory-bound, fancy accumulators stop helping; measure roofline instincts.",m6 d153
+PyO3 role in this course?,Expose Rust kernels to Python without writing CPython C API by hand.,m6 d153
+maturin role?,Build and install PyO3 wheels into the active venv.,m6 d153
+Rust BM25 end-to-end speedup Day 154?,216× end to end vs Python baseline; 58/58 scores identical.,m6 d154
+Amdahl cap cited for BM25 work?,About 591× — parallel/kernel gains cannot exceed the serial fraction.,m6 d154
+rayon speedup on 64× corpus?,About 6.8× on that tiled corpus size.,m6 d154
+GPU/Triton status in this course?,UNTESTED: no GPU/nvcc on the box; samples shipped under gpu_untested/.,m6 d154
+Why tile corpus 64× in Day 154?,To stress parallel search beyond the tiny real week-file count.,m6 d154
+ORT threading win Day 155?,4 threads ≈2.1× at batch 256 on this CPU.,m6 d155
+First rule of ORT tuning?,Measure graph opts + threads on your shapes; do not copy blog numbers.,m6 d155
+ORT graph optimizations doc used?,Official ORT performance graph-optimizations page (see docs/resources.md).,m6 d155
+Static QDQ int8 speedup Day 156?,About 4.4× at batch 256 (1 thread); watch Δlogit (0.935 static vs 0.132 dynamic in that run).,m6 d156
+Why report Δlogit with int8?,Speed without an error metric is an incomplete claim.,m6 d156
+Dynamic vs static quant tradeoff seen?,Dynamic had smaller Δlogit; static was faster at b256 in that run.,m6 d156
+Unstructured 90% sparsity speedup?,No speed-up on this path — sparsity needs structured patterns or sparse kernels.,m6 d157
+Structured prune h128 accuracy/speed?,Acc about 0.9759 with ~9.3× in the measured setting.,m6 d157
+Distillation result Day 157?,Lost on every seed — honest negative kept.,m6 d157
+Why structured prune over unstructured here?,Unstructured 90% brought no speed-up without sparse kernels.,m6 d157
+SmolLM2-135M KV footprint fp16?,About 22.5 KiB/token; GQA noted as ~3× saving vs full MHA math.,m6 d158
+Prefill logits memory at 2048?,About 384 MiB in that budgeting exercise.,m6 d158
+GQA meaning for KV?,Grouped-query attention shares K/V across heads — fewer KV bytes per token.,m6 d158
+ExecuTorch XNNPACK vs portable µs?,"About 10.7 vs 1120.4 µs on the microbenchmark (server CPU, not phone).",m6 d159
+Android app path status?,UNTESTED on device; Gradle/Kotlin snippets are illustrative only.,m6 d159
+llama.cpp Android doc status?,Linked as UNTESTED reference only; not built on this box.,m6 d159
+Rust int8 vs fp32 at batch 256 Day 160?,Rust int8 slower than fp32 without VNNI — do not assume int8 always wins.,m6 d160
+VNNI absence lesson?,"Without VNNI/AMX int8 paths, int8 Rust can lose to fp32 BLAS — hardware labels required.",m6 d160
+Project pick Week 23?,"Pruned-128 ORT (~105 kB fp32 p95 ~6.5 µs / ~30 kB int8 p95 ~9.4 µs) — server-CPU, NOT phone.",m6 d161
+Why say NOT phone on Week 23 project?,All timings are server-CPU; phone NPU/DSP numbers were never measured.,m6 d161
+Adult DI before mitigation Day 162?,About 0.29 with base rates 0.304 / 0.111 in that split.,m6 d162
+Why base rates matter for DI?,DI compares positive rates across groups; base-rate gaps drive much of the ratio.,m6 d162
+Drop-sex proxy AUC?,About 0.933 — removing the column does not remove the signal.,m6 d163
+Reweighing DI and Female precision?,DI → ~0.57 but Female precision fell to ~0.60 in that run.,m6 d163
+Equalized-odds thresholds cost?,Approximately free in that lab relative to other mitigations' precision hits.,m6 d163
+Shapley vs LIME top-3?,Agreed on top-3 features in the Day 164 check.,m6 d164
+Interpretability limit taught?,Local explanations can agree and still not prove causality or fairness.,m6 d164
+DP-SGD σ=1 ε (Opacus cross-check)?,ε≈1.44 with accuracy about 0.8481 in that run.,m6 d165
+MIA LR vs overfit MLP AUC?,LR≈0.50 (chance); overfit MLP ≈0.57.,m6 d165
+Opacus used how on Day 165?,RDP accountant cross-check — not a full production DP pipeline.,m6 d165
+PGD@8/255 accuracy vs random?,PGD → 0.000 vs random ~0.672 on that CNN eval.,m6 d166
+Age-shift accuracy drop?,About 0.90 → 0.69 with domain AUC ~0.800.,m6 d166
+Energy figures in Week 24?,ASSUMED 45 W — no RAPL reading on the box.,m6 d166
+SmolLM2 harmful refusal rate Day 167?,Refused 1/3 harmful prompts; fabricated Atlantis/Zorblax facts when weak.,m6 d167
+NIST/EU materials used as?,Overview pointers only — not legal advice.,m6 d167
+Model card minimum fields?,"Intended use, out-of-scope, metrics with hardware, ethical considerations, production NO if unfit.",m6 d167
+Audit release decision?,NO for real decisions — audit report filed.,m6 d168
+Datasheet companion?,Document data lineage beside the model card (day167 datasheet / audit inputs).,m6 d168
+Capstone corpus size?,"1467 chunks; 1,075,590 chunk chars from weeks/*.md.",m6 d169
+SmolLM2-135M-Instruct param count?,"134,515,008.",m6 d169
+RAG+gen p50 budget?,≤ 8.0 s for 40 new tokens on CPU.,m6 d169
+Recall@3 target?,≥ 0.70 on the hand-labelled QA set.,m6 d169
+Non-goals Week 25?,"No browsing tool, no GPU training, no production-ready claim, no personal-data corpus.",m6 d169
+Full embed time Day 170?,16.11 s for the full 1467-chunk index.,m6 d170
+LoRA 60-step result?,Loss 3.791→0.961 in ~14.8 s; bare generations were nonsense — RAG required.,m6 d170
+Retriever model id?,sentence-transformers/all-MiniLM-L6-v2 (384-d).,m6 d170
+Recall@3 on 25 QA?,18/25 = 0.720.,m6 d171
+Grounded heuristic rate Day 171?,8/8 on the measured slice (still not perfect factuality).,m6 d171
+Tool success and injection?,Tools 3/3; injection 3/3 block with 0/10 FP on benign.,m6 d171
+top_k default in capstone?,3.,m6 d171
+Rust int8 vs numpy-int8 peak?,Up to ~50.35× on the fair large-matrix comparison.,m6 d172
+KV bytes/token cited Day 172?,23040 B/tok in that budget path.,m6 d172
+Why BLAS can beat Rust on tiny N?,OpenBLAS wins on the tiny 1467×384 corpus; always label the baseline.,m6 d172
+Fair int8 baseline for gate?,"numpy-int8 (and large synthetic matrix), not OpenBLAS fp32 on tiny N.",m6 d172
+Day 173 gates result?,PASS on the freeze metrics.,m6 d173
+PSI drift role Day 173?,Window-level drift signal beside per-query flags; binning caveats apply.,m6 d173
+Red-team cases Day 174?,6/6 handled per the audit script.,m6 d174
+Model card production claim?,NO real-user deployment claim.,m6 d174
+Injection FP budget?,0 false positives on the 10 benign prompts in the measured suite.,m6 d174
+Service tests Day 175?,10/10 pass on the stdlib HTTP service.,m6 d175
+Month-6 midpoint exam size?,20 questions with answers.,m6 d175
+Service stack?,stdlib HTTPServer on :8765 (Day 176 polish used :8766 to avoid zombies).,m6 d175
+Week 26 length?,Five days only (Days 176–180).,m6 d176
+Freeze files copied Day 176?,5 JSON scorecards (day171–day175).,m6 d176
+Polish tests Day 176?,7/7 PASS.,m6 d176
+Overlong input behaviour?,Blocked with reason too long.,m6 d176
+Why freeze before polish?,So later robustness work cannot silently rewrite the baseline.,m6 d176
+Service port during polish?,8766.,m6 d176
+Retrieve p50 ms Day 177?,118.8.,m6 d177
+Retrieve p95 ms Day 177?,127.7.,m6 d177
+RAG p50 / max Day 177?,0.84 s / 1.09 s.,m6 d177
+Paraphrase injection block rate?,1/5 (4 evasions).,m6 d177
+Calc harden bug?,ast.Call/Lambda were allowed; switched to arithmetic-only AST allow-list.,m6 d177
+Post-harden calc abuse battery?,4/4 correct reject/allow.,m6 d177
+RSS after warm RAG?,973 MiB.,m6 d177
+Retrieve top-1 stability id?,week-14.md#0-0 across 5 repeats.,m6 d177
+Final recall@3?,0.720 (matches freeze).,m6 d178
+Recall @1/@3/@5?,0.520 / 0.720 / 0.720.,m6 d178
+Context OFF grounded caveat?,Heuristic can still score grounded via hit overlap; not pure faithfulness.,m6 d178
+Release decision string?,ACCEPT_COURSE_NO_PROD.,m6 d178
+Calc / tools batteries Day 178?,Calc 6/6; tools 3/3.,m6 d178
+Why @5 equals @3 here?,"No additional recall on this 25-pair set — spend effort on chunking/questions, not blind top_k.",m6 d178
+Student template path?,code/capstone/out/REPORT_TEMPLATE.md,m6 d179
+Reference report recall cited?,0.72 from freeze logs.,m6 d179
+Demo checklist must include?,"Health, calc, injection block, RAG, gates, model card production NO.",m6 d179
+Fill reference numbers from?,Real logs/JSON only — never from memory.,m6 d179
+Three artefacts Day 179?,"REPORT_TEMPLATE.md, REFERENCE_REPORT.md, DEMO_CHECKLIST.md.",m6 d179
+Final exam question count?,30 across all six months.,m6 d180
+Skills matrix rows?,14.,m6 d180
+Primary spaced-repetition inputs?,flashcards/month-01.csv … month-06.csv and review-schedule.csv.,m6 d180
+What-next reading rule?,Verified official/primary docs only (no invented URLs).,m6 d180
+Name one research direction from Day 180?,"Paraphrase-robust tool-agent guards without LLM-as-judge cost (or groundedness metrics, int8 that wins on-chip, DPO+frozen evals, Android KV/int4).",m6 d180
+Portfolio lead?,"Honest report: freeze 0.72, paraphrase gaps, production NO.",m6 d180
+Month-6 flashcard file?,flashcards/month-06.csv via make_month06.py.,m6 d180
+Do not zip until?,User asks for verification — Week 26 closeout leaves the tree unzipped.,m6 d180

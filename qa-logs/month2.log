@@ -1,0 +1,61 @@
+=== code/week-05/day29_capstone_benchmark.py
+    ok [2 s]
+=== code/week-05/day30_checkpoint.py
+    ok [0 s]
+=== code/week-05/day31_regularisation.py
+    ok [2 s]
+=== code/week-05/day32_poly_bias_variance.py
+    ok [3 s]
+=== code/week-05/day33_cv_search.py
+    ok [5 s]
+=== code/week-05/day34_softmax.py
+    ok [1 s]
+=== code/week-05/day35_week_project.py
+    ok [12 s]
+=== code/week-06/day36_knn.py
+    ok [1 s]
+=== code/week-06/day37_naive_bayes.py
+    ok [2 s]
+=== code/week-06/day38_svm.py
+    ok [2 s]
+=== code/week-06/day39_trees.py
+    ok [2 s]
+=== code/week-06/day40_random_forest.py
+    ok [10 s]
+=== code/week-06/day41_gboost.py
+    ok [30 s]
+=== code/week-06/day42_week_project.py
+    ok [9 s]
+=== code/week-07/day43_importance.py
+    ok [6 s]
+=== code/week-07/day44_feature_eng.py
+    ok [4 s]
+=== code/week-07/day45_imbalanced.py
+    ok [1 s]
+=== code/week-07/day46_pipelines.py
+    ok [5 s]
+=== code/week-07/day47_kmeans.py
+    ok [3 s]
+=== code/week-07/day48_clustering.py
+    ok [1 s]
+=== code/week-07/day49_week_project.py
+    ok [5 s]
+=== code/week-08/day50_pca.py
+/workspace/ai-ml-course/code/week-08/../common.py:12: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  p = os.path.join(outdir(file), name); plt.tight_layout(); plt.savefig(p, dpi=90); plt.close()
+    ok [8 s]
+=== code/week-08/day51_anomaly.py
+    ok [2 s]
+=== code/week-08/day52_recsys.py
+    ok [35 s]
+=== code/week-08/day53_timeseries.py
+    ok [9 s]
+=== code/week-08/day54_calibration.py
+    ok [2 s]
+=== code/week-08/day55_ml_strategy.py
+    ok [7 s]
+=== code/week-08/day56_week_project.py
+    ok [8 s]
+ALL OK
+EXIT:0
+END_MONTH2 2026-10-29T23:07:57+05:30

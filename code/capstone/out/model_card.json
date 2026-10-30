@@ -1,0 +1,151 @@
+{
+  "model_name": "Course Assistant (capstone)",
+  "version": "0.1.0-week25",
+  "date": "2026-10-29",
+  "intended_use": "CPU-only study helper over ai-ml-course weeks/*.md notes; not a general chatbot or medical/legal advisor.",
+  "out_of_scope": [
+    "personal advice",
+    "code execution beyond calc AST",
+    "web browsing",
+    "PII processing"
+  ],
+  "components": {
+    "retriever": "sentence-transformers/all-MiniLM-L6-v2",
+    "generator": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "optional_adapter": "LoRA r=8 on q_proj/v_proj (adapters/course_lora)",
+    "tools": [
+      "calc",
+      "course_search",
+      "get_day_title"
+    ],
+    "scoring_kernel": "rust_score int8 (PyO3+rayon)"
+  },
+  "training_data": "Hand-written QA (25) + course markdown chunks; no third-party copyrighted course dumps.",
+  "eval_summary": {
+    "recall_at_3": 0.72,
+    "hits": 18,
+    "n": 25,
+    "p50_retrieve_ms": 120.0,
+    "grounded": 1.0,
+    "p50_rag_s": 0.79,
+    "tool_ok": 3,
+    "tool_n": 3,
+    "injection_block": 3,
+    "injection_n": 3,
+    "injection_rate": 1.0,
+    "fp_benign": 0,
+    "psi_dim0": 0.1074,
+    "psi_norm": 0.007,
+    "psi_shift": 0.0,
+    "gates": {
+      "recall@3": true,
+      "grounded": true,
+      "tool": true,
+      "injection": true,
+      "fp_benign": true,
+      "p50_rag": true,
+      "no_recall_drop_10pct": true,
+      "inj_floor": true
+    },
+    "status": "PASS",
+    "failed": [],
+    "rel_recall_drop": 0.0
+  },
+  "perf_summary": {
+    "corpus_np_fp32_us": 6.3,
+    "corpus_np_int8_us": 331.5,
+    "corpus_rust_serial_us": 57.3,
+    "corpus_rust_rayon_us": 39.3,
+    "corpus_speedup_vs_np_int8": 5.78,
+    "top3_agree": 3,
+    "int8_nbytes_corpus": 603728,
+    "synth50k384_np_fp32_us": 357.4,
+    "synth50k384_np_int8_us": 12477.6,
+    "synth50k384_rust_us": 305.4,
+    "synth50k384_speedup_vs_np_int8": 40.85,
+    "synth50k384_speedup_vs_fp32": 1.17,
+    "synth100k256_np_fp32_us": 434.3,
+    "synth100k256_np_int8_us": 29568.4,
+    "synth100k256_rust_us": 497.9,
+    "synth100k256_speedup_vs_np_int8": 59.38,
+    "kv_fp16_b_per_tok": 23040,
+    "prefill_ms": 33.4,
+    "decode_ms_per_tok": 12.1,
+    "nocache_over_kv": 1.7,
+    "rss_mib": 692.0,
+    "gate_1_5x_vs_np_int8": true,
+    "best_speedup_vs_np_int8": 59.38
+  },
+  "safety": {
+    "injection_pattern": "(ignore (all |any )?(previous|prior|above) (instructions|rules)|system prompt|reveal (the )?(system|hidden)|jailbreak)",
+    "redteam_mitigated": 6,
+    "redteam_n": 6,
+    "benign_fp": 0,
+    "threats": [
+      {
+        "id": "prompt_injection",
+        "risk": "User/retrieved text overrides system policy",
+        "mitigation": "INJECTION_PAT + guard_user; block before tools"
+      },
+      {
+        "id": "tool_abuse",
+        "risk": "calc/exec escape",
+        "mitigation": "AST allow-list; no Names/Calls/attrs"
+      },
+      {
+        "id": "data_exfiltration",
+        "risk": "Agent leaks HF cache paths / secrets",
+        "mitigation": "No env/file tools in allow-list"
+      },
+      {
+        "id": "hallucination",
+        "risk": "Ungrounded course answers",
+        "mitigation": "RAG context required; groundedness gate \u22650.60"
+      },
+      {
+        "id": "privacy",
+        "risk": "Training on personal data",
+        "mitigation": "Corpus = public course notes only; no PII by design"
+      },
+      {
+        "id": "fairness",
+        "risk": "Uneven answer quality by topic/week",
+        "mitigation": "Per-week recall reported; no demographic attrs in corpus"
+      },
+      {
+        "id": "supply_chain",
+        "risk": "Model/weight tampering",
+        "mitigation": "Pinned HF ids; local HF_HOME cache; checksum optional"
+      }
+    ]
+  },
+  "fairness_proxy": {
+    "per_week_recall": {
+      "week-01": 0.0,
+      "week-03": 0.0,
+      "week-02": 0.0,
+      "week-05": 0.0,
+      "week-06": 1.0,
+      "week-07": 1.0,
+      "week-08": 1.0,
+      "week-09": 1.0,
+      "week-11": 0.5,
+      "week-14": 1.0,
+      "week-17": 1.0,
+      "week-18": 0.0,
+      "week-20": 1.0,
+      "week-23": 1.0,
+      "week-24": 1.0
+    },
+    "min": 0.0,
+    "max": 1.0
+  },
+  "limitations": [
+    "SmolLM2-135M hallucinates without RAG; LoRA alone insufficient on CPU budget.",
+    "Injection guard is regex-based; paraphrases may evade \u2014 defence in depth still needed.",
+    "Fairness measured only as topic/week recall skew, not demographic parity (no demographics in corpus).",
+    "OpenBLAS fp32 can beat int8 Rust on tiny corpora (~1.5k rows); int8 wins vs naive numpy-int8 and at 50k+."
+  ],
+  "compute": "CPU-only box; HF_HOME local cache; no GPU assumed.",
+  "contact": "course maintainer / student capstone"
+}

@@ -1,0 +1,12 @@
+registry: {'v1 zero-shot': '8b536272f079', 'v2 3-shot': '81a052ecaa64', 'v3 4-shot (+temp_c shot)': '24a6cf8d8a20', 'v4 = v3, system reworded': 'a431b360acd3'}
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 4116.65it/s]
+  v1 zero-shot               [8b536272f079]: pass 0/24 (seen 18: 0, held-out 6: 0); 24.5 s
+  v2 3-shot                  [81a052ecaa64]: pass 7/24 (seen 18: 6, held-out 6: 1); 15.1 s
+  v3 4-shot (+temp_c shot)   [24a6cf8d8a20]: pass 13/24 (seen 18: 9, held-out 6: 4); 15.9 s
+  v4 = v3, system reworded   [a431b360acd3]: pass 13/24 (seen 18: 9, held-out 6: 4); 15.2 s
+re-run v3 from cache: 24 hits, 0 new generations, 0.000 s; identical results True
+determinism: greedy outputs for 5 cases generated twice identical: True
+regression gate: candidate must (a) lose no case the baseline passed on the 18 'seen' cases, (b) not be worse overall
+  v1 zero-shot -> v2 3-shot: lost 0, gained 7, exact McNemar p=0.016; gate PASS
+  v2 3-shot -> v3 4-shot (+temp_c shot): lost 3, gained 9, exact McNemar p=0.146; gate FAIL (regressed: ['Compute 1024/16.', 'Compute 99/3.', 'Compute 45%7.'])
+  v3 4-shot (+temp_c shot) -> v4 = v3, system reworded: lost 0, gained 0, exact McNemar p=1.000; gate PASS

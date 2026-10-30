@@ -1,0 +1,13 @@
+random policy, gamma=1: exact solve 0.34 ms; iterative evaluation 342 sweeps, 1.7 ms, max diff 1.7e-07
+V_random (exact), 4x4:
+[[  0. -14. -20. -22.]
+ [-14. -18. -20. -20.]
+ [-20. -20. -18. -14.]
+ [-22. -20. -14.   0.]]
+Monte Carlo from state 1, 2000 episodes: mean return -13.91 ± 0.73 (95% CI), exact -14.00; episode lengths min 1, max 143
+gamma=0.5: V(state 1) -1.69, V(state 7) -1.95  (bounded by -1/(1-gamma) = -2.0)
+gamma=0.9: V(state 1) -5.28, V(state 7) -7.13  (bounded by -1/(1-gamma) = -10.0)
+gamma=0.99: V(state 1) -11.95, V(state 7) -16.96  (bounded by -1/(1-gamma) = -100.0)
+slip=0.0: 'go down, then right' policy, V(state 1) -5.00, V(state 4) -5.00
+slip=0.2: 'go down, then right' policy, V(state 1) -5.73, V(state 4) -6.40
+slip=0.5: 'go down, then right' policy, V(state 1) -7.87, V(state 4) -10.81

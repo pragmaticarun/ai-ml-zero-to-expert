@@ -1,0 +1,10 @@
+{
+  "threats": 7,
+  "redteam_mitigated": 6,
+  "redteam_n": 6,
+  "benign_fp": 0,
+  "recall_min": 0.0,
+  "recall_max": 1.0,
+  "recall_mean": 0.633,
+  "model_card": "/workspace/ai-ml-course/code/week-25/../capstone/out/MODEL_CARD.md"
+}

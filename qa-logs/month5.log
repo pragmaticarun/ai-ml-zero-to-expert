@@ -1,0 +1,114 @@
+=== code/week-18/day121_mdp_bellman.py
+    ok [1 s]
+=== code/week-18/day122_dynamic_programming.py
+    ok [2 s]
+=== code/week-18/day123_mc_td_qlearning.py
+    ok [2 s]
+=== code/week-18/day124_function_approx.py
+    ok [7 s]
+=== code/week-18/day125_dqn_cartpole.py
+    ok [112 s]
+=== code/week-18/day126_project.py
+    ok [113 s]
+=== code/week-19/day127_reinforce.py
+    ok [19 s]
+=== code/week-19/day128_actor_critic.py
+    ok [180 s]
+=== code/week-19/day129_ppo.py
+    ok [317 s]
+=== code/week-19/day130_bandits.py
+    ok [19 s]
+=== code/week-19/day131_reward_shaping.py
+    ok [10 s]
+=== code/week-19/day132_rl_for_llms.py
+    ok [4 s]
+=== code/week-19/day133_project.py
+    ok [219 s]
+=== code/week-20/day134_tool_calling.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:49:07.010000 486093 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:49:07.032000 486093 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 3142.16it/s]
+    ok [27 s]
+=== code/week-20/day135_react.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:49:34.361000 486400 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:49:34.382000 486400 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 4813.23it/s]
+    ok [109 s]
+=== code/week-20/day136_planning_memory.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:51:25.586000 487279 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:51:25.622000 487279 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 13169.93it/s]
+    ok [7 s]
+=== code/week-20/day137_rag_and_sandbox.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:51:37.399000 487359 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:51:37.430000 487359 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 14690.83it/s]
+Loading weights:   0%|          | 0/105 [00:00<?, ?it/s]Loading weights: 100%|██████████| 105/105 [00:00<00:00, 11275.01it/s]
+    ok [31 s]
+=== code/week-20/day138_agent_eval.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:52:01.298000 487663 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:52:01.320000 487663 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights:   0%|          | 1/272 [00:00<00:46,  5.79it/s]Loading weights:  47%|████▋     | 129/272 [00:00<00:00, 559.09it/s]Loading weights:  78%|███████▊  | 211/272 [00:00<00:00, 656.27it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 597.44it/s]
+    ok [99 s]
+=== code/week-20/day139_injection_structured.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:53:40.442000 488501 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:53:40.463000 488501 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 3939.16it/s]
+    ok [47 s]
+=== code/week-20/day140_project.py
+    ok [0 s]
+=== code/week-21/day141_scoping.py
+    ok [6 s]
+=== code/week-21/day142_validate_version.py
+    ok [2 s]
+=== code/week-21/day143_tracking_repro.py
+2026/10/30 00:54:34 INFO mlflow.tracking.fluent: Experiment with name 'w21-mlp' does not exist. Creating a new experiment.
+    ok [15 s]
+=== code/week-21/day144_onnx_serving.py
+/workspace/ai-ml-course/code/week-21/day144_onnx_serving.py:7: DeprecationWarning: You are using the legacy TorchScript-based ONNX export. Starting in PyTorch 2.9, the new torch.export-based ONNX exporter has become the default. Learn more about the new export logic: https://docs.pytorch.org/docs/stable/onnx_export.html. For exporting control flow: https://pytorch.org/tutorials/beginner/onnx/export_control_flow_model_to_onnx_tutorial.html
+  torch.onnx.export(m, (torch.zeros(1, 30),), p, input_names=["x"], output_names=["logits"], dynamic_axes={"x": {0: "batch"}}, dynamo=False)
+    ok [12 s]
+=== code/week-21/day145_drift_labels.py
+    ok [5 s]
+=== code/week-21/day146_ab_canary_cost.py
+    ok [3 s]
+=== code/week-21/day147_project.py
+/workspace/ai-ml-course/code/week-21/day147_project.py:8: DeprecationWarning: You are using the legacy TorchScript-based ONNX export. Starting in PyTorch 2.9, the new torch.export-based ONNX exporter has become the default. Learn more about the new export logic: https://docs.pytorch.org/docs/stable/onnx_export.html. For exporting control flow: https://pytorch.org/tutorials/beginner/onnx/export_control_flow_model_to_onnx_tutorial.html
+  torch.onnx.export(m, (torch.zeros(1, 30),), os.path.join(ART, "model.onnx"), input_names=["x"], output_names=["logits"], dynamic_axes={"x": {0: "batch"}}, dynamo=False)
+    ok [6 s]
+=== code/week-22/day148_prompts_evals.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:55:16.324000 489603 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:55:16.346000 489603 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 4295.08it/s]
+    ok [140 s]
+=== code/week-22/day149_tracing_guardrails.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:57:36.172000 490231 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:57:36.197000 490231 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights:  18%|█▊        | 50/272 [00:00<00:00, 499.53it/s]Loading weights:  45%|████▍     | 122/272 [00:00<00:00, 624.00it/s]Loading weights:  70%|██████▉   | 190/272 [00:00<00:00, 648.91it/s]Loading weights:  96%|█████████▌| 260/272 [00:00<00:00, 659.21it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 653.78it/s]
+    ok [42 s]
+=== code/week-22/day150_capstone.py
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_mxfp8.cpython-310-x86_64-linux-gnu.so
+Failed to load /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so: Could not load this library: /workspace/ai-ml-course/.venv/lib/python3.13/site-packages/torchao/_C_cutlass_90a.abi3.so
+W1030 00:58:18.697000 490632 torch/utils/_pytree.py:646] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1030 00:58:18.720000 490632 torch/utils/_pytree.py:646] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 2729.28it/s]
+    ok [14 s]
+ALL OK
+EXIT:0
+END_MONTH5 2026-10-30T00:58:29+05:30

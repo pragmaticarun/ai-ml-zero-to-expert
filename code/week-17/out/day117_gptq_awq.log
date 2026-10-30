@@ -1,0 +1,7 @@
+calibration: 2048 tokens, Hessians for 210 layers in 1.9 s
+int4 per-channel RTN      : quantise   0.7 s, mean relative layer-output error 0.0223, val ppl 64.84
+int4 per-channel AWQ-style: quantise   1.9 s, mean relative layer-output error 0.0161, val ppl 44.04, mean chosen alpha 0.27
+int4 per-channel GPTQ     : quantise  14.1 s, mean relative layer-output error 0.0048, val ppl 44.31
+int4 group-64    RTN      : quantise   0.5 s, mean relative layer-output error 0.0127, val ppl 36.89
+int4 group-64    AWQ-style: quantise   1.8 s, mean relative layer-output error 0.0077, val ppl 31.17, mean chosen alpha 0.33
+int4 group-64    GPTQ     : quantise  13.7 s, mean relative layer-output error 0.0026, val ppl 31.96

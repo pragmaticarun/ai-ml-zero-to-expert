@@ -1,0 +1,9 @@
+{
+  "n_chunks": 1556,
+  "embed_s": 11.77,
+  "recall_at_3": 0.72,
+  "lora_steps": 60,
+  "lora_s": 12.8,
+  "loss_start": 3.689,
+  "loss_end": 0.941
+}

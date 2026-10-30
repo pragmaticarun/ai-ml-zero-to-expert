@@ -1,0 +1,22 @@
+vocab 65 characters, train 1,003,854 val 111,540 tokens
+uniform loss ln(65) = 4.174; bigram (add-one) val loss 2.482
+GPT params 816,000; loss at init 4.237
+  step   250 train 2.298 val 2.334
+  step   500 train 1.906 val 1.998
+  step   750 train 1.642 val 1.808
+  step  1000 train 1.541 val 1.715
+  step  1250 train 1.424 val 1.645
+  step  1500 train 1.444 val 1.625
+1500 steps in 85 s (57 ms/step); final val loss 1.625 = 2.344 bits/char vs bigram 3.581
+--- sample (temperature 0.8, top-k 20) ---
+ROMEO:
+The mother's pressent of your any,
+And gelst than of thy hourty here hath think
+And so says him; that's your wake excution
+are forfolk-day father we would for me him:
+Even, the contring mean! no. So I fearful him?
+
+MENENIUS:
+Has you as of livele: I am
+so much thou, my poins to the pots of hath fair
+---

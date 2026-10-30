@@ -1,0 +1,13 @@
+our forward vs HF logits: max abs diff 0.00e+00
+ours, no cache: 64 tokens in 2.35 s = 27.3 tok/s
+ours, KV cache: 64 tokens in 0.94 s = 67.8 tok/s
+same tokens with and without cache: True; text: ' "I have no desire to see you, but I will go to the king\'s house and tell him th'
+HF generate (its own cache): 64 tokens in 1.04 s = 61.7 tok/s; same tokens as ours: True
+KV cache size for 1 sequence x 128 tokens: 5.9 MB fp32 (30 layers x 2 x 3 kv heads x 64)
+KV cache size for 1 sequence x 512 tokens: 23.6 MB fp32 (30 layers x 2 x 3 kv heads x 64)
+KV cache size for 1 sequence x 2048 tokens: 94.4 MB fp32 (30 layers x 2 x 3 kv heads x 64)
+batched decoding B= 1: 32 tokens in 0.50 s = 63.6 tok/s total, 63.6 tok/s per sequence
+batched decoding B= 4: 128 tokens in 0.69 s = 186.3 tok/s total, 46.6 tok/s per sequence
+batched decoding B=16: 512 tokens in 0.91 s = 559.8 tok/s total, 35.0 tok/s per sequence
+speculative (draft = first 10/30 layers, gamma 4): acceptance 0.03, 58 target forwards for 64 tokens, 24.0 tok/s, output equals greedy: True
+speculative (draft = first 20/30 layers, gamma 4): acceptance 0.06, 51 target forwards for 64 tokens, 20.1 tok/s, output equals greedy: True

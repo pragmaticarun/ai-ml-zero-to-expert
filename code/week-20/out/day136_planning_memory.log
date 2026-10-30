@@ -1,0 +1,12 @@
+(1) planning with unreliable tools: success rate (mean tool calls per task), 24 tasks x 50 seeds
+  p=0.0: plan, no retry 1.000 (2.50); plan, 2 retries 1.000 (2.50); ReAct, cap 10 1.000 (2.50)
+  p=0.1: plan, no retry 0.760 (2.30); plan, 2 retries 0.999 (2.80); ReAct, cap 10 1.000 (2.80)
+  p=0.3: plan, no retry 0.401 (1.91); plan, 2 retries 0.924 (3.43); ReAct, cap 10 0.995 (3.63)
+(2) memory: 65 turns, 20 facts, 5 updated near the end; 20 questions
+  window last 10 turns  : accuracy 0.25 (on the 5 updated facts 1.00); mean context 87 words
+  full history          : accuracy 1.00 (on the 5 updated facts 1.00); mean context 538 words
+  BM25 top-3            : accuracy 1.00 (on the 5 updated facts 1.00); mean context 27 words
+  MiniLM dense top-3    : accuracy 1.00 (on the 5 updated facts 1.00); mean context 27 words
+  BM25 top-1            : accuracy 0.75 (on the 5 updated facts 0.00); mean context 9 words
+  MiniLM dense top-1    : accuracy 0.80 (on the 5 updated facts 0.20); mean context 9 words
+  key-value store       : accuracy 1.00 (on the 5 updated facts 1.00); mean context 4 words

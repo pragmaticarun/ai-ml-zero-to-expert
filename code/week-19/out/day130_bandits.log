@@ -1,0 +1,8 @@
+bandit greedy: cumulative regret after 2000 pulls 558.8 ± 36.0 (s.e., 200 runs); optimal arm in last 500 pulls 16%; 3.5 s
+bandit eps0.1: cumulative regret after 2000 pulls 112.7 ± 2.6 (s.e., 200 runs); optimal arm in last 500 pulls 79%; 3.5 s
+bandit optimistic: cumulative regret after 2000 pulls 38.5 ± 5.6 (s.e., 200 runs); optimal arm in last 500 pulls 77%; 3.4 s
+bandit UCB1: cumulative regret after 2000 pulls 183.3 ± 1.9 (s.e., 200 runs); optimal arm in last 500 pulls 63%; 1.9 s
+bandit Thompson: cumulative regret after 2000 pulls 30.5 ± 1.1 (s.e., 200 runs); optimal arm in last 500 pulls 88%; 3.3 s
+recsys random: CTR 0.382; cumulative regret over 5000 rounds 2832 (mean of 20 runs); 1.2 s
+recsys eps-greedy (no context): CTR 0.399; cumulative regret over 5000 rounds 2738 (mean of 20 runs); 1.2 s
+recsys LinUCB: CTR 0.876; cumulative regret over 5000 rounds 342 (mean of 20 runs); 1.8 s

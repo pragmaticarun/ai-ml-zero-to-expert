@@ -1,0 +1,13 @@
+one block d=128: attention 65,536 (4d^2=65,536), MLP 131,712 (8d^2+5d=131,712), 2 LayerNorms 512, total 197,760
+GPT vocab 65 ctx 128 d 128 L 4: 816,000 params (embeddings shared with output head: True)
+pre-LN  L= 2: grad norm of first-block qkv 1.57e-02, last-block 1.58e-02, ratio first/last 0.99
+pre-LN  L=12: grad norm of first-block qkv 2.59e-02, last-block 2.15e-02, ratio first/last 1.20
+pre-LN  L=24: grad norm of first-block qkv 4.01e-02, last-block 2.43e-02, ratio first/last 1.65
+post-LN L= 2: grad norm of first-block qkv 1.46e-02, last-block 1.50e-02, ratio first/last 0.97
+post-LN L=12: grad norm of first-block qkv 2.01e-02, last-block 2.28e-02, ratio first/last 0.88
+post-LN L=24: grad norm of first-block qkv 2.70e-02, last-block 2.77e-02, ratio first/last 0.98
+pre-LN residual stream norm after blocks 1,4,8,12: [8.21, 8.88, 9.73, 10.67]
+pre-LN  lr 3e-03, no warmup: loss at step 1 4.316, mean of last 20 steps 2.386
+pre-LN  lr 1e-02, no warmup: loss at step 1 4.316, mean of last 20 steps 2.355
+post-LN lr 3e-03, no warmup: loss at step 1 4.306, mean of last 20 steps 2.382
+post-LN lr 1e-02, no warmup: loss at step 1 4.306, mean of last 20 steps 3.326

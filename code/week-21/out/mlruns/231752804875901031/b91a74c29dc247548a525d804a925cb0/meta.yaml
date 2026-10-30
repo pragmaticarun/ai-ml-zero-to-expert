@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/b91a74c29dc247548a525d804a925cb0/artifacts
+end_time: 1793301876426
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: b91a74c29dc247548a525d804a925cb0
+run_name: nimble-mare-238
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301876422
+status: 3
+tags: []
+user_id: box

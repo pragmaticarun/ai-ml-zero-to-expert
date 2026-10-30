@@ -1,0 +1,7 @@
+corpus 1099 chunks x 7006 terms, nnz 77,359; 58 queries, top-5
+agreement with Python baseline (identical ranked top-5 lists): rust 58/58, scipy 58/58
+per query (ms): tokenise 0.0026 | python score+sort 1.513 | scipy 0.0743 | rust 0.0044 | rust rayon 0.0019
+end to end with rust = tokenise + rust = 0.0070 ms -> 216x vs python; tokenising is now 37% of the time (Amdahl: even an infinitely fast kernel caps the speed-up at 591x)
+
+64x tiled corpus: 70,336 chunks, nnz 4,950,976 (39.6 MB); top-5 score sets match scipy 58/58
+per query (ms): scipy 3.089 | rust 0.245 | rust rayon over queries (8 threads) 0.036 -> rayon 6.8x over serial rust

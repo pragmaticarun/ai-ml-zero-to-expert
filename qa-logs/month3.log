@@ -1,0 +1,93 @@
+=== code/week-09/day57_persistence.py
+    ok [9 s]
+=== code/week-09/day58_capstone_build.py
+    ok [16 s]
+=== code/week-09/day59_capstone_report.py
+    ok [3 s]
+=== code/week-09/day60_checkpoint.py
+    ok [1 s]
+=== code/week-09/day61_perceptron.py
+    ok [1 s]
+=== code/week-09/day62_forward_prop.py
+    ok [0 s]
+=== code/week-09/day63_week_project.py
+    ok [2 s]
+=== code/week-10/day64_autograd.py
+    ok [4 s]
+=== code/week-10/day65_dataloader.py
+    ok [6 s]
+=== code/week-10/day66_init_vanishing.py
+    ok [5 s]
+=== code/week-10/day67_optimisers.py
+    ok [6 s]
+=== code/week-10/day68_regularisation.py
+    ok [14 s]
+=== code/week-10/day69_batchnorm.py
+    ok [10 s]
+=== code/week-10/day70_week_project.py
+    ok [22 s]
+=== code/week-11/day71_conv_scratch.py
+    ok [1 s]
+=== code/week-11/day72_architectures.py
+    ok [58 s]
+=== code/week-11/day73_cifar_cnn.py
+    ok [312 s]
+=== code/week-11/day74_transfer.py
+    ok [61 s]
+=== code/week-11/day75_debugging.py
+    ok [8 s]
+=== code/week-11/day76_audio_image_pipelines.py
+    ok [9 s]
+=== code/week-11/day77_week_project.py
+/workspace/ai-ml-course/.venv/lib/python3.13/site-packages/sklearn/linear_model/_logistic.py:599: ConvergenceWarning: lbfgs failed to converge after 200 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=200).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  n_iter_i = _check_optimize_result(
+    ok [59 s]
+=== code/week-12/day78_rnn_bptt.py
+    ok [3 s]
+=== code/week-12/day79_lstm_gru.py
+    ok [42 s]
+=== code/week-12/day80_embeddings.py
+    ok [16 s]
+=== code/week-12/day81_seq2seq_attention.py
+    ok [30 s]
+=== code/week-12/day82_mixed_precision_profiling.py
+USDT:2026-10-29 23:22:13 353030:353030 SyncActivityProfilerHandler.cpp:39] profiler_start
+USDT:2026-10-29 23:22:13 353030:353030 SyncActivityProfilerHandler.cpp:46] profiler_stop
+    ok [6 s]
+=== code/week-12/day83_jax_tour.py
+    ok [3 s]
+=== code/week-12/day84_char_lm.py
+    ok [440 s]
+=== code/week-13/day85_hparam_search.py
+    ok [9 s]
+=== code/week-13/day86_capstone_build.py
+/workspace/ai-ml-course/.venv/lib/python3.13/site-packages/sklearn/linear_model/_logistic.py:599: ConvergenceWarning: lbfgs failed to converge after 300 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=300).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  n_iter_i = _check_optimize_result(
+    ok [155 s]
+=== code/week-13/day87_capstone_ablations.py
+    ok [581 s]
+=== code/week-13/day88_capstone_error_analysis.py
+    ok [7 s]
+=== code/week-13/day89_cumulative_review.py
+    ok [3 s]
+=== code/week-13/day90_capstone_delivery.py
+    ok [3 s]
+=== code/week-13/day91_attention_scratch.py
+    ok [1 s]
+ALL OK
+EXIT:0
+END_MONTH3 2026-10-29T23:42:16+05:30

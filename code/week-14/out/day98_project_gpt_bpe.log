@@ -1,0 +1,19 @@
+encoded in 0.7 s: train 408,325 val 48,838 tokens
+val characters per token 2.284
+GPT params 938,752 (embedding table 131,072)
+  step   500 train 3.694 val 3.856
+  step  1000 train 3.114 val 3.550
+  step  1500 train 2.944 val 3.470
+1500 steps in 90 s; val loss 3.470 nats/token = 2.192 bits/char (compare Day 95's character model)
+context covers 292 characters vs 128 for the character model
+--- sample ---
+ROMEO:
+But, my lord, gentle uncle,
+To bear the day to be back my light;
+Even from this is my faithful penatience,
+With sorrow stark, and I'ld not live to thee:
+And all if though I seen thee, thou hast thoughts,
+And all thyself be revengeful fortune me;
+The lin of her steels of my charge once,
+Tend thy sining Richard, forgot
+---

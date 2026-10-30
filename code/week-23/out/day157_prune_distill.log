@@ -1,0 +1,18 @@
+teacher/base fp32 64-512-512-10: acc 0.9741; b256 796 us (1 thread)
+(1) global unstructured L1 pruning (all 3 Linear weights):
+    sparsity 0.50: zeros 0.500; acc no-finetune 0.9759 -> after 5-epoch finetune 0.9741; dense b256 803 us
+    sparsity 0.80: zeros 0.800; acc no-finetune 0.9630 -> after 5-epoch finetune 0.9778; dense b256 785 us
+    sparsity 0.90: zeros 0.900; acc no-finetune 0.8704 -> after 5-epoch finetune 0.9815; dense b256 807 us
+    sparsity 0.95: zeros 0.950; acc no-finetune 0.2500 -> after 5-epoch finetune 0.8889; dense b256 782 us
+    sparsity 0.98: zeros 0.980; acc no-finetune 0.1537 -> after 5-epoch finetune 0.1444; dense b256 783 us
+(2) structured pruning: keep the top-k hidden neurons (L2 norm of incoming weights) in both hidden layers, then 5-epoch finetune:
+    hidden 256: params  85002; acc before ft 0.9185 -> after 0.9778; b256 234 us (3.4x faster)
+    hidden 128: params  26122; acc before ft 0.7426 -> after 0.9759; b256 85 us (9.3x faster)
+    hidden  64: params   8970; acc before ft 0.5389 -> after 0.9222; b256 44 us (18.1x faster)
+    hidden  32: params   3466; acc before ft 0.2315 -> after 0.5870; b256 28 us (28.8x faster)
+    hidden  16: params   1482; acc before ft 0.1889 -> after 0.2481; b256 23 us (35.0x faster)
+(3) distillation: student 64-h-10 (one hidden layer), T=4; teacher = the base model; 5 seeds each; same init and batch order for both arms:
+    h= 8 epochs= 30 alpha=0.7: labels-only mean 0.8778 (sd 0.0226) | distilled mean 0.8067 (sd 0.0280); per-seed diff [-0.0778, -0.0796, -0.05, -0.0796, -0.0685]
+    h= 8 epochs=120 alpha=0.7: labels-only mean 0.9511 (sd 0.0066) | distilled mean 0.9293 (sd 0.0092); per-seed diff [-0.0389, -0.0148, -0.0167, -0.0241, -0.0148]
+    h= 8 epochs=120 alpha=0.3: labels-only mean 0.9511 (sd 0.0066) | distilled mean 0.9326 (sd 0.0079); per-seed diff [-0.0333, -0.013, -0.0093, -0.0241, -0.013]
+    h=16 epochs=120 alpha=0.3: labels-only mean 0.9696 (sd 0.0050) | distilled mean 0.9626 (sd 0.0078); per-seed diff [-0.0037, -0.013, -0.0019, -0.0056, -0.0111]

@@ -1,0 +1,18 @@
+{
+  "model": "sklearn LogisticRegression (C=1) on Adult OpenML v2",
+  "intended_use": "pedagogical fairness audit only; NOT for credit, hiring, or any real decision",
+  "out_of_scope": [
+    "real individuals",
+    "production decisions",
+    "jurisdictions with protected-class rules we have not checked"
+  ],
+  "metrics": {
+    "test_acc": 0.8542,
+    "DI_female_over_male": 0.29,
+    "TPR_gap_F_minus_M": -0.135,
+    "FPR_gap_F_minus_M": -0.075
+  },
+  "training_data": "OpenML adult v2, 70/30 stratified split, seed 0",
+  "ethical_considerations": "base rates differ by sex (M 0.304 vs F 0.111 >50K); demographic parity and equalised odds conflict with calibration; sex is predictable from other features (AUC 0.933 on Day 162)",
+  "env": "CPU-only Xeon; wall-clock below"
+}

@@ -1,0 +1,18 @@
+(1) bandwidth, 256 MB float64, 1 thread: copy 29.5 GB/s (read+write), sum 13.3 GB/s, a+a->b 17.5 GB/s (0.73 GFLOP/s)
+(2) matmul (torch, square n x n), GFLOP/s = 2n^3/time:
+    float64   1 thr: n=64:    87.0, n=256:   110.6, n=1024:   114.4, n=2048:   110.9
+    float64   8 thr: n=64:    57.0, n=256:   375.8, n=1024:   436.0, n=2048:   701.1
+    float32   1 thr: n=64:    74.3, n=256:   226.7, n=1024:   235.4, n=2048:   238.6
+    float32   8 thr: n=64:    74.2, n=256:  1040.6, n=1024:  1666.2, n=2048:  1701.1
+    bfloat16  1 thr: n=64:    36.8, n=256:   862.1, n=1024:  1654.4, n=2048:  1581.5
+    bfloat16  8 thr: n=64:    29.9, n=256:  1450.1, n=1024:  8826.9, n=2048: 11843.7
+(3) roofline, float32, 1 thread: measured peak 239 GFLOP/s, bandwidth 29.5 GB/s -> ridge point 8.1 FLOP/byte
+    vector add (1 flop / 12 bytes)        : intensity    0.08 -> bound memory; attainable <=    2.5 GFLOP/s
+    dot product (2 flops / 8 bytes)       : intensity    0.25 -> bound memory; attainable <=    7.4 GFLOP/s
+    matvec n=4096 (~2 flops / 4 bytes)    : intensity    0.50 -> bound memory; attainable <=   14.8 GFLOP/s
+    matmul n=1024 (2n^3 / 12n^2 bytes)    : intensity  170.67 -> bound compute; attainable <=  238.6 GFLOP/s
+    measured matvec n=4096 float32: 17.1 GFLOP/s, 34.3 GB/s of matrix read (above the DRAM roof: the 64 MB matrix fits in the 320 MB L3 cache)
+(4) layout, 4096x4096 float64 C-order: sum(axis=1) 4.8 ms, sum(axis=0) 4.5 ms; 512 row slices 0.8 ms vs 512 column slices 13.0 ms (15.8x slower, strided)
+    making the transpose contiguous costs 128.2 ms (2.1 GB/s)
+(5) 2x^2+3x+1 on 8M float64: naive (temporaries) 26.9 ms; in-place Horner with out= 12.1 ms (2.2x); max diff 1.8e-15
+(6) dot product of 1M floats: Python loop 30.4 ms, numpy 0.037 ms (832x)

@@ -1,0 +1,9 @@
+(1) QA pairs 25; building RAG…
+    chunks 1467 emb (1467, 384)
+(2) recall@3 18/25=0.720; p50 retrieve 119.0 ms
+(3) grounded 8/8=1.000; p50 RAG+gen 0.75 s
+(4) tool cases 3/3
+(5) injection block 3/3=1.000; false positives 0/10
+(6) PSI dim0 0.0957; PSI L2 0.0017; PSI +0.5 shift 0.0000
+(7) gates PASS; failed=[]; rel_recall_drop=0.000
+[saved] /workspace/ai-ml-course/code/week-25/out/day173_stats.json

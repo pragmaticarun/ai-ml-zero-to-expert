@@ -1,0 +1,8 @@
+random walk MC alpha=0.01: RMS error after 10 / 50 / 100 episodes 0.209 / 0.143 / 0.098 (mean of 10 seeds)
+random walk MC alpha=0.03: RMS error after 10 / 50 / 100 episodes 0.178 / 0.099 / 0.099 (mean of 10 seeds)
+random walk TD alpha=0.05: RMS error after 10 / 50 / 100 episodes 0.175 / 0.065 / 0.036 (mean of 10 seeds)
+random walk TD alpha=0.1: RMS error after 10 / 50 / 100 episodes 0.128 / 0.062 / 0.058 (mean of 10 seeds)
+random walk TD alpha=0.15: RMS error after 10 / 50 / 100 episodes 0.094 / 0.076 / 0.072 (mean of 10 seeds)
+cliff Q-learning: mean online return per episode, episodes 1-50 -118.3, 401-500 -53.0; greedy path return per seed [-13, -13, -13, -13, -13, -13, -13, -13, -13, -13] (a 100-step cap marks a greedy loop); 0.8 s for 10 seeds
+cliff SARSA: mean online return per episode, episodes 1-50 -116.6, 401-500 -28.8; greedy path return per seed [-17, -17, -100, -17, -17, -17, -17, -17, -17, -19] (a 100-step cap marks a greedy loop); 0.9 s for 10 seeds
+gymnasium FrozenLake time limits (max_episode_steps): 4x4 100 8x8 100

@@ -1,0 +1,2 @@
+sft     : train 18 s, exact match 0.70, Shakespeare ppl 32.13, sample 'cloud lemon orange spring'
+dpo+nll : train 35 s, exact match 0.70, Shakespeare ppl 32.17, sample 'cloud lemon orange spring'

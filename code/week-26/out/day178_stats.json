@@ -1,0 +1,16 @@
+{
+  "recall_at_3": 0.72,
+  "freeze_recall": 0.72,
+  "grounded_context_on": 1.0,
+  "grounded_context_off": 1.0,
+  "recall_at_1": 0.48,
+  "recall_at_3_ablate": 0.72,
+  "recall_at_5": 0.72,
+  "calc_battery": 6,
+  "calc_n": 6,
+  "tool_ok": 3,
+  "tool_n": 3,
+  "worked_n": 6,
+  "failed_n": 7,
+  "decision": "ACCEPT_COURSE_NO_PROD"
+}

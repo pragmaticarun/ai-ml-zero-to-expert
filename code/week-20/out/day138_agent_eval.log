@@ -1,0 +1,4 @@
+structured oracle: trial-1 success 1.000 [95% CI 1.000-1.000]; mean over 8 trials 1.000; pass@8 1.000; pass^8 1.000; taxonomy over 192 runs {'success': 192}
+scripted text-parsing: trial-1 success 1.000 [95% CI 1.000-1.000]; mean over 8 trials 1.000; pass@8 1.000; pass^8 1.000; taxonomy over 192 runs {'success': 192}
+noisy scripted (known error rates): trial-1 success 0.875 [95% CI 0.749-1.000]; mean over 8 trials 0.859; pass@8 1.000; pass^8 0.458; taxonomy over 192 runs {'success': 165, 'wrong answer despite evidence': 15, 'answered without evidence': 11, 'stuck on tool errors': 1}
+SmolLM2-135M ReAct (greedy, 1 trial): success 0.000 [95% CI 0.000-0.000]; taxonomy {'wrong answer despite evidence': 6, 'unparseable output': 1, 'stuck on tool errors': 16, 'step limit / loop': 1}

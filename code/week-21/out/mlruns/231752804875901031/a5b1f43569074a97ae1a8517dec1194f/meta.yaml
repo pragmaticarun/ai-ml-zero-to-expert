@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/a5b1f43569074a97ae1a8517dec1194f/artifacts
+end_time: 1793301876049
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: a5b1f43569074a97ae1a8517dec1194f
+run_name: tasteful-lynx-595
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301876044
+status: 3
+tags: []
+user_id: box

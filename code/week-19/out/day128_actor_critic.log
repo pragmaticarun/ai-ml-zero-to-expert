@@ -1,0 +1,6 @@
+A2C n=1, seed 0: 289 episodes, mean length last 20 377.6; greedy eval at 10k..50k steps [245.8, 500.0, 225.2, 210.9, 443.5]; 53 s
+A2C n=1, seed 1: 235 episodes, mean length last 20 495.4; greedy eval at 10k..50k steps [500.0, 396.6, 255.4, 500.0, 500.0]; 53 s
+A2C n=1, seed 2: 2117 episodes, mean length last 20 260.1; greedy eval at 10k..50k steps [404.9, 9.3, 9.3, 500.0, 500.0]; 53 s
+A2C n=32, seed 0: 242 episodes, mean length last 20 440.6; greedy eval at 10k..50k steps [126.5, 281.7, 380.2, 500.0, 500.0]; 7 s
+A2C n=32, seed 1: 293 episodes, mean length last 20 336.1; greedy eval at 10k..50k steps [401.1, 500.0, 143.1, 188.8, 500.0]; 7 s
+A2C n=32, seed 2: 314 episodes, mean length last 20 264.5; greedy eval at 10k..50k steps [500.0, 167.7, 242.9, 223.9, 462.9]; 7 s

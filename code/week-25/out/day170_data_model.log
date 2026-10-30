@@ -1,0 +1,15 @@
+(1) chunks: 1467
+    index embed: 16.11 s for 1467 x 384; L2-normalising
+[saved] /workspace/ai-ml-course/code/week-25/../capstone/out/chunks.json
+    saved embeddings.npy (2.3 MB) and chunks.json
+    retrieval recall@3 by week-tag on 25 QA: 18/25 = 0.720
+    step 20/60 loss 2.957
+    step 40/60 loss 1.504
+    step 60/60 loss 1.351
+(2) LoRA train 60 steps in 14.8 s (0.25 min); saved /workspace/ai-ml-course/code/week-25/../capstone/adapters/course_lora
+    loss start 3.791 end 0.961
+    Q: What is RAG?
+    A: A recursive algorithm for finding a path from a root to a leaf in a tree.
+    Q: What is demographic parity?
+    A: A condition where a person is given the same number of siblings as a child, but the number of siblings is equal to the number of parents.
+[saved] /workspace/ai-ml-course/code/week-25/out/day170_stats.json

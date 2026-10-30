@@ -1,0 +1,92 @@
+What three ingredients define a supervised learner?,"A model family with parameters, a cost that scores a fit, and an optimiser that lowers the cost.",m1 d1
+What is MSE?,The mean of squared prediction errors: (1/m)·Σ(ŷ−y)².,m1 d1
+Why make a virtual environment per project?,"Pinned, isolated dependency versions, so results are reproducible.",m1 d1
+Machine learning in one sentence?,Fitting a function's parameters from examples instead of hand-writing rules.,m1 d1
+What are an array's strides?,"The bytes to step along each axis. A C-order (3,4) int64 array has strides (32, 8).",m1 d2
+Broadcasting rule?,"Align shapes from the right. Dimensions must be equal or 1, and size-1 dimensions stretch.",m1 d2
+What does a view share vs a copy?,"A view shares memory, so writes show through. A copy is independent.",m1 d2
+Machine epsilon of float64 vs float32?,About 2.2e-16 vs about 1.2e-7.,m1 d2
+Why is vectorised NumPy fast?,"Compiled loops, SIMD, contiguous memory, and no per-element interpreter overhead.",m1 d3
+Hidden cost of broadcasting?,"Big temporaries, e.g. (m,1,n)−(1,k,n) allocates m·k·n elements.",m1 d3
+First step before optimising code?,Measure (time or profile) to find the real bottleneck.,m1 d3
+Leakage example in tabular data?,A feature computed from the target (price_per_sqft when predicting price).,m1 d4
+Typical pandas cleaning steps?,"Fix dtypes, handle missing values, remove duplicates, sanity-check ranges and outliers.",m1 d4
+groupby().agg() does what?,"Split rows by key, apply aggregations per group, combine the results.",m1 d4
+What should a residual plot look like for a good model?,"A structureless band around 0, with no fan or curve.",m1 d5
+Why plot before modelling?,"To catch scale issues, outliers, skew and non-linearity that summary numbers hide.",m1 d5
+Why have a validation set as well as test?,"Tune on validation and touch test once, for an unbiased final estimate.",m1 d6
+When is a group split needed?,"When several rows share an entity (user, patient), so the same entity isn't in train and test.",m1 d6
+Fit a scaler on which data?,Training data only. Apply the same parameters elsewhere.,m1 d6
+Why build baselines first?,They set the bar any real model must beat (e.g. predict the mean or median).,m1 d7
+Geometric meaning of a·b?,‖a‖‖b‖cos θ: length times alignment.,m1 d8
+Cosine similarity formula?,a·b / (‖a‖‖b‖). It ignores vector length.,m1 d8
+"L1, L2 and L∞ norms of (3,4)?","7, 5, 4.",m1 d8
+A linear model's prediction as a dot product?,ŷ = w·x + b.,m1 d8
+FLOPs of an (m×k)(k×n) matmul?,2mkn.,m1 d9
+Shape rule for A@B?,(m×k)(k×n) → (m×n). Inner dimensions must match.,m1 d9
+(AB)ᵀ = ?,BᵀAᵀ.,m1 d9
+Why is BLAS much faster than a naive compiled loop?,"Cache blocking, SIMD vectorisation and multithreading.",m1 d9
+Normal equation?,AᵀA x = Aᵀb.,m1 d10
+Rule of thumb for condition number κ?,You lose about log10 κ digits of accuracy.,m1 d10
+Why not inv(A)@b?,It is slower and less accurate than solve/lstsq (Hilbert(12): error 5.7 vs 0.28).,m1 d10
+Least squares on the Day-1 flats gave?,"w = 4.6814, b = 3.3363.",m1 d10
+Definition of an eigenvector?,A direction the matrix only stretches: Av = λv.,m1 d11
+"Eigenvalues of [[2,1],[1,2]]?",1 and 3.,m1 d11
+"What does power iteration find, and why?","The dominant eigenvector, because its component grows fastest under repeated multiplication.",m1 d11
+Eigenvalues and exploding/vanishing signals?,"Repeated multiplication scales by |λ|^k: >1 explodes, <1 vanishes.",m1 d11
+SVD as geometry?,"Rotate, stretch along axes, rotate: X = UΣVᵀ.",m1 d12
+PCA explained variance of component i?,σᵢ² / Σσⱼ².,m1 d12
+Why centre before PCA?,"Otherwise PC1 points at the mean, not along the spread.",m1 d12
+Digits: variance explained by the top 10 PCs?,73.8%.,m1 d12
+Regression as geometry?,ŷ is the orthogonal projection of y onto the column space of X.,m1 d13
+Two properties of a projection matrix P?,Symmetric and idempotent (P² = P).,m1 d13
+Why QR beats the normal equation?,It avoids squaring κ: κ(AᵀA) = κ(A)².,m1 d13
+Storage for a rank-k SVD of an h×w image?,k(h + w + 1) numbers.,m1 d14
+Relative error of the best rank-k approximation?,√(Σ_{i>k} σᵢ²) / √(Σ σᵢ²).,m1 d14
+Why doesn't random noise compress with SVD?,It has no low-rank structure; its energy is spread over all singular values.,m1 d14
+Central difference formula and error order?,"[f(x+h) − f(x−h)]/(2h), error O(h²).",m1 d15
+Good h for central differences in float64?,About 1e-5 to 1e-6. Smaller h suffers rounding error.,m1 d15
+d/dw of (wx − y)²?,2(wx − y)·x: 2 × error × input.,m1 d15
+Derivative of the sigmoid?,σ(z)(1 − σ(z)).,m1 d15
+Vectorised MSE gradient for J=(1/2m)‖Xw−y‖²?,Xᵀ(Xw − y)/m.,m1 d16
+Gradient-check thresholds?,"Relative error <1e-7 good, ~1e-5 suspicious, >1e-3 a bug.",m1 d16
+Direction of the gradient?,"Steepest ascent, perpendicular to the contour lines.",m1 d16
+Chain rule on a graph?,"Multiply local derivatives along a path, and add over paths.",m1 d17
+Why reverse mode for training?,One backward pass gives all parameter gradients of a scalar loss.,m1 d17
+Why zero gradients each step?,backward() accumulates (+=).,m1 d17
+Stable learning-rate bound on a quadratic?,α < 2/λ_max of the Hessian.,m1 d18
+Effect of a large condition number on GD?,"Slow progress along flat directions, while α is capped by the steep one.",m1 d18
+Full-batch loss goes up. Meaning?,"α too large, or a bug.",m1 d18
+Bayes' rule?,P(A|B) = P(B|A)·P(A)/P(B).,m1 d19
+"Prevalence 1%, sensitivity 95%, FPR 5%: P(sick|+)?",About 0.161 (the base-rate effect).,m1 d19
+Independence definition?,P(A and B) = P(A)·P(B).,m1 d19
+Std of the mean of n i.i.d. samples?,σ/√n.,m1 d20
+CLT in words?,Averages of many independent variables are approximately normal.,m1 d20
+Var[aX + b]?,a²·Var[X].,m1 d20
+Std of a 100-sample accuracy estimate at p=0.9?,√(0.9·0.1/100) = 0.03.,m1 d20
+Coin MLE from k heads in n flips?,k/n.,m1 d21
+Why maximise the log-likelihood?,"Sums instead of products: no underflow, same maximiser.",m1 d21
+Which noise model makes least squares the MLE?,Gaussian noise.,m1 d21
+Bernoulli negative log-likelihood is called?,Log-loss (binary cross-entropy).,m1 d21
+"Linear regression cost J(w,b)?",(1/2m)Σ(wx + b − y)².,m1 d22
+Parameter vs hyperparameter?,"Learned (w, b) vs chosen (learning rate, degree).",m1 d22
+GD updates for linear regression?,w −= α·mean(err·x); b −= α·mean(err). Update both simultaneously.,m1 d23
+Why learn GD when a closed form exists?,GD generalises to models without a closed form and scales with n.,m1 d23
+Define R².,1 − SS_res/SS_tot: the fraction of variance explained relative to predicting the mean.,m1 d24
+How to un-scale standardised weights?,w = w_s/σ; b = b_s − Σ w·μ.,m1 d24
+Z-score formula?,"(x − μ)/σ, with μ and σ from training data.",m1 d25
+Iterations raw vs z-scored in Day 25?,Raw hit the 200k cap or stopped early; z-scored took 83. κ 9.63e4 vs 1.16.,m1 d25
+Which models don't need scaling?,Tree-based models.,m1 d25
+Sigmoid formula?,1/(1 + e^(−z)).,m1 d26
+Log-loss for one example?,−[y log p + (1−y) log(1−p)].,m1 d26
+Logistic regression gradient?,"Xᵀ(p − y)/m, the same form as linear regression.",m1 d26
+Why not MSE for classification?,It is non-convex with a sigmoid and barely punishes confident errors (0.998 vs 6.908).,m1 d26
+Precision and recall?,TP/(TP+FP) and TP/(TP+FN).,m1 d27
+Effect of lowering the threshold?,"Higher recall, lower precision.",m1 d27
+Meaning of ROC-AUC?,P(a random positive scores higher than a random negative).,m1 d27
+High train error suggests? Low train but high val error?,Bias (underfit); variance (overfit).,m1 d27
+What is error analysis?,Slicing errors by meaningful groups to find systematic patterns that suggest fixes.,m1 d28
+Day-28 fix for under-predicted big homes?,"A hinge feature max(area − 1800, 0).",m1 d28
+Why did all Month-1 methods give the same MAE?,Convex problem: they all reach the same optimum.,m1 d29
+When does moving code to Rust help most?,"When Python overhead or memory traffic dominates, not when the work is already a big BLAS call.",m1 d29
+Checkpoint gap-analysis scale?,"0 = can't, 1 = with notes, 2 = from memory. Revisit every 0 or 1.",m1 d30

@@ -1,0 +1,16 @@
+(1) spinning service on :8765
+    [PASS] health {'status': 'ok', 'service': 'course-assistant'}
+    [PASS] metrics keys=['eval', 'version']
+    [PASS] ask_calc {'blocked': False, 'trace': [['calc', '12*11', {'result': '132'}]], 'answer': '132'}
+    [PASS] ask_inject_blocked {'blocked': True, 'reason': 'blocked: injection pattern', 'answer': None}
+    [PASS] ask_rag ans_len=62
+    [PASS] gate_recall 0.72
+    [PASS] gate_grounded 1.0
+    [PASS] gate_inject 1.0
+    [PASS] gate_status PASS
+    [PASS] retrieve_k3 ['week-14.md#0-0', 'week-14.md#4-0', 'week-12.md#5-800']
+(2) service+regression tests 10/10
+(3) wrote exam /workspace/ai-ml-course/code/week-25/out/day175_exam.md (20 questions)
+(4) exam-related retrieve smoke 5/5
+[saved] /workspace/ai-ml-course/code/week-25/out/day175_stats.json
+(5) integration PASS

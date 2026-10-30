@@ -1,0 +1,9 @@
+index: 1037 chunks from 112 days built in 10.1 s
+retrieval: 250 ms/question, context recall@3 0.92
+fp32             : answer accuracy 0.25, identical answers to fp32 12/12, 0.77 s/answer, Shakespeare ppl 32.05, linear weights 425 MB
+   e.g. Q: 'What exact match did SFT on chosen answers reach in the Week' -> 'SFT on chosen answers reached 0.70, which is the exact match.'
+int8 per-channel : answer accuracy 0.25, identical answers to fp32 9/12, 0.78 s/answer, Shakespeare ppl 32.11, linear weights 106 MB
+   e.g. Q: 'What exact match did SFT on chosen answers reach in the Week' -> 'SFT on chosen answers reached 0.70, which is the exact match.'
+int4 group-64    : answer accuracy 0.17, identical answers to fp32 0/12, 0.94 s/answer, Shakespeare ppl 43.69, linear weights 53 MB
+   e.g. Q: 'What exact match did SFT on chosen answers reach in the Week' -> 'The project report (`code/week-16/out/report.md`) contains the project report fo'
+note: quantised weights are dequantised to fp32 for compute (simulated), so speed is not expected to change

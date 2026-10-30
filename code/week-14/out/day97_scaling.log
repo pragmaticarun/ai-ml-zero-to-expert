@@ -1,0 +1,13 @@
+  step   600 train 2.388 val 2.418
+d= 32 L=1: non-embedding params   12,640, val loss 2.418 (3 s)
+  step   600 train 2.238 val 2.278
+d= 48 L=2: non-embedding params   56,256, val loss 2.278 (4 s)
+  step   600 train 2.085 val 2.139
+d= 64 L=2: non-embedding params   99,584, val loss 2.139 (4 s)
+  step   600 train 1.956 val 2.028
+d= 96 L=3: non-embedding params  334,560, val loss 2.028 (9 s)
+  step   600 train 1.864 val 1.954
+d=128 L=4: non-embedding params  791,296, val loss 1.954 (13 s)
+fit: loss = 3.85 * N^(-0.060) + 0.234  (5 points, 600 steps x 32 x 64 = 1,228,800 tokens each; an illustration, not a law)
+extrapolated loss at N = 1e6 and 1e7: [np.float64(1.922), np.float64(1.705)]
+tokens per parameter for the largest model: 1.55 (Chinchilla's compute-optimal rule of thumb is about 20)

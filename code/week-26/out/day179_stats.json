@@ -1,0 +1,8 @@
+{
+  "template": "/workspace/ai-ml-course/code/week-26/../capstone/out/REPORT_TEMPLATE.md",
+  "reference": "/workspace/ai-ml-course/code/week-26/../capstone/out/REFERENCE_REPORT.md",
+  "demo_checklist": "/workspace/ai-ml-course/code/week-26/../capstone/out/DEMO_CHECKLIST.md",
+  "recall": 0.72,
+  "gates": "PASS",
+  "decision": "ACCEPT_COURSE_NO_PROD"
+}

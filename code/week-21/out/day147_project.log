@@ -1,0 +1,10 @@
+data version 9f2384ac7409; model 53df326a18b85c38; test acc 0.965; decision threshold 0.8
+drift threshold calibrated on 200 no-drift windows of 143 rows from train: 99th pct of max-PSI over 30 features = 0.234 (vs the 0.2 rule of thumb)
+at threshold 0.8: missed malignant 2, false alarms 4; acc by area tertile {"small": 1.0, "medium": 0.915, "large": 0.958}
+== pytest
+  10 passed in 0.34s
+== running service: load test + drifted traffic
+  500 single-row requests, concurrency 8: p50 7.8 ms, p95 21.7 ms, 769 req/s; SLO p95<50 ms: met
+  /metrics after clean traffic: {'requests': 500, 'rows': 500, 'rejected': 0, 'model_p95_ms': 0.16715109832148267, 'drift': {'window': 500, 'max_psi': 0.18700900202641724, 'feature': 'worst symmetry', 'alert': False}}
+  /metrics after 500 rows with area x1.3: {'requests': 510, 'rows': 1000, 'rejected': 0, 'model_p95_ms': 0.170255050397827, 'drift': {'window': 500, 'max_psi': 0.6580364877865502, 'feature': 'mean area', 'alert': True}}
+model card written: code/week-21/project/MODEL_CARD.md

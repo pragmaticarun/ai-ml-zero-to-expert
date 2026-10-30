@@ -1,0 +1,4 @@
+name,params,train_acc,val_loss,val_acc,seconds,config,torch,device
+A_sgd_256,203530,0.9987,0.0823,0.9764,1.9,"{""name"": ""A_sgd_256"", ""hidden"": [256], ""bn"": false, ""dropout"": 0.0, ""opt"": ""sgd"", ""lr"": 0.05, ""wd"": 0.0, ""sched"": ""none"", ""seed"": 0, ""epochs"": 8, ""bs"": 128}",2.15.0+cpu,cpu
+B_adam_512x2_dropout,669706,0.9925,0.0986,0.9756,9.1,"{""name"": ""B_adam_512x2_dropout"", ""hidden"": [512, 512], ""bn"": false, ""dropout"": 0.2, ""opt"": ""adam"", ""lr"": 0.001, ""wd"": 0.0, ""sched"": ""none"", ""seed"": 0, ""epochs"": 8, ""bs"": 128}",2.15.0+cpu,cpu
+C_bn_512x2_onecycle,671754,0.9989,0.0504,0.9834,8.5,"{""name"": ""C_bn_512x2_onecycle"", ""hidden"": [512, 512], ""bn"": true, ""dropout"": 0.2, ""opt"": ""sgd"", ""lr"": 0.1, ""wd"": 0.0005, ""sched"": ""onecycle"", ""seed"": 0, ""epochs"": 8, ""bs"": 128}",2.15.0+cpu,cpu

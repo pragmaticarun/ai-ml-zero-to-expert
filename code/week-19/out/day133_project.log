@@ -1,0 +1,18 @@
+REINFORCE+baseline, seed 10: final greedy eval 500.0, sampled eval 354.1; 6 s
+REINFORCE+baseline, seed 11: final greedy eval 137.5, sampled eval 130.2; 5 s
+REINFORCE+baseline, seed 12: final greedy eval 500.0, sampled eval 404.4; 6 s
+REINFORCE+baseline, seed 13: final greedy eval 500.0, sampled eval 360.8; 6 s
+REINFORCE+baseline, seed 14: final greedy eval 469.0, sampled eval 445.9; 6 s
+A2C n=32, seed 10: final greedy eval 500.0, sampled eval 499.1; 9 s
+A2C n=32, seed 11: final greedy eval 498.8, sampled eval 485.8; 8 s
+A2C n=32, seed 12: final greedy eval 500.0, sampled eval 500.0; 8 s
+A2C n=32, seed 13: final greedy eval 500.0, sampled eval 500.0; 8 s
+A2C n=32, seed 14: final greedy eval 500.0, sampled eval 500.0; 8 s
+PPO clip 0.2, seed 10: final greedy eval 500.0, sampled eval 497.4; 31 s
+PPO clip 0.2, seed 11: final greedy eval 500.0, sampled eval 500.0; 30 s
+PPO clip 0.2, seed 12: final greedy eval 500.0, sampled eval 500.0; 31 s
+PPO clip 0.2, seed 13: final greedy eval 500.0, sampled eval 500.0; 30 s
+PPO clip 0.2, seed 14: final greedy eval 500.0, sampled eval 500.0; 31 s
+SUMMARY REINFORCE+baseline: greedy mean 421.3 (min 137.5, max 500.0); sampled mean 339.1; seeds at 500 greedy 3/5; mean time 6 s/seed
+SUMMARY A2C n=32: greedy mean 499.8 (min 498.8, max 500.0); sampled mean 497.0; seeds at 500 greedy 4/5; mean time 8 s/seed
+SUMMARY PPO clip 0.2: greedy mean 500.0 (min 500.0, max 500.0); sampled mean 499.5; seeds at 500 greedy 5/5; mean time 31 s/seed

@@ -1,0 +1,12 @@
+{
+  "name": "Adult (OpenML adult version 2)",
+  "source": "https://www.openml.org/d/1590 (UCI Adult Census Income via sklearn.datasets.fetch_openml)",
+  "rows_train_test": [
+    34189,
+    14653
+  ],
+  "label": "income >50K (binary)",
+  "sensitive_attribute_audited": "sex (Female=1)",
+  "collection": "U.S. Census Bureau Current Population Survey; see UCI / OpenML documentation",
+  "limitations": "U.S., early 1990s, binary sex field, no disability/sexual-orientation fields, fnlwgt is a survey weight"
+}

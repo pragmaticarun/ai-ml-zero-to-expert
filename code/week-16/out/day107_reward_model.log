@@ -1,0 +1,5 @@
+[A: rejected = unreversed] 120 steps x 8 pairs in 90 s, last batch loss 0.000, trainable 2,442,817
+  held-out accuracy: rejected unreversed (same type as training) 1.00; rejected = random other order (new type) 0.68
+  example rewards: correct 12.02, unreversed -4.59, correct + ' Great question!' 9.29
+[B: chosen always ends with '!'] 120 steps x 8 pairs in 105 s, last batch loss 0.000, trainable 2,442,817
+  held-out accuracy: as in training 1.00; no '!' anywhere 0.62; '!' moved to the WRONG answer 0.00

@@ -1,0 +1,26 @@
+== (1) validation before execution
+  {"tool": "lookup", "args": {"city": "Corvo", "field": "population"}}     -> ('ok', 310000)
+  {"tool": "lookup", "args": {"city": "Corvo"}}                            -> ('error', "$: missing required 'field'")
+  {"tool": "lookup", "args": {"city": "Corvo", "field": "area"}}           -> ('error', "$.field: 'area' not in ['population', 'country', 'temp_c']")
+  {"tool": "lookup", "args": {"city": 3, "field": "country"}}              -> ('error', '$.city: expected string, got int')
+  {"tool": "calculator", "args": {"expression": "2+2", "unsafe": true}}    -> ('error', "$: unexpected property 'unsafe'")
+  {"tool": "weather", "args": {}}                                          -> ('error', "unknown tool 'weather'")
+  {"tool": "calculator", "args": {"expression": "open('x').read()"}}       -> ('error', 'ValueError: disallowed syntax: Call')
+  {"tool": "lookup", "args": {"city": "Atlantis", "field": "country"}}     -> ('error', 'KeyError: "unknown city \'Atlantis\'"')
+  "not a dict"                                                             -> ('error', "malformed call: need {'tool','args'}")
+== (2) scripted policy in the loop: 'population of Corvo divided by population of Dunmere'
+   ({'tool': 'lookup', 'args': {'city': 'Corvo', 'field': 'population'}}, 'ok', 310000)
+   ({'tool': 'lookup', 'args': {'city': 'Dunmere', 'field': 'population'}}, 'ok', 8000)
+   ({'tool': 'calculator', 'args': {'expression': '310000/8000'}}, 'ok', 38.75)
+  final 38.75 in 4 steps (final)
+== (3) SmolLM2-135M-Instruct as the tool caller
+  zero-shot: of 18 requests: JSON parsed 0, schema-valid 0, right tool 0, correct result 0; 0.99 s/request
+     fail: 'What is the population of Avalon?' -> "The population of Avalon is unknown. The population of any city is determined by the city'"
+     fail: 'What is the population of Corvo?' -> 'The population of Corvo is 1,000.'
+     fail: 'What is the population of Elsby?' -> 'The population of Elsby is unknown. The population of a city is calculated by multiplying '
+     fail: 'Which country is Brindle in?' -> 'Based on the information provided, the country Brindle is in is the United States.'
+  3-shot: of 18 requests: JSON parsed 17, schema-valid 7, right tool 12, correct result 6; 0.59 s/request
+     fail: 'What is the population of Avalon?' -> '{"tool": "lookup", "args": {"population": 80000000000000000000000000000000000000000000000'
+     fail: 'Which country is Brindle in?' -> '{"tool": "lookup", "args": {"country": "Brindle"}}'
+     fail: 'Which country is Farrow in?' -> '{"tool": "lookup", "args": {"country": "Farrow", "field": "city"}}'
+     fail: 'What is the temperature in Avalon?' -> '{"tool": "lookup", "args": {"temperature": "Avalon"}}'

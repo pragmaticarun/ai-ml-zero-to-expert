@@ -1,0 +1,14 @@
+12 questions; answers missing from notes: []
+[ctx hit ] '0.00'         RAG -> "RM B got 0.68, which is the same as RM A's 0.68."
+[ctx hit ] '0.17'         RAG -> 'The exact match on Day 108 after training was a negative log-prob of 0.693, which is the s'
+[ctx hit ] '0.70'         RAG -> 'SFT on chosen answers reached 0.70, which is the exact match.'
+[ctx hit ] '32.05'        RAG -> 'The SmolLM2 instructed model got 192 perplexity on Shakespeare validation.'
+[ctx hit ] '26.29'        RAG -> 'The base SmolLM2-135M model got a perplexity of **1.00** in Week 15.'
+[ctx hit ] '2,442,817'    RAG -> 'The Day 107 reward model had 2 trainable parameters: the last token (prompt) and the last '
+[ctx miss] '[0.07, 0.30]' RAG -> 'The bootstrap 95% confidence interval for exact match on Day 110 is approximately 0.081.'
+[ctx hit ] '0.20'         RAG -> 'The oracle verifier gave the best-of-n, which is 0.17.'
+[ctx hit ] '0.693'        RAG -> 'The DPO loss at step 0 when the LoRA B matrices are zero is approximately 0.693.'
+[ctx hit ] '0 of 16'      RAG -> 'The judge was consistent when answering the same question in the same order in Week 15.'
+[ctx hit ] '0.993'        RAG -> 'On Day 106, the optimal policy got a reward of 0.993, which is the same as the expected re'
+[ctx hit ] '−10.3'        RAG -> 'The rejected log-prob change with beta 0.5 is 120.8 nats of relative log-prob change betwe'
+context recall@3 0.92 | accuracy closed-book 0.00, RAG 0.25, oracle passage 0.08 | mean RAG prompt 816 tokens | 30 s

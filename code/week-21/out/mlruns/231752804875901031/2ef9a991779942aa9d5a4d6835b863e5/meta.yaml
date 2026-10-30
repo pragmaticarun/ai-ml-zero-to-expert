@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/2ef9a991779942aa9d5a4d6835b863e5/artifacts
+end_time: 1793301876985
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 2ef9a991779942aa9d5a4d6835b863e5
+run_name: invincible-shrew-413
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301876981
+status: 3
+tags: []
+user_id: box

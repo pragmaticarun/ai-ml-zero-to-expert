@@ -1,0 +1,11 @@
+Adult: train 34189, test 14653; P(>50K) overall 0.239; test Female share 0.335
+logreg (with sex feature), t=0.5   acc 0.8542 | sel M 0.257 F 0.073 (DI 0.29) | TPR M 0.624 F 0.489 | FPR M 0.096 F 0.021 | prec M 0.739 F 0.741
+  Male   n 9746 base rate 0.304 acc 0.8188 ECE 0.0099
+  Female n 4907 base rate 0.111 acc 0.9244 ECE 0.0078
+  gaps F-M: DP(sel) -0.183, TPR -0.135, FPR -0.075, precision +0.002, ECE -0.0021
+calibration by group (bin: mean p -> observed rate, count):
+  M: [0.0,0.2) 0.06->0.06 n4748; [0.2,0.4) 0.29->0.30 n1887; [0.4,0.6) 0.50->0.50 n1169; [0.6,0.8) 0.70->0.68 n1024; [0.8,1.0) 0.92->0.91 n918
+  F: [0.0,0.2) 0.03->0.04 n4188; [0.2,0.4) 0.29->0.30 n272; [0.4,0.6) 0.50->0.53 n182; [0.6,0.8) 0.70->0.71 n135; [0.8,1.0) 0.92->0.89 n130
+logreg WITHOUT sex feature, t=0.5  acc 0.8537 | sel M 0.253 F 0.076 (DI 0.30) | TPR M 0.617 F 0.506 | FPR M 0.095 F 0.022 | prec M 0.740 F 0.737
+proxy check: sex predicted from the other features, AUC 0.933
+base rates differ (M 0.304 vs F 0.111), so an imperfect classifier cannot have equal precision AND equal FPR AND equal FNR across groups at once (Chouldechova 2017; Kleinberg et al. 2016 for calibration vs balance).

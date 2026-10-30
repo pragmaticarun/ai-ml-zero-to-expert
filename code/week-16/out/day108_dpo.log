@@ -1,0 +1,12 @@
+reference log-probs for 480 train + 40 test pairs in 23 s; mean train logp chosen -20.2, rejected -7.1
+before DPO: exact match 0.00  e.g. 'Reverse the order of these words: spring orange lemon cloud' -> 'To reverse the order of these words, I will first identify the words that are'
+step   0 loss 0.693 reward margin 0.00 pref acc 0.00  dlogp chosen +0.0 rejected +0.0
+step  20 loss 0.000 reward margin 9.87 pref acc 1.00  dlogp chosen +10.7 rejected -87.9
+step  40 loss 0.000 reward margin 13.95 pref acc 1.00  dlogp chosen +6.3 rejected -133.2
+step  60 loss 0.000 reward margin 12.30 pref acc 1.00  dlogp chosen +5.4 rejected -117.5
+step  80 loss 0.000 reward margin 14.63 pref acc 1.00  dlogp chosen +8.8 rejected -137.6
+step 100 loss 0.000 reward margin 11.75 pref acc 1.00  dlogp chosen +13.1 rejected -104.4
+step 119 loss 0.000 reward margin 12.08 pref acc 1.00  dlogp chosen +14.2 rejected -106.6
+trained 120 steps x 4 pairs (beta 0.1, lr 0.0005) in 84 s
+held-out: implicit-reward pref acc 1.00, mean margin 13.53, dlogp chosen +8.6, rejected -126.7
+after DPO: exact match 0.17  e.g. 'Reverse the order of these words: spring orange lemon cloud' -> 'clouds orange springfirehose'

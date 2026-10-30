@@ -1,0 +1,8 @@
+notes: 112 days with content; eval queries (interview questions, their sections removed from the index): 58
+example query: 'Why not train ten separate yes/no classifiers instead of one softmax model?' -> gold day 34
+embedded 58 queries in 2.7 s, dim 384
+chunking words 64/16  :  2012 chunks, embed  18.3 s, search all queries 1.5 ms | recall@1 0.43 recall@5 0.62 MRR 0.52
+chunking words 128/32 :  1037 chunks, embed  14.5 s, search all queries 0.4 ms | recall@1 0.40 recall@5 0.64 MRR 0.51
+chunking words 256/64 :   550 chunks, embed   4.7 s, search all queries 0.4 ms | recall@1 0.34 recall@5 0.64 MRR 0.50
+chunking section      :  1099 chunks, embed   9.4 s, search all queries 0.5 ms | recall@1 0.40 recall@5 0.71 MRR 0.54
+index fp32 1.59 MB vs int8 0.40 MB; int8 index recall@1/@5/MRR (0.39655172413793105, 0.6206896551724138, 0.5120300588199862)

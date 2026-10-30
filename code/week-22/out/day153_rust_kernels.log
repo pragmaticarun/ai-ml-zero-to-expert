@@ -1,0 +1,21 @@
+== build portable x86-64 (default): exit 0, 1 s
+  dot n=   65,536 (0.5 MB): numpy      6.2 us ( 21.1 GFLOP/s), naive     35.2 us (  3.7 GFLOP/s), simd      6.3 us ( 20.7 GFLOP/s), rayon      6.5 us ( 20.1 GFLOP/s); rel.err vs float64: naive 4.9e-06, simd 8.7e-07, numpy 4.7e-08
+  dot n=1,048,576 (8.0 MB): numpy    248.5 us (  8.4 GFLOP/s), naive    528.7 us (  4.0 GFLOP/s), simd    233.5 us (  9.0 GFLOP/s), rayon     42.7 us ( 49.1 GFLOP/s); rel.err vs float64: naive 2.5e-05, simd 7.6e-07, numpy 1.8e-06
+  dot n=16,777,216 (128.0 MB): numpy   3972.0 us (  8.4 GFLOP/s), naive   8492.7 us (  4.0 GFLOP/s), simd   3684.9 us (  9.1 GFLOP/s), rayon    520.4 us ( 64.5 GFLOP/s); rel.err vs float64: naive 5.3e-05, simd 4.3e-06, numpy 7.4e-06
+  softmax 4096x1024 numpy             :   7.72 ms (  4.3 GB/s effective), max err 3.1e-07
+  softmax 4096x1024 rust 3-pass       :  10.38 ms (  3.2 GB/s effective), max err 4.7e-06
+  softmax 4096x1024 rust online       :  18.70 ms (  1.8 GB/s effective), max err 4.7e-06
+  softmax 4096x1024 rust 3-pass rayon :   2.07 ms ( 16.2 GB/s effective), max err 4.7e-06
+  softmax 4096x1024 rust online rayon :   3.46 ms (  9.7 GB/s effective), max err 4.7e-06
+
+== build target-cpu=native: exit 0, 8 s
+  dot n=   65,536 (0.5 MB): numpy      6.3 us ( 21.0 GFLOP/s), naive     33.2 us (  4.0 GFLOP/s), simd      5.4 us ( 24.4 GFLOP/s), rayon      5.4 us ( 24.2 GFLOP/s); rel.err vs float64: naive 4.9e-06, simd 8.7e-07, numpy 4.7e-08
+  dot n=1,048,576 (8.0 MB): numpy    253.5 us (  8.3 GFLOP/s), naive    528.3 us (  4.0 GFLOP/s), simd    253.4 us (  8.3 GFLOP/s), rayon     38.6 us ( 54.3 GFLOP/s); rel.err vs float64: naive 2.5e-05, simd 7.6e-07, numpy 1.8e-06
+  dot n=16,777,216 (128.0 MB): numpy   3998.5 us (  8.4 GFLOP/s), naive   8490.0 us (  4.0 GFLOP/s), simd   4004.1 us (  8.4 GFLOP/s), rayon    567.0 us ( 59.2 GFLOP/s); rel.err vs float64: naive 5.3e-05, simd 4.3e-06, numpy 7.4e-06
+  softmax 4096x1024 numpy             :   7.82 ms (  4.3 GB/s effective), max err 3.1e-07
+  softmax 4096x1024 rust 3-pass       :   9.87 ms (  3.4 GB/s effective), max err 4.7e-06
+  softmax 4096x1024 rust online       :  18.90 ms (  1.8 GB/s effective), max err 4.7e-06
+  softmax 4096x1024 rust 3-pass rayon :   1.83 ms ( 18.3 GB/s effective), max err 4.7e-06
+  softmax 4096x1024 rust online rayon :   3.14 ms ( 10.7 GB/s effective), max err 4.7e-06
+
+numpy pinned to 1 BLAS thread (OPENBLAS_NUM_THREADS=1); rayon used 8 threads. Final installed build: target-cpu=native.

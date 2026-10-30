@@ -1,0 +1,14 @@
+== (1) validation: schema inferred from train (ranges widened by 50% of span)
+  clean test batch                  : PASS []
+  NaNs in 5 rows                    : FAIL ['5 rows with NaN']
+  unit change: area in mm^2 (x100)  : FAIL ['mean area: 143 values outside [-995, 3.67e+03]']
+  dropped column                    : FAIL ['expected 30 columns, got 29']
+  label 2 appears                   : FAIL ['unknown labels [2]']
+  silent shift: radius +10%         : PASS []
+== (2) content-addressed versioning
+  v1 9f2384ac7409 stored True
+  same data re-committed: 9f2384ac7409 stored-new False (dedup)
+  row-shuffled copy: raw hash equal False; order-invariant hash equal True
+  one label flipped -> v2 8d7d3315955f (differs from v1: True)
+  one value +1e-4 -> hash differs: True (hashes detect ANY change, even meaningless ones)
+  store: 3 log entries, 211.6 kB on disk; lineage of v2: 8d7d3315955f <- 9f2384ac7409

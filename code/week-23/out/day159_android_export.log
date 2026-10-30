@@ -1,0 +1,10 @@
+(1) convert_onnx_models_to_ort exit 0; files: ['required_operators.config 0kB', 'required_operators.with_runtime_opt.config 0kB', 'w23_dyn.ort 311kB', 'w23_dyn.with_runtime_opt.ort 315kB', 'w23_mlp.ort 1208kB', 'w23_mlp.with_runtime_opt.ort 1208kB']
+    w23_dyn.ort            acc 0.9741; max|diff| vs torch 1.323e-01; b1 10.8 us (1 thread)
+    w23_dyn.with_runtime_opt.ort acc 0.9741; max|diff| vs torch 1.323e-01; b1 15.1 us (1 thread)
+    w23_mlp.ort            acc 0.9741; max|diff| vs torch 0.000e+00; b1 20.1 us (1 thread)
+    w23_mlp.with_runtime_opt.ort acc 0.9741; max|diff| vs torch 0.000e+00; b1 17.2 us (1 thread)
+    required-operators config (input to a reduced-size custom build): # Generated from model/s: | # - /workspace/ai-ml-course/code/week-23/out/day159_ort/w23_dyn.ort | # - /workspace/ai-ml-course/code/week-23/out/day159_ort/w23_mlp.ort | ai.onnx;13;Gemm | ai.onnx;14;Relu | com.microsoft;1;DynamicQuantizeMatMul,FusedGemm
+(2) ExecuTorch portable (no delegate): w23_mlp_portable.pte 1207 kB; acc 0.9741; max|diff| vs torch 2.098e-05; b1 1120.4 us (Python binding overhead included; static batch=1 export)
+(2) ExecuTorch XNNPACK delegate      : w23_mlp_xnnpack.pte 1207 kB; acc 0.9741; max|diff| vs torch 2.480e-05; b1 10.7 us (Python binding overhead included; static batch=1 export)
+(3) LiteRT: ai_edge_litert 2.3.0 Interpreter importable = True; .tflite conversion from PyTorch UNTESTED here (converter not installed)
+reference torch eager b1 29.4 us (1 thread)

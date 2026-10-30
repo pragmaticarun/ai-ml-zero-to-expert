@@ -1,0 +1,11 @@
+causal MHA vs nn.MultiheadAttention: max diff 6.0e-08
+causal: weights above diagonal all zero: True
+sequence 2 (length 4): weight on padded keys: 0.0
+padded batch vs the short sequence alone (real positions): max diff 0.0e+00
+a fully masked row gives NaN: True
+F.scaled_dot_product_attention (is_causal) vs mine: max diff 6.0e-08
+params: 4*D^2 = 1024, nn.MultiheadAttention(bias=False) = 1024
+T=  256: naive attention     0.7 ms, score matrix    1.0 MiB (fp32, 4 heads)
+T=  512: naive attention     3.0 ms, score matrix    4.0 MiB (fp32, 4 heads)
+T= 1024: naive attention     9.6 ms, score matrix   16.0 MiB (fp32, 4 heads)
+T= 2048: naive attention    40.4 ms, score matrix   64.0 MiB (fp32, 4 heads)

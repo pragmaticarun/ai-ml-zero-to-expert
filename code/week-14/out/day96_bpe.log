@@ -1,0 +1,17 @@
+trained BPE to vocab 1024 (768 merges) on 1,003,854 chars in 15.9 s
+first 10 merges: [' t', 'he', ' a', 'ou', ' s', ' m', 'in', ' w', 're', 'ha']
+last 5 merges: ['ier', 'os', ' nothing', 'ork', 'ichard']
+train: 1,003,854 bytes -> 408,325 tokens, 2.46 bytes/token
+val: 111,540 bytes -> 48,838 tokens, 2.28 bytes/token
+'To be, or not to be'    ->  7 tokens ['To', ' be', ',', ' or', ' not', ' to', ' be'] | roundtrip ok: True
+'Hello, world! 12345'    -> 12 tokens ['H', 'ell', 'o', ',', ' world', '!', ' ', '1', '2', '3', '4', '5'] | roundtrip ok: True
+'naïve café 東京'          -> 17 tokens ['n', 'a', '�', '�', 've', ' c', 'a', 'f', '�', '�', ' ', '�', '�', '�', '�', '�', '�'] | roundtrip ok: True
+'   indented'            ->  6 tokens [' ', ' ', ' ', 'ind', 'ent', 'ed'] | roundtrip ok: True
+vocab 300: val 1.39 bytes/token
+vocab 512: val 1.90 bytes/token
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (35983 > 8192). Running this sequence through the model will result in indexing errors
+SmolLM2-135M tokenizer (vocab 49,152): val 3.10 bytes/token
+  'Hello, world! 12345' -> ['Hello', ',', 'Ġworld', '!', 'Ġ', '1', '2', '3', '4', '5']
+Python encoder: 111,540 chars in 72 ms
+Rust encoder (serial): 7.6 ms, identical to Python: True, speed-up 9x
+Rust encoder (rayon): 5.7 ms, identical to Python: True, speed-up 13x

@@ -1,0 +1,9 @@
+// UNTESTED. Module-level build.gradle.kts dependencies, as shown on each official page (pick ONE runtime per app).
+dependencies {
+    // ONNX Runtime Mobile (onnxruntime.ai/docs/install, "Install on Android", Java/Kotlin); page uses 'latest.release'
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:<version>")
+    // ExecuTorch (docs.pytorch.org/executorch/stable/using-executorch-android.html), from Maven Central
+    implementation("org.pytorch:executorch-android:<version>")
+    // LiteRT (ai.google.dev/edge/litert/android); page shows 2.3.0 at time of checking, plus optional litert-gpu
+    implementation("com.google.ai.edge.litert:litert:<version>")
+}

@@ -1,0 +1,34 @@
+# Month 1 (verified on this box with Python 3.13.5; versions installed: numpy 2.5.4, pandas 3.1.0,
+# matplotlib 3.11.2, scikit-learn 1.9.1, scipy 1.18.1, maturin 1.15.0)
+numpy>=2.0
+pandas>=2.2
+matplotlib>=3.8
+scikit-learn>=1.5
+scipy>=1.12
+maturin>=1.5        # optional: builds the Rust/PyO3 capstone kernel (needs a Rust toolchain)
+# Month 3 (verified: torch 2.15.0+cpu, jax 0.12.0.1; CPU wheels are fine):
+torch>=2.4
+torchvision>=0.19
+jax>=0.4          # optional: Day 83 only
+# Month 4 (verified on this box: transformers 5.21.1, datasets 5.1.0, peft 0.21.2, accelerate 1.15.0,
+# huggingface_hub 2.3.0, tokenizers 0.23.3, safetensors 0.8.0). Note transformers 5 configs use rope_parameters.
+transformers>=5.0
+datasets>=3.0
+peft>=0.13
+accelerate>=1.0
+safetensors>=0.4
+# Week 17 Rust kernel (code/week-17/rust_qmatmul): Rust toolchain + maturin (above); pyo3/numpy/rayon are Cargo deps.
+# llama.cpp / vLLM are NOT required (described from their READMEs only).
+# Month 6: onnx, onnxruntime
+
+# Month 5 (verified on this box: gymnasium 1.4.0)
+gymnasium>=1.0
+# Week 21 (MLOps), verified installed 2026-10-29
+mlflow-skinny==3.17.2
+fastapi==0.162.0
+uvicorn==0.54.0
+httpx==0.28.1
+onnx==1.23.2
+onnxruntime==1.31.1
+onnxscript==0.7.2
+pytest==9.2.0

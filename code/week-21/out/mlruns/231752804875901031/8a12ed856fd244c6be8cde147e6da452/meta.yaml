@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/8a12ed856fd244c6be8cde147e6da452/artifacts
+end_time: 1793301878360
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 8a12ed856fd244c6be8cde147e6da452
+run_name: languid-donkey-348
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301878355
+status: 3
+tags: []
+user_id: box

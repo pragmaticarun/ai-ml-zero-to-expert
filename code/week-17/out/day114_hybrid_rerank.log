@@ -1,0 +1,8 @@
+BM25 index + scoring 58 queries: 0.1 s
+dense (MiniLM)               recall@1 0.40 recall@5 0.64 MRR 0.51
+BM25                         recall@1 0.41 recall@5 0.67 MRR 0.51
+hybrid RRF(dense, BM25)      recall@1 0.41 recall@5 0.76 MRR 0.56
+cross-encoder rerank of dense top-20: 11.6 s for 58 queries (200 ms/query)
+dense + rerank               recall@1 0.50 recall@5 0.81 MRR 0.63
+cross-encoder rerank of hybrid top-20: 12.4 s for 58 queries (213 ms/query)
+hybrid + rerank              recall@1 0.48 recall@5 0.79 MRR 0.62

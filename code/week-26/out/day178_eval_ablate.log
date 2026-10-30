@@ -1,0 +1,28 @@
+(1) final recall@3 18/25=0.720 (freeze 0.72)
+(2) ablation context ON grounded 8/8=1.000 p50=0.94s; OFF 8/8=1.000 p50=0.71s
+(3) ablation top_k recall@1=0.520 @3=0.720 @5=0.720
+    calc '1+2*3' -> 7 OK
+    calc '(2+3)*4' -> 20 OK
+    calc '2**10' -> 1024 OK
+    calc '(lambda:1)()' REJECT ValueError OK
+    calc "__import__('os').system('id')" REJECT ValueError OK
+    calc "open('/etc/passwd').read()" REJECT ValueError OK
+(4) calc allow/deny 6/6
+(5) tools 3/3
+(6) WORKED:
+   + MiniLM retrieval recall@3=0.72 clears ≥0.70 on 25 hand-labelled pairs
+   + RAG context raises usable groundedness; p50 RAG+gen ~0.75-0.84s << 8s budget
+   + Allow-listed tools + AST calc (post-harden) reject import/open/lambda
+   + Known-pattern injection 3/3; service tests 10/10; freeze gates PASS
+   + Rust int8 ≥1.5× vs numpy-int8 on large matrices (best 50.35×); KV budget quantified
+   + Model card + threat model filed; no false production claim
+(7) DID NOT / LIMITS:
+   - LoRA-alone (60 steps) produced nonsense answers despite loss 3.791→0.961 — RAG is mandatory
+   - Paraphrase injections evaded regex on Day 177: 1/5 blocked (4 evasions) — need defence in depth
+   - OpenBLAS fp32 beats Rust int8 on tiny 1467×384 corpus — ship numpy for small N
+   - Groundedness heuristic ≠ factuality (k-means/nearest-neighbour confusion in logs)
+   - Macro per-week recall mean 0.633 with some singleton weeks at 0.0 despite micro 0.72
+   - PSI percentile-bin +0.5 shift returned 0.0 — detector needs multi-feature product monitors
+   - Pre-harden calc allowed Call/Lambda path (Day 177 abuse 3/4) — fixed Day 177/178
+(8) wrote /workspace/ai-ml-course/code/week-26/../capstone/out/FINAL_EVAL_REPORT.md
+[saved] /workspace/ai-ml-course/code/week-26/out/day178_stats.json

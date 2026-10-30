@@ -1,0 +1,12 @@
+budget: {'acc': 0.97, 'p95_us': 20.0, 'size_kb': 400, 'rss_mib': 30}  (batch 1, 1 thread, 1000 timed calls after 50 warm-up; this x86 server CPU, NOT a phone)
+variant                     file kB     acc  p50 us  p95 us load RSS MiB  verdict
+torch eager fp32               1207  0.9741    38.6    51.7          3.3  FAIL: p95,size
+ORT fp32                       1205  0.9741    15.1    15.4          9.9  FAIL: size
+ORT dynamic int8                307  0.9741    10.9    11.4          7.7  PASS
+ORT static QDQ int8             308  0.9741    10.6    12.9          8.1  PASS
+ORT-format .ort int8            312  0.9741    11.1    12.7          7.8  PASS
+ExecuTorch XNNPACK fp32        1208  0.9741    12.1    14.9        134.9  FAIL: size,rss
+Rust int8 (tiny_infer)          308  0.9741    31.2    35.8          3.1  FAIL: p95
+pruned-128 ORT fp32             105  0.9759     5.2     6.5          7.2  PASS
+pruned-128 ORT dyn int8          30  0.9759     7.5     9.4          7.4  PASS
+Rust row: file size = in-memory int8 weights + f32 scales/biases from MlpInt8.nbytes() (Day 160 log: 308 kB); it loads the fp32 .pt and quantizes at start-up.

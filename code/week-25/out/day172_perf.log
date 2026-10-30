@@ -1,0 +1,10 @@
+(1) corpus (1467, 384) fp32 2.25 MB
+    numpy fp32 8.9 µs; numpy int8 393.7 µs; rust serial 58.7 µs (6.71x vs np-int8); rayon 68.7 µs (5.73x)
+    int8 bytes 569196; top-3 agree 3/3; max|diff vs fp32| 0.0016
+(1b) 50k×384: np-fp32 582.7 µs; np-int8 12548.5 µs; rust rayon 293.0 µs (42.83x vs np-int8, 1.99x vs fp32); rust serial 1853.7 µs
+(1c) 100k×256: np-fp32 516.9 µs; np-int8 21664.7 µs; rust rayon 430.3 µs (50.35x vs np-int8, 1.20x vs fp32)
+(1d) gate int8 rust ≥1.5× vs numpy-int8: PASS (best 50.35x); vs fp32 best 1.99x (BLAS often wins small N)
+(2) SmolLM2 KV fp16 B/tok 23040 (22.5 KiB); ctx 512 = 11.2 MiB; ctx 2048 = 45.0 MiB
+    ru_maxrss after SmolLM2: 692 MiB
+    prefill 5 tok: 26.3 ms; decode KV 20 tok: 241.3 ms (12.1 ms/tok); no-cache 382.9 ms (1.6x)
+[saved] /workspace/ai-ml-course/code/week-25/out/day172_stats.json

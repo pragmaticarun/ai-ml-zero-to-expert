@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/6920c7699978458da6db3de9eb4e0b07/artifacts
+end_time: 1793301877356
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 6920c7699978458da6db3de9eb4e0b07
+run_name: glamorous-snake-43
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301877352
+status: 3
+tags: []
+user_id: box

@@ -1,0 +1,24 @@
+(1) retrieval recall@3: 18/25 = 0.720; p50 retrieve 118.3 ms
+    grounded=True (0.90s) Q='What is gradient descent?'
+      A='Gradient descent is a type of optimization algorithm used in machine learning to find the minimum of a function. It is a' hits=['week-03.md#3-0', 'week-06.md#7-0', 'week-18.md#6-800']
+    grounded=True (0.78s) Q='What is a confusion matrix?'
+      A='A confusion matrix is a table that summarizes the performance of a classification model. It shows the number of true pos' hits=['week-04.md#7-0', 'week-02.md#5-0', 'week-10.md#8-2400']
+    grounded=True (0.81s) Q='What does overfitting mean?'
+      A='Based on the context, overfitting means that the model is too complex and fits the training data too closely, capturing ' hits=['week-24.md#4-1600', 'week-06.md#6-4000', 'week-11.md#6-2400']
+    grounded=True (0.70s) Q='What is cross-validation?'
+      A='Cross-validation is a technique used to evaluate the performance of a model on unseen data. It involves splitting the da' hits=['week-05.md#6-0', 'week-07.md#5-0', 'week-01.md#7-0']
+    grounded=True (0.70s) Q='What is a decision tree?'
+      A="A decision tree is a type of supervised learning algorithm that uses a set of rules to make predictions on new data. It'" hits=['week-06.md#5-0', 'week-06.md#7-4800', 'week-06.md#5-3200']
+    grounded=True (0.72s) Q='What is random forest?'
+      A='The classical ML toolbox: k-NN, naive Bayes, SVMs, trees, forests, boosting.\n\n**Status:** Written in full (Phase 2). Tit' hits=['week-06.md#6-0', 'week-06.md#6-3200', 'week-06.md#0-0']
+    grounded=True (0.85s) Q='What is k-means?'
+      A='k-means is a clustering algorithm that finds the k-nearest neighbors to a given point. It is a variation of the **self-c' hits=['week-07.md#6-4000', 'week-07.md#6-800', 'week-07.md#6-0']
+    grounded=True (0.53s) Q='What is PCA?'
+      A='The concept lesson is about understanding the process of Principal Component Analysis (PCA) and how it works.' hits=['week-02.md#6-3200', 'week-08.md#2-0', 'week-02.md#6-0']
+(2) grounded_rate 8/8 = 1.000; p50 rag+gen 0.78 s
+    agent: 'calc: (2+3)*4' -> blocked=False answer='20'
+    agent: 'What is the title of day 155?' -> blocked=False answer='ONNX export and ONNX Runtime tuning: graph optimisations, threads and the profiler'
+    agent: 'What is RAG?' -> blocked=False answer='RAG is a **tool** that is used to **retrieval as a tool**.'
+(3) tool/agent success 3/3
+(4) injection guard: blocked 3/3 attacks; false positives 0/10 benign
+[saved] /workspace/ai-ml-course/code/week-25/out/day171_stats.json

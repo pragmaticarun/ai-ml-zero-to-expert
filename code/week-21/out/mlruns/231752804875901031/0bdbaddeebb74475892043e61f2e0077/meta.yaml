@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/0bdbaddeebb74475892043e61f2e0077/artifacts
+end_time: 1793301876238
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 0bdbaddeebb74475892043e61f2e0077
+run_name: capable-vole-610
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301876233
+status: 3
+tags: []
+user_id: box

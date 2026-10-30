@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/31a516c4023241c2b9e2b86bd4b6630d/artifacts
+end_time: 1793301879461
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: 31a516c4023241c2b9e2b86bd4b6630d
+run_name: awesome-hound-971
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301879457
+status: 3
+tags: []
+user_id: box

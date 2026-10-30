@@ -1,0 +1,26 @@
+USDT:2026-10-29 21:56:06 251379:251379 SyncActivityProfilerHandler.cpp:39] profiler_start
+USDT:2026-10-29 21:56:07 251379:251379 SyncActivityProfilerHandler.cpp:46] profiler_stop
+corpus 1099 chunks, 58 queries; BM25 build 0.03 s
+(1) baseline (Week 17 BM25.scores): 1.46 ms/query (best of 3 repeats over 58 queries)
+(2) cProfile, top by own time:
+    438322 function calls in 0.167 seconds
+    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    218928    0.101    0.000    0.116    0.000 /workspace/ai-ml-course/code/week-17/_rag.py:56(<genexpr>)
+    63742    0.030    0.000    0.146    0.000 {built-in method builtins.sum}
+    155186    0.015    0.000    0.015    0.000 {method 'get' of 'dict' objects}
+    58    0.014    0.000    0.167    0.003 /workspace/ai-ml-course/code/week-17/_rag.py:55(scores)
+    58    0.006    0.000    0.006    0.000 {built-in method torch.tensor}
+    58    0.000    0.000    0.000    0.000 {method 'findall' of 're.Pattern' objects}
+(3) tracemalloc: building BM25 allocates peak 6.1 MB (per-doc Counters); per query peak: 32 kB
+(4) max |score diff| vs baseline: inverted 1.8e-06, sparse 1.8e-06; W is 1099x7006 with 77359 non-zeros (1.00% dense)
+    baseline 1.46 ms/query | inverted index 0.295 ms (5x) | sparse mat-vec 0.043 ms (34x)
+(5) torch.profiler, MLP 384-1024-384 on batch 256, 20 calls, 1 thread:
+    ----------------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                      Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg    # of Calls  
+    ----------------------  ------------  ------------  ------------  ------------  ------------  ------------  
+               aten::addmm        86.03%      41.519ms        88.74%      42.824ms       1.071ms            40  
+              aten::linear         5.52%       2.665ms        94.97%      45.833ms       1.146ms            40  
+                aten::gelu         5.03%       2.428ms         5.03%       2.428ms     121.393us            20  
+               aten::copy_         2.52%       1.218ms         2.52%       1.218ms      30.453us            40  
+                   aten::t         0.38%     184.569us         0.71%     343.333us       8.583us            40  
+    ----------------------  ------------  ------------  ------------  ------------  ------------  ------------  

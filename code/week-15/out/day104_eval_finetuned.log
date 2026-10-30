@@ -1,0 +1,11 @@
+loaded LoRA tensors; unexpected keys: 0
+base           reverse-words exact match 0.00; right words in any order 0.00
+instruct       reverse-words exact match 0.00; right words in any order 0.00
+base+SFT-LoRA  reverse-words exact match 1.00; right words in any order 1.00
+base           Shakespeare val ppl 26.29
+instruct       Shakespeare val ppl 32.05
+base+SFT-LoRA  Shakespeare val ppl 57.90
+base           16-question MC accuracy: sum log-prob 0.88, length-normalised 0.81 (chance 0.25)
+instruct       16-question MC accuracy: sum log-prob 0.88, length-normalised 0.81 (chance 0.25)
+base+SFT-LoRA  16-question MC accuracy: sum log-prob 0.88, length-normalised 0.81 (chance 0.25)
+Instruct-as-judge on 16 pairs x 2 orders: picks A 10/32; same verdict after swapping (consistent) 0/16; correct 16/32

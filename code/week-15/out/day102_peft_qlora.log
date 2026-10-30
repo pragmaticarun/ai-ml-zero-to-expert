@@ -1,0 +1,10 @@
+peft r= 4 targets=2 modules/layer: trainable 230,400 (0.17% of 134,515,008)
+peft r=16 targets=2 modules/layer: trainable 921,600 (0.69% of 134,515,008)
+peft r= 4 targets=4 modules/layer: trainable 460,800 (0.34% of 134,515,008)
+peft r=16 targets=4 modules/layer: trainable 1,843,200 (1.37% of 134,515,008)
+peft r= 4 targets=7 modules/layer: trainable 1,221,120 (0.91% of 134,515,008)
+peft r=16 targets=7 modules/layer: trainable 4,884,480 (3.63% of 134,515,008)
+linear-layer weights quantised: 106,168,320 (78.9% of params); embeddings kept in fp32
+memory of those weights: fp32 405 MiB, bf16 202 MiB, int4+fp16 scale per 64 54 MiB
+val ppl: fp32 base 26.29, int4 (simulated) base 36.89
+QLoRA-style: LoRA r=8 on all linear layers (2,442,240 trainable) over frozen int4 base, 60 steps in 33 s: val ppl 25.46

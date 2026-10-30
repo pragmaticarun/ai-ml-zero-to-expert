@@ -1,0 +1,13 @@
+baseline t=0.5                     acc 0.8542 | sel M 0.257 F 0.073 (DI 0.29) | TPR M 0.624 F 0.489 | FPR M 0.096 F 0.021 | prec M 0.739 F 0.741
+reweighing weights: {'g0y0': 1.093, 'g0y1': 0.788, 'g1y0': 0.853, 'g1y1': 2.204}
+reweighing (with sex), t=0.5       acc 0.8469 | sel M 0.210 F 0.120 (DI 0.57) | TPR M 0.540 F 0.647 | FPR M 0.067 F 0.054 | prec M 0.780 F 0.600
+reweighing (no sex), t=0.5         acc 0.8473 | sel M 0.213 F 0.118 (DI 0.55) | TPR M 0.545 F 0.643 | FPR M 0.069 F 0.052 | prec M 0.775 F 0.607
+group thresholds for demographic parity (sel=0.18): M 0.65 F 0.15
+  -> test                          acc 0.8339 | sel M 0.176 F 0.178 (DI 1.01) | TPR M 0.473 F 0.783 | FPR M 0.046 F 0.102 | prec M 0.819 F 0.488
+group thresholds for equal opportunity (TPR=0.60): M 0.52 F 0.40
+  -> test                          acc 0.8534 | sel M 0.248 F 0.092 (DI 0.37) | TPR M 0.608 F 0.568 | FPR M 0.090 F 0.033 | prec M 0.747 F 0.685
+accuracy/selection trade-off of a single threshold:
+  single t=0.3                     acc 0.8265 | sel M 0.407 F 0.117 (DI 0.29) | TPR M 0.809 F 0.651 | FPR M 0.231 F 0.050 | prec M 0.604 F 0.618
+  single t=0.4                     acc 0.8471 | sel M 0.321 F 0.092 (DI 0.29) | TPR M 0.714 F 0.568 | FPR M 0.150 F 0.033 | prec M 0.676 F 0.685
+  single t=0.5                     acc 0.8541 | sel M 0.258 F 0.075 (DI 0.29) | TPR M 0.627 F 0.496 | FPR M 0.097 F 0.023 | prec M 0.738 F 0.732
+  single t=0.6                     acc 0.8502 | sel M 0.202 F 0.057 (DI 0.28) | TPR M 0.526 F 0.406 | FPR M 0.060 F 0.013 | prec M 0.792 F 0.792

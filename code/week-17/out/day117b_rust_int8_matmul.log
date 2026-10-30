@@ -1,0 +1,4 @@
+max |rust - torch dequant| 2.38e-06; vs unquantised fp32 5.72e-02
+batch  1: torch fp32 15.9 us | torch dequant+matmul 982.7 us | rust int8 1 thread 439.4 us | rust int8 rayon 8 threads 145.2 us
+batch 64: torch fp32 122.5 us | torch dequant+matmul 1067.5 us | rust int8 1 thread 26425.9 us | rust int8 rayon 8 threads 4056.3 us
+weight bytes: fp32 3,538,944 vs int8 884,736 + fp32 scales 2,304

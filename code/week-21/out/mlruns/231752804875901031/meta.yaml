@@ -1,0 +1,9 @@
+artifact_location: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031
+creation_time: 1793301874941
+effective_trace_archival_retention: null
+experiment_id: '231752804875901031'
+last_update_time: 1793301874941
+lifecycle_stage: active
+name: w21-mlp
+trace_location: null
+workspace: default

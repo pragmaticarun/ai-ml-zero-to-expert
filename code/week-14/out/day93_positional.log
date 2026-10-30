@@ -1,0 +1,8 @@
+no positions: permuting inputs just permutes outputs: True
+sinusoidal: shape (64, 16) | values in [-1,1]: True
+with sinusoidal added: permutation-equivariant? False
+PE dot products from position 10: [8.0, 7.49, 6.37, 5.56, 4.7, 4.21]
+same offset, different start (pos 10->14 vs 40->44): 5.5597 5.5597
+RoPE q.k with offset 3 at positions 3,10,100,1000: [-0.36481, -0.36481, -0.36481, -0.36483]
+RoPE preserves vector norms: True
+RoPE q.k for identical all-ones q,k by distance: [16.0, 14.97, 11.12, 8.43, 9.82, 6.36]

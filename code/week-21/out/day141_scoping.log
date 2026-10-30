@@ -1,0 +1,18 @@
+data: 426 train / 143 test rows, 30 features, positive (benign) rate 0.627
+baseline majority class: acc 0.629
+baseline 1-feature rule (worst radius < train median -> benign): acc 0.804
+logistic regression: acc 0.958
+MLP 30-32-32-2: acc 0.965; train 0.9 s
+learning curve (MLP, mean of 3 seeds of the subsample):
+   10% of train (42 rows): test acc 0.914 (min 0.888, max 0.951)
+   25% of train (106 rows): test acc 0.946 (min 0.937, max 0.951)
+   50% of train (213 rows): test acc 0.944 (min 0.937, max 0.951)
+  100% of train (426 rows): test acc 0.953 (min 0.944, max 0.958)
+cost-weighted threshold choice (a missed malignant = 10x cost of a false alarm; malignant = class 0):
+  threshold 0.5: missed malignant 3, false alarms 2, cost 32
+  threshold 0.8: missed malignant 2, false alarms 4, cost 24
+  threshold 0.95: missed malignant 2, false alarms 5, cost 25
+error analysis by slice (tertiles of 'mean area' on test):
+  small : n  48, acc 1.000, errors 0
+  medium: n  47, acc 0.915, errors 4
+  large : n  48, acc 0.979, errors 1

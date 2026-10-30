@@ -1,0 +1,16 @@
+fp32 MLP 64-512-512-10: 301066 params; torch test acc 0.9741
+(1) exported w23_mlp.onnx: 1205 kB, opset 17, nodes ['Gemm', 'Relu', 'Gemm', 'Relu', 'Gemm']
+    numerics vs torch on 540 test rows: max |diff| 0.00e+00; argmax agreement 1.0000; ORT acc 0.9741
+(2) graph optimisation levels (1 thread), median us/call:
+    DISABLE_ALL      b1    15.1  b256    686.3  saved graph ops: ['Gemm', 'Relu', 'Gemm', 'Relu', 'Gemm']
+    ENABLE_BASIC     b1    19.7  b256    690.6  saved graph ops: ['Gemm', 'Relu', 'Gemm', 'Relu', 'Gemm']
+    ENABLE_EXTENDED  b1    15.6  b256    763.4  saved graph ops: ['FusedGemm', 'FusedGemm', 'Gemm']
+    ENABLE_ALL       b1    14.4  b256    680.5  saved graph ops: ['FusedGemm', 'FusedGemm', 'Gemm']
+(3) intra_op_num_threads sweep (ENABLE_ALL), median us/call:
+    threads=1: b1    15.6   b256    676.3
+    threads=2: b1    12.1   b256    463.0
+    threads=4: b1    11.3   b256    325.1
+    threads=8: b1    11.7   b256    313.9
+    reference torch eager (8 threads): b1    23.2   b256    255.7
+(4) ORT_PARALLEL execution mode (1 intra thread): b1 18.7 us (a chain graph has no independent branches to run in parallel)
+(5) ORT profiler (day155_ortprof_2026-10-29_22-14-49_016.json, 50 runs at b256): kernel time by op: {'FusedGemm': '97%', 'Gemm': '3%'}

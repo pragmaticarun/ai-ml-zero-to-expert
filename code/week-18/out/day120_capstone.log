@@ -1,0 +1,20 @@
+index: 1037 chunks from 112 days, built in 9.8 s
+retrieval on 58 held-out questions: recall@1 0.48, recall@5 0.79, 214 ms/query
+fp32             : accuracy 0.25; mean prompt 816 tok, prefill 330 ms, decode 60.4 tok/s, mean answer 26.6 tok
+int8 per-channel : accuracy 0.25; mean prompt 816 tok, prefill 313 ms, decode 61.1 tok/s, mean answer 28.3 tok
+our KV-cache decoder == HF generate (int8, Q1): True
+int8 answers identical to fp32: 9/12
+per-question analysis (int8):
+  Q01 [generation error (answer was in context)] gold='0.00' answer="RM B got 0.68, which is the same as RM A's 0.68."
+  Q02 [generation error (answer was in context)] gold='0.17' answer='The exact match on Day 108 after training was a negative log-prob of 0'
+  Q03 [correct] gold='0.70' answer='SFT on chosen answers reached 0.70, which is the exact match.'
+  Q04 [generation error (answer was in context)] gold='32.05' answer='The SmolLM2 instructed model got 192 perplexity on Shakespeare validat'
+  Q05 [generation error (answer was in context)] gold='26.29' answer='The base SmolLM2-135M model got perplexity 3.196 nats/token in Week 15'
+  Q06 [generation error (answer was in context)] gold='2,442,817' answer='The Day 107 reward model had 2 trainable parameters:\n\n1. **Linear laye'
+  Q07 [retrieval miss] gold='[0.07, 0.30]' answer='The bootstrap 95% confidence interval for exact match on Day 110 is ap'
+  Q08 [generation error (answer was in context)] gold='0.20' answer='The oracle verifier gave the best-of-n, which is 0.17.'
+  Q09 [correct] gold='0.693' answer='The DPO loss at step 0 when the LoRA B matrices are zero is approximat'
+  Q10 [generation error (answer was in context)] gold='0 of 16' answer='The judge was consistent when answering the same question in the same '
+  Q11 [correct] gold='0.993' answer='On Day 106, the optimal policy got a reward of 0.993, which is the sam'
+  Q12 [generation error (answer was in context)] gold='−10.3' answer='The rejected log-prob change with beta 0.5 is 120.8 nats of relative l'
+failure categories: {'correct': 3, 'retrieval miss': 1, 'generation error (answer was in context)': 8}

@@ -1,0 +1,14 @@
+artifact_uri: file:///workspace/ai-ml-course/code/week-21/out/mlruns/231752804875901031/cc6667e6b653496ebec398fce3c9d428/artifacts
+end_time: 1793301878952
+entry_point_name: ''
+experiment_id: '231752804875901031'
+lifecycle_stage: active
+run_id: cc6667e6b653496ebec398fce3c9d428
+run_name: ambitious-doe-570
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1793301878948
+status: 3
+tags: []
+user_id: box

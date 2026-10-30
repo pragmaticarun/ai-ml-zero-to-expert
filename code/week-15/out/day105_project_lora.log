@@ -1,0 +1,7 @@
+course-notes probe text: 12,705 tokens
+no training                  trainable           0  val ppl  26.29  notes ppl  24.89
+full fine-tune lr 5e-5       trainable 134,515,008  val ppl  21.34  notes ppl  26.29  (59 s for 80 steps)
+LoRA q,v r=2                 trainable     115,200  val ppl  23.23  notes ppl  27.11  (48 s for 80 steps)
+LoRA q,v r=8                 trainable     460,800  val ppl  23.02  notes ppl  28.29  (35 s for 80 steps)
+LoRA q,v r=32                trainable   1,843,200  val ppl  22.68  notes ppl  30.17  (38 s for 80 steps)
+LoRA all-linear r=8          trainable   2,442,240  val ppl  21.42  notes ppl  28.65  (51 s for 80 steps)

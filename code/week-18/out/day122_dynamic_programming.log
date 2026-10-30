@@ -1,0 +1,15 @@
+gridworld 4x4 optimal V (value iteration, 4 sweeps):
+[[ 0. -1. -2. -3.]
+ [-1. -2. -3. -2.]
+ [-2. -3. -2. -1.]
+ [-3. -2. -1.  0.]]
+FrozenLake 4x4 slippery, gamma=0.9: our table == gymnasium's: True; VI 145 sweeps 0.7 ms, PI 6 iterations 0.3 ms, max|V_VI-V_PI| 6.9e-10; V(start) 0.069; greedy policy success in gymnasium 0.733 over 2000 episodes
+FrozenLake 4x4 slippery, gamma=0.99: our table == gymnasium's: True; VI 571 sweeps 2.8 ms, PI 7 iterations 0.2 ms, max|V_VI-V_PI| 2.8e-09; V(start) 0.542; greedy policy success in gymnasium 0.741 over 2000 episodes
+  optimal actions 4x4 (gamma 0.99; L D R U):
+  LUUU
+  LHLH
+  UDLH
+  HRDG
+FrozenLake 8x8 slippery, gamma=0.9: our table == gymnasium's: True; VI 158 sweeps 2.3 ms, PI 10 iterations 0.7 ms, max|V_VI-V_PI| 7.0e-10; V(start) 0.006; greedy policy success in gymnasium 0.596 over 2000 episodes
+FrozenLake 8x8 slippery, gamma=0.99: our table == gymnasium's: True; VI 662 sweeps 7.7 ms, PI 9 iterations 0.5 ms, max|V_VI-V_PI| 3.1e-09; V(start) 0.415; greedy policy success in gymnasium 0.632 over 2000 episodes
+FrozenLake 4x4 NOT slippery: V(start) 0.951 (= 0.99^5 = 0.951, the 6-step shortest path), 7 sweeps

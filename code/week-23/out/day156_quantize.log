@@ -1,0 +1,14 @@
+Collecting tensor data and making histogram ...
+Finding optimal threshold for each tensor using 'percentile' algorithm ...
+Number of tensors : 6
+Number of histogram bins : 2048
+Percentile : (0.0010000000000047748,99.999)
+variant                                   size kB     acc  agree max|dlogit| b1 us(1t) b256 us(1t) b256 us(4t)
+fp32                                         1205  0.9741  1.000       0.000      15.7       680.3       325.8
+ort dynamic int8                              307  0.9741  1.000       0.132      11.0       211.8       185.0
+ort static QDQ per-tensor MinMax              308  0.9741  1.000       0.935      10.6       155.6       169.9
+ort static QDQ per-channel MinMax             321  0.9741  1.000       0.935      16.7       183.4       179.6
+ort static QDQ per-channel Percentile         321  0.9741  1.000       0.941      16.6       184.0       173.1
+torch fp32 eager (4 threads): b1 22.4 us, b256 305.1 us; state_dict 1207 kB
+torch dynamic qint8 (4 threads, engine x86): acc 0.9741, agree 1.000, max|dlogit| 0.183, b1 52.2 us, b256 267.5 us; state_dict 309 kB
+CPU flags relevant to int8: ['avx512bw', 'avx_vnni', 'avx512_vnni', 'amx_int8']
