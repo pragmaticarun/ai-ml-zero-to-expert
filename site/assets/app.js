@@ -1,11 +1,41 @@
 /* DOM layer. Data: window.COURSE (data.js); logic: window.Core (core.js). */
 (function () {
   'use strict';
-  var C = window.Core, D = window.COURSE, KEY = 'aiml-course-v1';
+  var C = window.Core, M = window.Merge, D = window.COURSE, KEY = 'aiml-course-v2', OLD_KEY = 'aiml-course-v1';
   var body = document.body, ROOT = body.dataset.root || '';
-  function load() { try { return C.normalize(JSON.parse(localStorage.getItem(KEY) || 'null')); } catch (e) { return C.emptyState(); } }
-  var S = load();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { alert('Could not save progress (storage full or disabled).'); } }
+  // v2 document {v:2, items:{key:{u,val}}}; S is the plain in-memory view the page code edits.
+  function loadDoc() {
+    try { var d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d && d.v === 2) return M.toDoc(d); } catch (e) { /* fall through */ }
+    try { return M.migrate(C.normalize(JSON.parse(localStorage.getItem(OLD_KEY) || 'null'))); } catch (e) { return { v: 2, items: {} }; } // old v1 key kept untouched as a backup
+  }
+  var DOC = loadDoc(), S = C.normalize(M.unflatten(DOC.items));
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(DOC)); return true; } catch (e) { alert('Could not save progress (storage full or disabled).'); return false; } }
+  function save() { DOC = { v: 2, items: M.stamp(DOC.items, S, Date.now()) }; if (persist() && SY) SY.schedule(); }
+  // after a merge, keep completedAt consistent with the merged blocks
+  function reconcile(s) { var ch = false; for (var k in s.days) { var r = s.days[k], was = r.completedAt; C.touchDay(s, +k); if (r.completedAt !== was) ch = true; } return ch; }
+  var SY = null;
+  if (window.Sync && window.fetch) {
+    SY = window.Sync.createSync({ merge: M, fetch: window.fetch.bind(window), storage: localStorage,
+      getDoc: function () { return DOC; },
+      setDoc: function (d) {
+        var before = JSON.stringify(S); DOC = d; var ns = C.normalize(M.unflatten(DOC.items));
+        if (reconcile(ns)) DOC = { v: 2, items: M.stamp(DOC.items, ns, Date.now()) };
+        persist(); if (JSON.stringify(ns) === before) return;
+        S = ns; var a = document.activeElement, typing = a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'checkbox'));
+        if (!typing && body.dataset.kind !== 'settings') location.reload(); else remoteNote = true;
+      },
+      onStatus: paintSync });
+  }
+  var remoteNote = false;
+  function paintSync(st) {
+    var el = document.getElementById('sync-st'); if (!st) return;
+    var icon = { off: '○', pending: '…', syncing: '⟳', synced: '✓', offline: '⚠', error: '✕' }[st.state] || '○';
+    var label = { off: 'Not synced', pending: 'Pending', syncing: 'Syncing', synced: 'Synced', offline: 'Offline', error: 'Sync error' }[st.state] || st.state;
+    if (el) { el.textContent = icon + ' ' + label + (remoteNote ? ' · reload for updates' : ''); el.className = 'sync ' + st.state; el.title = st.msg + (st.at ? ' (' + new Date(st.at).toLocaleTimeString() + ')' : ''); }
+    var dt = document.getElementById('sync-detail'); if (dt) dt.textContent = st.msg;
+    if (typeof onSyncPaint === 'function') onSyncPaint(st);
+  }
+  var onSyncPaint = null;
   function $(sel, el) { return (el || document).querySelector(sel); }
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
   function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -32,6 +62,13 @@
   $$('[data-st]').forEach(function (el) { var st = C.status(S, +el.dataset.st); el.textContent = badge(st); el.className = 'st ' + st; });
   $$('[data-quizst]').forEach(function (el) { var sc = C.quizScore(S.quizzes[el.dataset.quizst]); if (sc.right + sc.wrong) el.textContent = '· ' + sc.right + ' right / ' + sc.wrong + ' wrong'; });
 
+  if (SY) {
+    SY.init();
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') SY.syncNow(); });
+    window.addEventListener('focus', function () { if (SY.connected() && SY.status().state !== 'syncing') SY.syncNow(); });
+    window.addEventListener('online', function () { SY.syncNow(); });
+    window.addEventListener('storage', function (e) { if (e.key === KEY) { DOC = loadDoc(); S = C.normalize(M.unflatten(DOC.items)); var a = document.activeElement; if (!a || (a.tagName !== 'TEXTAREA' && a.tagName !== 'INPUT')) location.reload(); } }); // another tab saved
+  }
   var kind = body.dataset.kind;
   if (kind === 'home') home();
   if (kind === 'day') day(+body.dataset.day);
@@ -195,7 +232,7 @@
     st.addEventListener('change', function () { S.startDate = /^\d{4}-\d{2}-\d{2}$/.test(st.value) ? st.value : ''; save(); msg('Start date saved.'); });
     function msg(t) { $('#msg').textContent = t; }
     $('#export').addEventListener('click', function () {
-      var blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+      var blob = new Blob([JSON.stringify({ v: 2, app: 'aiml-course', exportedAt: new Date().toISOString(), state: S, items: DOC.items }, null, 2)], { type: 'application/json' });
       var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'aiml-progress-' + C.todayISO() + '.json';
       document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); msg('Exported.');
     });
@@ -203,13 +240,34 @@
       var f = e.target.files[0]; if (!f) return;
       var rd = new FileReader();
       rd.onload = function () {
-        try { var obj = C.validateImport(JSON.parse(rd.result)); if (!confirm('Replace your current progress with the imported file?')) return; S = obj; save(); msg('Imported ' + C.completedDays(S).length + ' completed days.'); st.value = S.startDate || ''; }
+        try { var raw = JSON.parse(rd.result), obj = raw && raw.v === 2 && raw.items ? C.normalize(M.unflatten(M.toDoc(raw).items)) : C.validateImport(raw); if (!confirm('Replace your current progress with the imported file?' + (SY && SY.connected() ? ' This replacement will also sync to your other computers.' : ''))) return; S = obj; save(); msg('Imported ' + C.completedDays(S).length + ' completed days.'); st.value = S.startDate || ''; }
         catch (err) { msg('Import failed: ' + err.message); }
       };
       rd.readAsText(f);
     });
     $('#reset').addEventListener('click', function () {
-      if (confirm('Delete ALL progress, notes, quiz marks and flashcard history in this browser?') && prompt('Type RESET to confirm') === 'RESET') { var th = S.theme; S = C.emptyState(); S.theme = th; save(); st.value = ''; msg('Progress reset.'); }
+      if (confirm('Delete ALL progress, notes, quiz marks and flashcard history in this browser' + (SY && SY.connected() ? ' AND on your synced computers' : '') + '?') && prompt('Type RESET to confirm') === 'RESET') { var th = S.theme; S = C.emptyState(); S.theme = th; save(); st.value = ''; msg('Progress reset.'); }
     });
+    if (SY) syncUI();
+    function syncUI() {
+      var sm = function (t) { $('#sync-msg').textContent = t; }, tok = $('#sync-token'), gid = $('#sync-gistid');
+      onSyncPaint = function (st) {
+        $('#sync-setup').hidden = SY.connected();
+        $('#sync-recreate').hidden = st.need !== 'gist' || !SY.hasToken();
+        $('#sync-now').disabled = !SY.connected(); $('#sync-disconnect').disabled = !SY.connected() && !SY.hasToken();
+        var g = SY.gistId(); $('#sync-gist').textContent = g ? '(gist ' + g + ')' : '';
+        if (st.need === 'token') $('#sync-setup').hidden = false;
+      };
+      onSyncPaint(SY.status());
+      $('#sync-form').addEventListener('submit', function (e) {
+        e.preventDefault(); var t = tok.value; tok.value = ''; // never keep the token in the DOM
+        sm('Connecting…');
+        SY.connect(t, gid.value).then(function (r) { gid.value = ''; sm(r.created ? 'Created a new secret gist and synced.' : 'Connected to your existing sync gist and merged.'); onSyncPaint(SY.status()); },
+          function (err) { sm(err.message); onSyncPaint(SY.status()); });
+      });
+      $('#sync-now').addEventListener('click', function () { SY.syncNow().then(function () { sm(SY.status().msg); }); });
+      $('#sync-recreate').addEventListener('click', function () { if (confirm('Create a new secret sync gist with the progress in this browser?')) SY.recreate().then(function () { sm('New sync gist created.'); onSyncPaint(SY.status()); }, function (e) { sm(e.message); }); });
+      $('#sync-disconnect').addEventListener('click', function () { if (confirm('Remove the token and gist id from this browser? Your progress here and in the gist stays.')) { SY.disconnect(); sm('Disconnected. Revoke the token on GitHub if you no longer need it.'); onSyncPaint(SY.status()); } });
+    }
   }
 })();

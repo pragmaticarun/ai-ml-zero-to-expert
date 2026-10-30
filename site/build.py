@@ -214,6 +214,8 @@ def load():
     return syl, weeks, days, exams, cards, sched
 
 # ---------- html ----------
+VERSION = "2.0.0"  # bump to bust browser caches
+
 def page(title, body, depth, kind, attrs=""):
     up = "../" * depth
     nav = [("index.html", "Dashboard"), ("syllabus.html", "Syllabus &amp; search"), ("review.html", "Review &amp; flashcards"),
@@ -222,17 +224,18 @@ def page(title, body, depth, kind, attrs=""):
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)} · AI/ML Zero to Expert</title>
-<script>try{{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{{}}').theme;if(t)document.documentElement.dataset.theme=t;}}catch(e){{}}</script>
-<link rel="stylesheet" href="{up}assets/style.css"><link rel="stylesheet" href="{up}assets/pygments.css">
+<script>try{{var d=JSON.parse(localStorage.getItem('aiml-course-v2')||'null'),t=d&&d.items&&d.items['set:theme']?d.items['set:theme'].val:JSON.parse(localStorage.getItem('aiml-course-v1')||'{{}}').theme;if(t)document.documentElement.dataset.theme=t;}}catch(e){{}}</script>
+<link rel="stylesheet" href="{up}assets/style.css?v={VERSION}"><link rel="stylesheet" href="{up}assets/pygments.css?v={VERSION}">
 </head><body data-kind="{kind}" data-root="{up}" {attrs}>
 <a class="skip" href="#main">Skip to content</a>
 <header class="top"><a class="brand" href="{up}index.html">AI/ML · 180 days</a>
 <nav aria-label="Main">{links}</nav>
+<a id="sync-st" class="sync off" href="{up}settings.html#sync" role="status" aria-live="polite" title="Cross-device sync status">○ Not synced</a>
 <button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
 <main id="main" tabindex="-1">{body}</main>
-<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
-<script src="{up}assets/data.js"></script><script src="{up}assets/core.js"></script><script src="{up}assets/app.js"></script>
-</body></html>"""
+<footer><p>Static, offline site. Progress is saved in this browser; optional sync to your own private GitHub Gist (Settings → Sync). Export to back it up.</p></footer>
+<script src="{up}assets/data.js?v={VERSION}"></script><script src="{up}assets/core.js?v={VERSION}"></script><script src="{up}assets/merge.js?v={VERSION}"></script><script src="{up}assets/sync.js?v={VERSION}"></script><script src="{up}assets/app.js?v={VERSION}"></script>
+</body></html>""".replace("{VERSION}", VERSION)
 
 def main():
     syl, weeks, days, exams, cards, sched = load()
@@ -318,7 +321,7 @@ def main():
 <label>Status <select id="fs"><option value="">All</option><option value="done">Done</option><option value="partial">In progress</option><option value="todo">Not started</option><option value="behind">Behind schedule</option></select></label></div>
 <p id="count" role="status"></p>
 <table class="syl"><thead><tr><th>Day</th><th>Week</th><th>Month</th><th>Title</th><th>Planned</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>
-<script src="assets/search.js"></script>""", 0, "syllabus"))
+<script src="assets/search.js?v={VERSION}"></script>""", 0, "syllabus"))
     (SITE / "review.html").write_text(page("Review & flashcards", """<h1>Review and flashcards</h1>
 <section class="card"><h2>Review today</h2><div id="review-today"></div></section>
 <section class="card"><h2>Flashcards (SM-2 style)</h2>
@@ -329,9 +332,29 @@ def main():
     (SITE / "settings.html").write_text(page("Settings & data", """<h1>Settings and data</h1>
 <section class="card"><h2>Schedule</h2><p><label>Start date (Day 1, Asia/Kolkata) <input type="date" id="start"></label></p>
 <p>One course day per calendar day (6 h/day). Planned dates and behind/ahead flags use this date.</p></section>
+<section class="card" id="sync"><h2>Sync across computers (optional)</h2>
+<p>Status: <strong id="sync-detail">Not connected</strong> <span id="sync-gist"></span></p>
+<div id="sync-setup">
+<ol><li>Create a <strong>classic</strong> GitHub token with <strong>only the <code>gist</code> scope</strong>:
+<a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=aiml-course-progress" target="_blank" rel="noopener noreferrer">github.com/settings/tokens/new?scopes=gist</a>. Choose an expiry, then copy the token.</li>
+<li>Paste it below and press <em>Connect</em>. The site looks for an existing secret gist named <code>aiml-course-progress.json</code> and reuses it. If there isn't one, it creates a new secret gist.</li>
+<li>Do the same once on each computer, using the same GitHub account. Progress is merged, not overwritten.</li></ol>
+<form id="sync-form" autocomplete="off"><p><label>GitHub token <input type="password" id="sync-token" autocomplete="off" spellcheck="false" size="44" placeholder="ghp_…"></label></p>
+<p><label>Existing gist id (optional) <input type="text" id="sync-gistid" size="34" spellcheck="false" placeholder="leave empty to find or create"></label></p>
+<p><button type="submit" id="sync-connect">Connect</button></p></form></div>
+<p><button type="button" id="sync-now">Sync now</button> <button type="button" id="sync-recreate" hidden>Recreate sync gist</button>
+<button type="button" id="sync-disconnect">Disconnect this browser</button></p>
+<details><summary>What is stored where, and how to revoke</summary><ul>
+<li><strong>This browser (localStorage):</strong> your progress, the token (key <code>aiml-sync-token</code>) and the gist id. The token is never included in exports or the progress file. It is only ever sent to <code>api.github.com</code>.</li>
+<li><strong>Your gist:</strong> progress only (checked blocks, hours, notes, quiz answers and marks, flashcard schedule, start date, theme). It is <em>secret</em>: unlisted and not searchable. However, <strong>anyone who has its URL can read it</strong>, so don't put anything sensitive in your notes.</li>
+<li><strong>Keep the token private.</strong> It can read and write <em>all</em> of your gists. Use a separate token for this site.</li>
+<li><strong>Disconnect</strong> removes the token and gist id from this browser only. Your progress and the gist stay as they are.</li>
+<li><strong>Revoke</strong> the token at <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">github.com/settings/tokens</a>. You can delete the gist at <a href="https://gist.github.com/" target="_blank" rel="noopener noreferrer">gist.github.com</a>.</li>
+<li>Sync runs about 2.5 s after each change, when a page loads, and when you return to the tab. While you're offline, changes are kept here and synced later. If the same item is changed on two computers, the most recent change wins.</li></ul></details>
+<p id="sync-msg" role="status"></p></section>
 <section class="card"><h2>Backup</h2><p><button type="button" id="export">Export progress (JSON)</button>
 <label class="btn">Import JSON <input type="file" id="import" accept="application/json,.json" hidden></label></p>
-<p><button type="button" id="reset" class="danger">Reset all progress…</button></p><p id="msg" role="status"></p></section>""", 0, "settings"))
+<p><button type="button" id="reset" class="danger">Reset all progress (also syncs to connected computers)…</button></p><p id="msg" role="status"></p></section>""", 0, "settings"))
     print(f"days={len(days)} weeks={len(weeks)} exams={len(exams)} cards={len(cards)}")
     for w in sorted(weeks):
         q = weeks[w]["quiz"]; print(f"  week {w:02d}: quiz {len(q)} Q, {sum(1 for x in q if x['a'])} with answers")

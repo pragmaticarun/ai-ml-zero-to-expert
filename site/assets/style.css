@@ -35,3 +35,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:
 .fcbtns{display:flex;flex-wrap:wrap;gap:.4rem}
 @media (max-width:600px){.cell{width:28px;height:28px}.wl{width:100%}main{padding:.6rem}}
 @media print{header,footer,.tracker{display:none}}
+/* sync status */
+.sync{font-size:.85rem;padding:.15rem .5rem;border-radius:999px;border:1px solid var(--line,#8884);text-decoration:none;white-space:nowrap}
+.sync.synced{color:#178a3a}.sync.error{color:#c0392b;border-color:#c0392b}.sync.offline{color:#b9770e}.sync.syncing,.sync.pending{opacity:.85}
+#sync input[type=password],#sync input[type=text]{max-width:100%}

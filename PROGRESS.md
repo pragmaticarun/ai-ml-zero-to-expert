@@ -141,3 +141,4 @@ Last updated: 2026-10-29 (Phase 1 complete).
 
 
 - 2026-10-30 (IST): static site in site/ was built (180 days, 26 weeks, 8 exams, 604 cards). node unit tests 6/6 pass. smoke.sh: 225 pages/assets returned 200, 0 broken links. Not tested in a real browser.
+- 2026-10-30 (IST): site v2.0.0 adds Gist sync (per-item LWW merge, tombstones, v1 migration). node tests 22/22 pass; Firefox+Playwright test with a mocked GitHub API passes 15/15; smoke.sh returns 200 for every page with 0 broken links. Not yet tested against the real GitHub API.

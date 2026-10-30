@@ -16,7 +16,7 @@ Teaching style: intuition → tiny example → plain-language maths → code. Se
 6. After Day 180 follow `code/capstone/out/WHAT_NEXT.md`.
 
 ## Course website
-There is a static progress-tracking site in `site/`. It runs offline with no server. Open `site/index.html`, or rebuild it with `.venv/bin/python site/build.py`. See [site/README.md](site/README.md) for GitHub Pages setup and tests.
+There is a static progress-tracking site in `site/`. It runs offline with no server. It can also sync progress across computers through your own private GitHub Gist (set this up in Settings → Sync). Open `site/index.html`, or rebuild it with `.venv/bin/python site/build.py`. See [site/README.md](site/README.md) for GitHub Pages setup and tests.
 
 ## Setup (tested: Linux, Python 3.13, CPU-only)
 ```bash
