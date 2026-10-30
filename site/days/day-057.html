@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 57 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="57">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-056.html">← Day 56</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-058.html">Day 58 →</a></nav>
+<h1>Day 57: Reproducible experiments: seeds, configs, model persistence</h1>
+<p class="meta">Week 9 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/day57_persistence.py"><code>code/week-09/day57_persistence.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 56 (+1), Day 54 (+3), Day 50 (+7), Day 36 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Six weeks from now someone asks, "how did you get 0.93?" If you can't regenerate that number from a commit, a config and a data version, it isn't a result. It's an anecdote. Reproducibility is also how you catch your own bugs: a number that changes when nothing should have changed is a warning.</p>
+<p><strong>Sources of non-determinism, and fixes.</strong>
+1. <strong>Random seeds</strong> in splits, model initialisation, bootstrap sampling and CV shuffles. Pass <code>random_state</code> everywhere, and use <code>np.random.default_rng(seed)</code> rather than global state.
+2. <strong>Data drift under you:</strong> a re-downloaded file, a changed SQL query. Fingerprint the data (a hash of its contents) and store the hash with the result.
+3. <strong>Library versions:</strong> default parameters change between releases. Record the Python, NumPy, pandas and scikit-learn versions.
+4. <strong>Hardware and threading:</strong> floating-point sums in different orders differ in the last bits. Usually that is harmless. Know that it exists.</p>
+<p><strong>Seed variance is not noise to hide.</strong> Run several seeds and report mean ± std. If two models differ by less than the seed spread, you haven't shown that one is better.</p>
+<p><strong>Persistence.</strong> <code>joblib.dump(pipeline, path)</code> saves the <em>whole fitted pipeline</em> (preprocessing included). Reload it in the same library versions, and <strong>verify a round trip</strong> (predictions identical after reload). Pickle-based formats can execute code when loaded, so only load files you trust. ONNX and skops are alternatives for safer exchange.</p>
+<p><strong>Minimum run record (<code>runs.csv</code> / model card):</strong> timestamp, git commit, data hash, config (all hyperparameters), metric(s), versions, and the artefact path.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-09/day57_persistence.py</code> (adult, HistGB). Verified:
+- Data fingerprint <code>cd37a2b18a7dd171</code> (first 16 hex digits of a SHA-256 over the pandas row hashes).
+- Two runs with the same config give test AUC 0.928072 both times. <strong>Identical.</strong>
+- Five seeds (changing both the split and the model seed): [0.9281, 0.9281, 0.9296, 0.9296, 0.9277], <strong>mean 0.9286, std 0.0008</strong>. Any model comparison closer than about 0.002 AUC on this setup is within seed noise.
+- <code>joblib</code> dump plus load took roughly 60-110 ms across our runs. The file is 451 KiB, and predictions are <strong>bit-identical</strong> after reload.
+- It writes <code>out/model_card.json</code> (data hash, config, test_auc, versions) and appends a row to <code>out/runs.csv</code>.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Write <code>fingerprint(df)</code> and show that it changes if you alter one cell.</li>
+<li>Put the config in a dict or YAML file. The script must read <em>all</em> hyperparameters from it, with no literals in model code.</li>
+<li>Add the current git commit (<code>git rev-parse --short HEAD</code>, if available) to the model card.</li>
+<li>Seed study: 10 seeds for HistGB and for random forest. Is the difference in mean AUC larger than about 2 standard deviations?</li>
+<li>Round trip: save, reload in a <em>fresh</em> Python process, and <code>assert np.array_equal(p_before, p_after)</code>.</li>
+<li>Stretch: export the logistic-regression pipeline to ONNX (<code>skl2onnx</code>, if you choose to install it) and compare its predictions to 1e-6.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Model A has 0.9290 and model B 0.9281, one seed each, with seed std 0.0008. Conclusion? <em>(Not distinguishable. Run more seeds.)</em></li>
+<li>Why save the whole pipeline, not just the classifier? <em>(The preprocessing is part of the model; without it, predictions on raw data are wrong.)</em></li>
+<li>What does a data fingerprint protect against? <em>(Silent data changes.)</em></li>
+<li>Why is unpickling an untrusted file dangerous? <em>(It can execute arbitrary code.)</em></li>
+<li>Name four fields of a run record. <em>(Commit, data hash, config, metric, versions, time.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Name four sources of non-determinism.
+  2. What did the 5-seed spread show?
+  3. How do you verify persistence?
+  4. What goes in a model card?
+  5. Why record library versions?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Experiment trackers (MLflow, Weights &amp; Biases) automate the run log, artefacts and comparison plots. DVC versions large data alongside git. Try MLflow's local mode for a day and decide whether its overhead pays off for a project your size.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"I can't reproduce your 0.93 from last month." Write the reply you wish you could send. It would contain the git commit, the data fingerprint, the config file, the library versions and the command, all read from the model card, plus the seed spread, so the colleague knows that a result within ±0.002 counts as a reproduction. Then list what you would change in your workflow if you could <em>not</em> send that reply: a run log appended automatically by every training script, configs in files rather than code, and a CI job that re-runs the smallest experiment weekly and fails if its metric moves beyond the seed spread.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Seeding only NumPy and forgetting the CV shuffle.</li>
+<li>Reporting the best of 10 seeds as "the" result.</li>
+<li>Loading a joblib file under a different scikit-learn version and ignoring the warning.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: the Month-2 capstone build. Everything from Weeks 5-9 in one project, and no peeking at the test set.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-056.html">← Day 56</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-058.html">Day 58 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

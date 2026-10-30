@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 15 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="15">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-014.html">← Day 14</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-016.html">Day 16 →</a></nav>
+<h1>Day 15: Derivatives and numerical differentiation</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-03/day15_derivatives.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/day15_derivatives.py"><code>code/week-03/day15_derivatives.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 14 (+1), Day 12 (+3), Day 8 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> You're standing on a hillside in fog. You can't see the valley, but you can feel the slope under your feet. The derivative is that slope. If the ground drops to your left, step left. ML training is exactly this: the "hill" is the cost J(w), and the derivative dJ/dw says which way and how steeply the cost changes when you nudge the parameter w.</p>
+<p><strong>Concrete example.</strong> One flat has x = 3 (hundred sq ft) and price y = 12. The model is ŷ = w·x and the cost is J(w) = (3w − 12)². Verified lab output:
+- w = 2: J = 36 and dJ/dw = <strong>−36</strong>. The slope is negative, so increasing w lowers the cost: <strong>move w up</strong>.
+- w = 4: J = 0 and dJ/dw = 0, the bottom.
+- w = 5: J = 9 and dJ/dw = <strong>+18</strong>, so move w down.
+Note that the magnitude is bigger the further you are from the optimum, so steps naturally shrink as you approach it.</p>
+<p><strong>Plain-language maths.</strong>
+- Definition: f′(x) = lim_{h→0} [f(x + h) − f(x)]/h, the "rise over run" for an infinitesimal run.
+- Rules you need: (xⁿ)′ = n xⁿ⁻¹, (eˣ)′ = eˣ, (ln x)′ = 1/x, sum rule, product rule, and the chain rule (Day 17).
+- For J(w) = (wx − y)²: J′(w) = 2(wx − y)·x. Read it as "2 × error × input". This "error times input" shape appears in every gradient this month.</p>
+<p><strong>Numerical differentiation</strong> is your unit test for calculus. <strong>Central difference</strong> [f(x + h) − f(x − h)]/(2h) has error ~h², while forward difference has error ~h. Verified for f(x) = x³ − 2x at x = 1.5 (true f′ = 4.75):</p>
+<table>
+<thead>
+<tr>
+<th>h</th>
+<th>forward error</th>
+<th>central error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1e-1</td>
+<td>4.6e-1</td>
+<td>1.0e-2</td>
+</tr>
+<tr>
+<td>1e-3</td>
+<td>4.5e-3</td>
+<td>1.0e-6</td>
+</tr>
+<tr>
+<td>1e-5</td>
+<td>4.5e-5</td>
+<td><strong>1.3e-10</strong></td>
+</tr>
+<tr>
+<td>1e-8</td>
+<td>3.8e-8</td>
+<td>2.9e-8</td>
+</tr>
+<tr>
+<td>1e-12</td>
+<td>4.2e-4</td>
+<td>4.2e-4</td>
+</tr>
+</tbody>
+</table>
+<p>Making h smaller only helps up to a point. Below about 1e-5 (central) the error <em>grows</em> again because of floating-point cancellation: f(x + h) and f(x − h) agree in almost all digits. This is the float64 epsilon from Day 2 at work. <strong>Use h ≈ 1e-5 to 1e-6 with central differences in float64.</strong></p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Differentiate f(x) = x³ − 2x: f′(x) = 3x² − 2, so f′(1.5) = 3·2.25 − 2 = 4.75.
+Central difference with h = 0.1: f(1.6) = 4.096 − 3.2 = 0.896 and f(1.4) = 2.744 − 2.8 = −0.056. So [0.896 − (−0.056)]/0.2 = 0.952/0.2 = <strong>4.76</strong>. The error is 0.01, matching the table ✓. (For a cubic the central-difference error is exactly h²·f‴/6 = 0.01·6/6 = 0.01.)</p>
+<h3 id="block-3-coding-lab-2h-codeweek-03day15_derivativespy">Block 3: Coding lab (2h): <code>code/week-03/day15_derivatives.py</code></h3>
+<p>Tasks:
+1. Plot both error curves vs h on log-log axes. Read the slopes off the plot (1 for forward, 2 for central) and find the "valley" of best h.
+2. Repeat in float32 (<code>np.float32</code>). Where is the best h now? (Larger, about 1e-2 to 1e-3, because float32 epsilon is ~1e-7.)
+3. Differentiate the sigmoid σ(z) = 1/(1 + e^(−z)) numerically and check it against σ(z)(1 − σ(z)). You will need this on Day 26.
+4. Write <code>numderiv(f, x, h=1e-5)</code> and keep it in a <code>utils.py</code>. You'll reuse it to gradient-check everything.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>d/dx of 5x⁴ − x + 7? <em>Answer:</em> 20x³ − 1.</li>
+<li>d/dx of e^(2x)? <em>Answer:</em> 2e^(2x) (chain rule preview).</li>
+<li>J(w) = (2w − 6)². Find the minimiser and J′(1). <em>Answer:</em> w = 3, and J′(1) = 2(2 − 6)·2 = −16.</li>
+<li>Why is central difference more accurate? <em>Hint:</em> the even-order error terms of the Taylor expansion cancel.</li>
+<li>Which way should w move if dJ/dw = +0.3? <em>Answer:</em> down (decrease w).</li>
+<li>d/dx of ln(1 + eˣ) (softplus)? <em>Answer:</em> eˣ/(1 + eˣ) = σ(x).</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 14 (+1):</strong> what is the storage formula for rank k, and what errors did k = 2/8/32 give?</li>
+<li><strong>Day 12 (+3):</strong> explain PCA as SVD in 3 sentences.</li>
+<li><strong>Day 8 (+7):</strong> compute the cosine of (1, 2) and (2, 4) (1.0).</li>
+<li><strong>Self-check:</strong>
+  1. Give the derivative as a slope, in words.
+  2. Derivative of (wx − y)² with respect to w?
+  3. Why does a too-small h hurt?
+  4. Which h works best for central differences in float64?
+  5. Derivative of the sigmoid?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Differentiating with respect to the wrong variable. In ML we differentiate the <strong>cost</strong> with respect to the <strong>parameters</strong>, with the data held fixed.</li>
+<li>Using h = 1e-12 "for accuracy" gives garbage from rounding.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Every time you derive a gradient this course, check it numerically. It takes about 2 minutes and saves days.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-014.html">← Day 14</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-016.html">Day 16 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

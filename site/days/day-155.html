@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 155 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="155">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-154.html">← Day 154</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-156.html">Day 156 →</a></nav>
+<h1>Day 155: ONNX export and ONNX Runtime tuning: graph optimisations, threads and the profiler</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Why export at all (25 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Read the numbers honestly (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 154 (+1), Day 152 (+3), Day 148 (+7), Day 134 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-why-export-at-all-25-min">Block 1: Why export at all (25 min)</h3>
+<p>A trained PyTorch model is Python objects plus a training framework of several hundred megabytes. A deployed model should be a <em>file</em>, plus a <em>runtime</em> that is small, fast and stable across versions. ONNX is a file format for that: a graph of standard operators (Gemm, Relu, Conv, MatMul...) with the weights inside, tagged with an <em>opset</em> version that pins what each operator means. ONNX Runtime (ORT) is one engine that executes such graphs on many targets: server CPUs, GPUs, browsers, and phones through ONNX Runtime Mobile. Week 21 (Day 144) already used ORT as a serving engine and found it about 4.2x faster per call than eager PyTorch, but only about 1.15x faster once wrapped in HTTP. That lesson still holds: tune the engine only after you know the engine is your bottleneck. This week the engine <em>is</em> the product, because on a phone there is no HTTP hop to hide behind.</p>
+<p>Export works by running the model once on an example input and recording the operators it executes (the classic tracer; <code>dynamo=False</code> in <code>_dep.export_onnx</code>). Two decisions matter. <strong>Dynamic axes:</strong> without them, the file is fixed to the example's batch size. We mark axis 0 as <code>batch</code>, so the same file serves batch 1 and batch 256. <strong>Opset:</strong> we pin 17. A newer opset can express more, but older runtimes (old app builds) may not load it.</p>
+<h3 id="block-2-run-it-35-min">Block 2: Run it (35 min)</h3>
+<p><code>python day155_onnx_ort.py</code> exports the MLP, checks it with <code>onnx.checker</code>, compares it with PyTorch, then times four things.</p>
+<p><strong>Verified (out/day155_onnx_ort.log):</strong>
+- The export is a 1,205 kB file with opset 17 and exactly five nodes: <code>Gemm, Relu, Gemm, Relu, Gemm</code>. On all 540 test rows, the maximum absolute logit difference against PyTorch is 0.00e+00, argmax agreement is 1.0000, and ORT accuracy is 0.9741. The numbers are identical, not just close: the same fp32 GEMM math in the same order.
+- <strong>Graph optimisation levels (1 thread, median µs per call):</strong> DISABLE_ALL 15.1 at batch 1 and 686.3 at batch 256; BASIC 19.7 / 690.6; EXTENDED 15.6 / 763.4; ALL 14.4 / 680.5. Saving each optimised graph shows what changed. From EXTENDED upwards, ORT fused each Gemm+Relu pair into a contrib <code>FusedGemm</code> op, leaving <code>['FusedGemm', 'FusedGemm', 'Gemm']</code>.
+- <strong>Thread sweep (ENABLE_ALL):</strong> with 1/2/4/8 intra-op threads, batch 1 took 15.6 / 12.1 / 11.3 / 11.7 µs and batch 256 took 676.3 / 463.0 / 325.1 / 313.9 µs. Eager PyTorch with 8 threads took 23.2 µs at batch 1 and 255.7 µs at batch 256.
+- <code>ORT_PARALLEL</code> execution mode at batch 1 took 18.7 µs. A chain graph has no independent branches, so inter-op parallelism has nothing to do.
+- The ORT profiler (JSON trace in <code>out/</code>, 50 runs at batch 256) attributes 97% of kernel time to <code>FusedGemm</code> and 3% to the final <code>Gemm</code>.</p>
+<h3 id="block-3-read-the-numbers-honestly-30-min">Block 3: Read the numbers honestly (30 min)</h3>
+<p><strong>Fusion did not buy measurable speed here.</strong> The level differences are a few µs at batch 1, and they move between runs. The EXTENDED batch-256 figure of 763.4 is slower than ALL's 680.5, although both levels produced the same saved graph, so that gap is noise and not a real effect. Why so little gain? Fusing a Relu into a Gemm saves one pass over a 256×512 activation tensor, and that pass is tiny next to the GEMM itself (the profiler's 97%). Fusions pay off when the fused-away ops are a large share of the time: layer norms, GELUs, attention patterns in transformers, Conv+BatchNorm in CNNs. The rule is simple: leave ENABLE_ALL on (it is the default), and don't expect miracles on a GEMM-bound MLP.</p>
+<p><strong>Threads help batch 256, not batch 1.</strong> Going from 1 to 4 threads cut batch-256 latency from 676.3 to 325.1 µs, about 2.1x. Going from 4 to 8 added almost nothing (313.9). At batch 1 the best was 11.3 µs at 4 threads against 15.6 at 1: a small gain that costs four cores. On a phone, that trade is usually wrong. More cores at full clock drain the battery and heat the device, and the app's UI thread competes for the same cores. A common on-device default is one or two intra-op threads for small models. Measure the gain before spending more.</p>
+<p><strong>Eager PyTorch wins at batch 256 with 8 threads (255.7 µs).</strong> That is a fair observation, not a failure of ORT. PyTorch's CPU GEMM path is very good at large batches on AVX-512. ORT's case for deployment is its small runtime, stable file format, mobile builds and execution providers, <em>and</em> lower per-call overhead at batch 1 (14.4 vs 23.2 µs here).</p>
+<p><strong>Warning in the raw output.</strong> When you save a graph optimised at ALL, ORT warns that it may contain hardware-specific optimisations (the NCHWc layout transformer) and should only be used on the same kind of machine. Lesson: ship the <em>unoptimised</em> or BASIC/EXTENDED-optimised model to a device, and let the device's runtime apply its own hardware-specific passes.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why did ENABLE_EXTENDED and ENABLE_ALL produce the same graph for this model? <em>Both apply the Gemm+Relu fusion. The extra passes in ALL are layout transforms that only matter for some op types (e.g. convolutions), and this MLP has none.</em></li>
+<li>Batch 1 at 1 thread took 15.6 µs and at 4 threads 11.3 µs. Would you ship 4 threads on a phone? <em>Probably not. A 4.3 µs gain is invisible to a user, and it costs three more cores' power and contention. Re-measure on the device first.</em></li>
+<li>What does the profiler's 97% for FusedGemm tell you about further graph tuning? <em>That the remaining 3% is the ceiling for non-GEMM tuning. Speed must come from the GEMMs themselves: fewer FLOPs (pruning) or cheaper FLOPs (int8).</em></li>
+<li>Why did the export diff come out exactly 0? <em>Same operators, same fp32 arithmetic, same accumulation order on this CPU. Different kernels or a different machine could give differences around 1e-6. Always check with a tolerance, not equality.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Re-export with <code>dynamic_axes</code> removed and try <code>s.run</code> at batch 256: read the error message. Then set <code>so.enable_profiling</code> in your own session, open the JSON in a trace viewer (Chrome's <code>about://tracing</code> or Perfetto), and find the <code>FusedGemm</code> spans.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li><code>intra_op_num_threads</code> splits one operator across threads. <code>inter_op_num_threads</code> (in PARALLEL mode only) runs independent operators at the same time. Most models want intra; graphs with real branches (multi-head models, ensembles) can use inter.</li>
+<li>ORT's thread pool spins threads for a short while after work, to cut wake-up latency. That costs CPU while idle. The ORT threading docs show how to turn spinning off, which matters for a phone's battery.</li>
+<li><code>onnx.checker.check_model</code> checks structure, not numerics. The comparison against PyTorch on real data is the test that counts.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read ORT's graph optimisation page and list the fusions in each level. Then export a small transformer block (Week 13) and look for <code>LayerNormalization</code>, <code>Gelu</code> and attention fusions in the saved graph. Those are where fusion gains come from.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Our ONNX model is 2x slower in production than on my laptop." Walk through it: same ORT version and execution provider? Same threads, and is the container's CPU quota lower than the visible core count? Is graph optimisation actually on? Is the batch size the same? Is the first call (warm-up) being timed? Is a hardware-specific optimised graph being shipped to a different CPU?</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Timing the first <code>run</code>, which includes lazy allocation.</li>
+<li>Shipping a graph saved at ENABLE_ALL to a different machine (the warning above).</li>
+<li>Forgetting dynamic axes, then padding everything to the export batch size.</li>
+<li>Judging threads at batch 256 when the product runs batch 1.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 156 makes the GEMMs cheaper instead of fewer: int8 quantization, measured on accuracy, size and latency at the same time.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-154.html">← Day 154</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-156.html">Day 156 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

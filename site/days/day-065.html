@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 65 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="65">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-064.html">← Day 64</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-066.html">Day 66 →</a></nav>
+<h1>Day 65: Datasets, DataLoaders, batching, devices</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day65_dataloader.py"><code>code/week-10/day65_dataloader.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 64 (+1), Day 62 (+3), Day 58 (+7), Day 44 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A model only learns as fast as you can feed it. On a GPU the data pipeline is often the bottleneck. On this CPU box everything shares the same cores, so the lesson is about <em>overhead</em>: how much time goes to Python per item versus real arithmetic.</p>
+<p><strong>Dataset.</strong> Any object with <code>__len__</code> and <code>__getitem__(i)</code> returning one example. <code>TensorDataset(X, y)</code> wraps tensors you already have in memory. A custom Dataset is how you load from disk, decode images, or apply per-item augmentation.</p>
+<p><strong>DataLoader.</strong> Wraps a Dataset and handles batching (<code>batch_size</code>), shuffling (<code>shuffle=True</code>, re-shuffled every epoch), collation (stacking items into a batch tensor) and parallel loading (<code>num_workers</code>). Each worker is a separate process, which costs start-up time and pays off only when per-item work (decoding JPEGs, heavy augmentation) is expensive.</p>
+<p><strong>Normalisation statistics.</strong> Compute the mean and std on the <strong>training split only</strong>, then apply them to validation and test. Using test statistics is a small leak, the same mistake as fitting a scaler on all data (Week 6).</p>
+<p><strong>Splits.</strong> Carve a validation set out of training data. The test set is touched once at the end (the Month-2 discipline).</p>
+<p><strong>Batch size.</strong> Larger batches give less noisy gradient estimates and better hardware utilisation, but fewer updates per epoch. On many problems, moderate batches with a tuned learning rate generalise as well as small ones; very large batches usually need a larger LR and warm-up.</p>
+<p><strong>Devices.</strong> <code>x.to(device)</code> copies a tensor to another device. Model and data must be on the same device. On a GPU you would add <code>pin_memory=True</code> and <code>non_blocking=True</code> to overlap copying with compute. Here <code>torch.cuda.is_available()</code> is <code>False</code>, so everything stays on <code>cpu</code>. Write the code device-agnostic anyway.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-10/day65_dataloader.py</code>. <strong>Verified:</strong>
+- Train mean <strong>0.1307</strong> and std <strong>0.3081</strong> (pixels scaled to [0, 1]). Split: <strong>55,000</strong> train / <strong>5,000</strong> validation; with batch 128 that is <strong>430</strong> batches per epoch.
+- One epoch of iteration only (no model), by loading method:</p>
+<table>
+<thead>
+<tr>
+<th>method</th>
+<th>seconds per epoch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>per-item custom Dataset, <code>num_workers=0</code></td>
+<td>0.63</td>
+</tr>
+<tr>
+<td>per-item custom Dataset, <code>num_workers=2</code></td>
+<td>0.60</td>
+</tr>
+<tr>
+<td><code>TensorDataset</code> + DataLoader</td>
+<td>0.21 (0.18 on a rerun)</td>
+</tr>
+<tr>
+<td>manual slicing of a tensor</td>
+<td>0.01</td>
+</tr>
+</tbody>
+</table>
+<p>Workers barely helped because the per-item work is trivial and the process start-up eats the gain. When data already sits in memory as a tensor, slicing is the cheapest of all, which is why the remaining scripts in this course use the <code>_mnist.train</code> helper that slices.
+- Batch size (same epochs and LR): batch 16 / 128 / 1024 took <strong>1.48 / 0.51 / 0.34 s</strong> per epoch and reached test accuracy <strong>0.9315 / 0.9312 / 0.9338</strong>. At this scale the three are within noise of each other on accuracy, but very different in time.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Write <code>class NoisyMNIST(Dataset)</code> that adds Gaussian noise with std σ in <code>__getitem__</code>. Train the Day-64 MLP on σ = 0, 0.5, 1.0 and record test accuracy on clean images.</li>
+<li>(30 min) Time one epoch with <code>num_workers</code> in {0, 2, 4}. Write down why the result might flip on a machine with slow disk reads.</li>
+<li>(30 min) Make your loop device-agnostic: one <code>device</code> variable, <code>.to(device)</code> for model and each batch. Run it here (CPU) and confirm nothing else changes.</li>
+<li>(20 min) Verify that <code>shuffle=True</code> changes the order across epochs and that <code>generator=torch.Generator().manual_seed(0)</code> makes it reproducible.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>55,000 examples, batch 128, <code>drop_last=False</code>. How many batches? <em>Answer: ceil(55000/128) = 430.</em></li>
+<li>Why compute normalisation statistics on train only? <em>Answer: so no information from validation/test leaks into preprocessing.</em></li>
+<li>When do workers help? <em>Answer: when per-item loading/augmentation is expensive relative to process start-up and inter-process transfer.</em></li>
+<li>You double the batch size. What is a reasonable first guess for the new learning rate with SGD? <em>Answer: roughly double it (linear scaling rule), then verify with a short run.</em></li>
+<li>A model is on the GPU and a batch is on the CPU. What happens? <em>Answer: a runtime error about tensors on different devices.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Draw the path of one example: file → Dataset <code>__getitem__</code> → collate → batch tensor → <code>.to(device)</code> → model. Self-check:
+- [ ] I can write a custom Dataset from memory.
+- [ ] I can explain why workers did not help in our run.
+- [ ] I know which split the normalisation statistics come from.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look at <code>torch.utils.data.IterableDataset</code> for streaming data that does not fit in memory, and at <code>persistent_workers=True</code>. Day 82 writes the collate step in Rust.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your GPU utilisation sits at 30% during training. What do you check?" Mention data loading time per batch, worker count, CPU-side augmentation, pinned memory, host-to-device copies, small batch sizes, and profiling (Day 82).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Shuffling the validation set: harmless for metrics but confusing when you compare predictions across runs.</li>
+<li>Returning NumPy arrays of the wrong dtype from <code>__getitem__</code> (float64), so the model gets doubles and errors.</li>
+<li>Forgetting <code>model.to(device)</code> while moving data, or vice versa.</li>
+<li>Measuring "speed" on the first epoch only: workers and caches warm up.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 66 asks why a deep network sometimes refuses to learn, and shows that the answer is often the first line of code: initialisation.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-064.html">← Day 64</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-066.html">Day 66 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

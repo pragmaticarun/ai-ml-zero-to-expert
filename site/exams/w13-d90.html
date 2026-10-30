@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 90: Month-3 checkpoint exam (Coding lab (2h)) · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="exam" data-root="../" >
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><h1>Day 90: Month-3 checkpoint exam (Coding lab (2h))</h1><p class="meta">Day 90 · 3 questions parsed from <a href="../../weeks/week-13.md"><code>weeks/week-13.md</code></a> · <a href="../days/day-090.html">Day 90 page</a></p>
+<section class="quiz card" data-quiz="exam-w13-d90"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>(40 min) <strong>Concepts.</strong> (a) Why do residual connections help deep networks? (b) What does batch norm do differently in train and eval mode? (c) Why does random search beat grid search? (d) What is ECE? (e) Why can an LSTM remember longer than a vanilla RNN?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><em>No written answer in the source file; grade against the lesson.</em> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>(40 min) <strong>Computation.</strong> (a) Output size of a 5×5 conv, stride 2, padding 2, on 64 × 64. (b) Parameters of Conv2d(64, 128, 3) with bias. (c) Adam's first update size for any gradient with bias correction and lr 1e-3. (d) The ECE of two bins: (n = 50, acc 0.8, conf 0.9) and (n = 150, acc 0.7, conf 0.7). (e) Cross-entropy of probabilities [0.25, 0.25, 0.5] when the true class is the third.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><em>No written answer in the source file; grade against the lesson.</em> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>(40 min) <strong>Code reading.</strong> Find the bug in each: (a) a validation loop without <code>model.eval()</code>; (b) <code>loss.backward()</code> in a loop without <code>zero_grad</code>; (c) normalisation statistics computed on <code>torch.cat([train, test])</code>; (d) a truncated-BPTT loop without <code>h = h.detach()</code>.</p>
+<p><em>Answers to the computation section:</em> (a) (64 + 4 − 5)/2 + 1 = 32 (floor of 31.5 is 31, plus 1). (b) 64·128·9 + 128 = 73,856. (c) about lr = 1e-3 per parameter, whatever the gradient's scale. (d) (50·0.1 + 150·0)/200 = 0.025. (e) −ln 0.5 = 0.693.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><em>No written answer in the source file; grade against the lesson.</em> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

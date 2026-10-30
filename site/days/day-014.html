@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 14 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="14">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-013.html">← Day 13</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-015.html">Day 15 →</a></nav>
+<h1>Day 14: Week 2 project: SVD image compression, plus Quiz 2</h1>
+<p class="meta">Week 2 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-02.md">source: weeks/week-02.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: project (2h): `code/week-02/day14_week_project_svd_compress.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 2 (1h), answers below)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-02/day14_week_project_svd_compress.py"><code>code/week-02/day14_week_project_svd_compress.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 13 (+1), Day 11 (+3), Day 7 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A grayscale image is a matrix of brightness values. Natural images are highly structured: smooth regions and repeated patterns. So most of the image's "energy" sits in a few singular values. Keep the top k singular triplets (uᵢ, σᵢ, vᵢ), store k(h + w + 1) numbers instead of h·w, and reconstruct with Σᵢ σᵢuᵢvᵢᵀ. This is not how JPEG works (JPEG uses the DCT on 8 × 8 blocks, which you may know from multimedia work), but it is the same principle: <strong>represent the signal in a basis where it is sparse, and drop the small coefficients.</strong></p>
+<p><strong>Plain-language maths.</strong> The relative error of the best rank-k approximation is √(Σ_{i&gt;k} σᵢ²)/√(Σᵢ σᵢ²), so you can read it straight off the singular value spectrum before reconstructing anything.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Verified on the synthetic 128 × 192 image (sinusoids + disc + step + noise):</p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>numbers stored</th>
+<th>% of original</th>
+<th>relative error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>642</td>
+<td>2.6%</td>
+<td>0.3322</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2568</td>
+<td>10.4%</td>
+<td>0.0912</td>
+</tr>
+<tr>
+<td>32</td>
+<td>10272</td>
+<td>41.8%</td>
+<td>0.0456</td>
+</tr>
+</tbody>
+</table>
+<p>From k = 8 to k = 32 the error only halves while the storage quadruples. The remaining error is mostly the added random noise, which has no low-rank structure. Diminishing returns are visible straight from the spectrum.</p>
+<h3 id="block-3-coding-lab-project-2h-codeweek-02day14_week_project_svd_compresspy">Block 3: Coding lab: project (2h): <code>code/week-02/day14_week_project_svd_compress.py</code></h3>
+<p>Deliverables (<code>notes/week02_report.md</code>):
+1. Plot σᵢ on a log scale. Mark where the "elbow" is.
+2. Compute the relative error from the singular values alone and confirm it matches the reconstruction error.
+3. Load a real photo (any PNG you own) with <code>matplotlib.image.imread</code>, convert it to gray, and produce the same table.
+4. Compare with a "block" approach: SVD of each 8 × 8 tile with k = 2. Which is better at equal storage on your photo?
+5. Bonus (systems): estimate compression time for a 4K frame using the timings from Day 9, and discuss why codecs use fixed transforms (DCT) instead of a per-image SVD.</p>
+<p><strong>Suggested timeline (2h).</strong>
+- 0:00-0:25: run the script, then plot the singular values on a log scale and mark the elbow. Write one sentence on how you chose it, since elbows are judgement calls.
+- 0:25-0:50: compute the relative error from the singular values, √(Σᵢ&gt;ₖ σᵢ²)/√(Σᵢ σᵢ²), and assert that it matches the error of the reconstructed image to about 1e-10. This is the Eckart-Young result made concrete.
+- 0:50-1:20: repeat on your own photo. Report the storage for rank k, k(m + n + 1) numbers, against m·n for the original.
+- 1:20-1:45: the 8 × 8 block comparison at equal storage. Show both images side by side at the same budget.
+- 1:45-2:00: the systems bonus and a proofread.</p>
+<p><strong>Rubric (self-grade out of 20).</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Singular-value plot on a log scale with the elbow marked and justified</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Error from the singular values matches the reconstruction error (assert in code)</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Own-photo table: k, storage ratio, relative error, with the images shown</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Fair block-SVD comparison at equal storage, with a visual and a verdict</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Storage formula derived, not just used</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Honest discussion of why real codecs use fixed transforms</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What separates a strong report from a weak one.</strong> A weak report shows nice pictures. A strong one shows the error identity holding numerically, compares methods <em>at equal storage</em> (otherwise the comparison is meaningless), and names a limitation: a per-image SVD must store the basis vectors, which fixed transforms avoid.</p>
+<h3 id="block-4-practice-quiz-2-1h-answers-below">Block 4: Practice: Quiz 2 (1h), answers below</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 13 (+1):</strong> Gram-Schmidt on (1, 0) and (1, 1).</li>
+<li><strong>Day 11 (+3):</strong> why eigenvalues matter for RNNs.</li>
+<li><strong>Day 7 (+7):</strong> which baseline won in Week 1, and by how much?</li>
+<li><strong>Self-check:</strong>
+  1. Storage formula for rank k?
+  2. How do you read the error from the singular values?
+  3. Why doesn't noise compress?
+  4. How does this relate to PCA?
+  5. Name an ML method that uses low rank (LoRA).</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>SVD vs DCT, from a codec engineer's view.</strong> The SVD basis is optimal <em>for this one image</em>, but you must store the basis (U and V) as well, and computing it is costly. The DCT basis is fixed, so it costs nothing to transmit and has fast O(N log N) transforms, and for smooth natural images it comes close to optimal. Modern learned codecs and neural compression revisit this trade-off by <em>learning</em> a transform from many images. That's an autoencoder, which you'll build in Month 4.</p>
+<p><strong>Colour images.</strong> Do the SVD per channel, or convert to YCbCr and spend more rank on luma (Y) than chroma. Human vision is less sensitive to chroma detail, the same trick as 4:2:0 subsampling in video.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Using RGB without converting to gray, or without doing the SVD per channel.</li>
+<li>Using uint8 images in maths. Convert to float first.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Next week is calculus. The question changes from "what is the best fit?" (closed form) to "which way should I move to improve?" (gradients). That question scales to billions of parameters.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-013.html">← Day 13</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-015.html">Day 15 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

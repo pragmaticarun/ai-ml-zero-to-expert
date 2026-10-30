@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 132 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="132">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-131.html">← Day 131</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-133.html">Day 133 →</a></nav>
+<h1>Day 132: RL for LLMs, revisited: PPO with a KL penalty, GRPO and DPO</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day132_rl_for_llms.py"><code>code/week-19/day132_rl_for_llms.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 131 (+1), Day 129 (+3), Day 125 (+7), Day 111 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The mapping.</strong> For a language model, the state is the prompt plus the tokens so far, an action is the next token, and a full answer is an episode. A reward model (or a checker, e.g. for maths answers) scores the finished answer. Everything below is stated only as far as it can be checked in the cited papers.</p>
+<p><strong>RLHF with PPO (InstructGPT, https://arxiv.org/abs/2203.02155).</strong> The pipeline is supervised fine-tuning, then a reward model trained on human rankings of several responses per prompt (the paper uses K = 4 to 9 responses), then PPO against that reward. The paper adds a per-token KL penalty from the SFT model to the reward, to stop the policy drifting into text that fools the reward model, and initialises the value function from the reward model. A variant, "PPO-ptx", also mixes in pretraining gradients. The DeepSeekMath paper describes the same set-up as the reward r_t = r_φ − β·log(π_θ/π_ref) per token, citing Ouyang et al. 2022. This is Day 128-129's PPO with Day 131's lesson built in: the learned reward is exploitable, so the KL term is a leash.</p>
+<p><strong>The objective being approximated.</strong> Maximising E[r] − β·KL(π‖π_ref) has the closed-form solution π*(y) ∝ π_ref(y)·exp(r(y)/β). You derived and computed this on Day 106; the DPO paper (https://arxiv.org/abs/2305.18290) uses it as its starting point.</p>
+<p><strong>DPO.</strong> Rearranging the closed form gives r(y) = β·log(π*(y)/π_ref(y)) + β·log Z. Substituting into the Bradley-Terry preference model makes Z cancel, so the policy can be fitted directly to preference pairs with a logistic loss on β·(log-ratio of the winner − log-ratio of the loser). The paper's stated advantage is eliminating the need to sample from the LM during fine-tuning: it is offline, with no reward model and no PPO loop. You implemented it on Day 108.</p>
+<p><strong>GRPO (DeepSeekMath, https://arxiv.org/abs/2402.03300).</strong> The paper describes GRPO as a variant of PPO that drops the critic and instead estimates the baseline from group scores. For each question, sample a group of G outputs, score them, and give each output the advantage (r_i − mean(r)) / std(r); with outcome rewards that advantage is applied to every token of the output. The clipped ratio objective is kept. Instead of putting KL in the reward, GRPO adds β·KL to the loss, using the estimator π_ref/π − log(π_ref/π) − 1, which the paper notes is guaranteed to be positive. Reported settings include policy learning rate 1e-6, KL coefficient 0.04 and 64 samples per question. The paper also frames SFT, rejection-sampling fine-tuning, DPO, PPO and GRPO in one "unified paradigm" that differs in data source and gradient coefficient, and reports that RL improved Maj@K but not Pass@K in its experiments.</p>
+<p><strong>Connections to this week.</strong> GRPO's group mean is Day 127's constant baseline, estimated per prompt; dropping the critic saves a model the size of the policy, which matters at LLM scale. Its group of samples per prompt is a bandit (Day 130) per prompt. The KL leash is the defence against Day 131's reward hacking.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day132_rl_for_llms.py</code> (about 4 s). It is a one-prompt "LLM" with five possible answers, reusing Day 106's numbers: rewards [1.0, 0.8, 0.5, 0.2, 0.0], π_ref = [0.05, 0.1, 0.2, 0.3, 0.35], β = 0.2. The policy is a softmax over five logits initialised at log π_ref, trained with Adam (lr 0.05) for 400 iterations, three seeds. Methods: REINFORCE with KL in the reward (64 samples, batch-mean baseline); PPO-clip with KL in the reward (4 epochs, ε 0.2); GRPO (8 groups of 8, group-normalised advantage, clipped, k3 KL in the loss with coefficient β); DPO (64 pairs per iteration sampled from π_ref, labelled by Bradley-Terry with the true rewards).</p>
+<p><strong>Verified (out/day132_rl_for_llms.log):</strong>
+- Closed form π* = [0.45, 0.331, 0.148, 0.049, 0.021]; reward 0.799; KL to ref 1.193 (matches Day 106). π_ref has reward 0.290 and total-variation (TV) distance 0.631 to π*.
+- REINFORCE+KL and PPO-clip+KL, all three seeds: π = [0.45, 0.331, 0.148, 0.049, 0.021], TV 0.000, reward 0.799, KL 1.193.
+- GRPO: π ≈ [0.921, 0.013, 0.018, 0.021, 0.027] (seed 0), TV 0.476 / 0.478 / 0.463, reward 0.945 / 0.943 / 0.925, KL 2.490 / 2.492 / 2.363.
+- DPO: TV 0.060 / 0.080 / 0.033, reward 0.796 / 0.794 / 0.815, KL 1.185 / 1.179 / 1.282 (seed 1: π = [0.391, 0.388, 0.172, 0.034, 0.016]).</p>
+<p><strong>Reading it.</strong> Both on-policy methods with KL in the reward land exactly on the closed-form optimum, which confirms they optimise E[r] − β·KL. DPO, trained only on offline pairs from π_ref, gets close (TV 0.03-0.08); the remaining error is noise from a fixed learning rate on sampled pairs, visible in seed 1 swapping the top two answers' masses. GRPO does <strong>not</strong> converge to the same π*: it reached higher reward and roughly double the KL. Two reasons follow from its definition, not from any claim in the paper: dividing by the group std rescales the reward, so the effective trade-off against the KL term is not the same β; and once most groups contain the same answer, their std is near zero and their advantage is zero, so only the KL term acts on them. The takeaway is not "GRPO is wrong" but that <strong>β is not portable between methods</strong>; the same number means a different leash.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Remove the std division in GRPO (use r − mean only). Does it move towards π*? Report TV.</li>
+<li>Change the group size to 4 and 32.</li>
+<li>Put GRPO's KL into the reward instead of the loss. Compare.</li>
+<li>Halve DPO's learning rate (or decay it) and check whether TV falls.</li>
+<li>Write a paragraph: which of these four would you choose at LLM scale with one GPU, and why (memory for policy, reference, value and reward models; online sampling cost).</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Write the closed-form KL-regularised optimum.</li>
+<li>In InstructGPT-style PPO, where does the KL go?</li>
+<li>In GRPO, where does it go and which estimator is used?</li>
+<li>What does GRPO use instead of a critic?</li>
+<li>Why does DPO not need sampling during training?</li>
+</ol>
+<p><strong>Answers.</strong> 1) π* ∝ π_ref·exp(r/β). 2) Into the per-token reward, as −β·log(π/π_ref). 3) Into the loss, with π_ref/π − log(π_ref/π) − 1. 4) The mean (and std) of rewards in a group of samples for the same prompt. 5) It fits the policy directly to fixed preference pairs through the closed-form relation between reward and policy.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days, especially Day 111's self-check. Flashcards: closed-form optimum; KL in reward vs in loss; group-relative advantage; k3 estimator; DPO's implicit reward; "β is not portable".</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>The toy has one prompt and five answers, so there is no credit assignment over tokens, no value model and no reward model error. Those are exactly the parts that make real RLHF hard and expensive.</li>
+<li>On real models these methods need GPUs: the policy, a frozen reference and (for PPO) a value model, plus generation at every step. On this CPU, Month 4's SmolLM2-135M DPO was feasible; online PPO or GRPO on it would be very slow and was not attempted.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read the GRPO section and the "unified paradigm" section of the DeepSeekMath paper, then Section 4 of the DPO paper. For each, write which line of <code>day132_rl_for_llms.py</code> corresponds to which equation.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Why might a team choose GRPO over PPO for a maths reasoning model?" From the paper: no critic to train or store, and the baseline comes from multiple samples of the same question, which suits verifiable outcome rewards. Mention the costs: G samples per prompt, and a reward-scale change through std normalisation.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Claiming two methods "optimise the same objective" because both have a β.</li>
+<li>Forgetting that DPO's data distribution (here π_ref) limits what it can learn.</li>
+<li>Quoting hyper-parameters from a paper as if they transfer to your setting.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow's project compares REINFORCE, A2C and PPO under one honest step budget.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-131.html">← Day 131</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-133.html">Day 133 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

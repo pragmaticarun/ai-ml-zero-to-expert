@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 19 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="19">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-18.html">← Week 18</a><a href="../syllabus.html">Syllabus</a><a href="week-20.html">Week 20 →</a></nav>
+<h1>Week 19 (Days 127-133)</h1><p class="meta"><a href="../../weeks/week-19.md">source: weeks/week-19.md</a> · <a href="../../pdf/week-19.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-127.html">Day 127: Policy gradients: REINFORCE and baselines</a> <span class="st" data-st="127"></span></li><li><a href="../days/day-128.html">Day 128: Actor-critic (A2C)</a> <span class="st" data-st="128"></span></li><li><a href="../days/day-129.html">Day 129: PPO from scratch</a> <span class="st" data-st="129"></span></li><li><a href="../days/day-130.html">Day 130: Exploration: bandits, UCB, Thompson sampling and a LinUCB recommendation tie-in</a> <span class="st" data-st="130"></span></li><li><a href="../days/day-131.html">Day 131: Reward shaping pitfalls</a> <span class="st" data-st="131"></span></li><li><a href="../days/day-132.html">Day 132: RL for LLMs, revisited: PPO with a KL penalty, GRPO and DPO</a> <span class="st" data-st="132"></span></li><li><a href="../days/day-133.html">Day 133: PROJECT W19: REINFORCE vs A2C vs PPO on CartPole at an equal step budget; Quiz 19</a> <span class="st" data-st="133"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-19"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>(Day 127) Write the REINFORCE gradient and say why environment dynamics do not appear in it.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>∇J = E[Σ_t ∇log π(a_t|s_t)·G_t]; the trajectory probability factorises into policy terms and dynamics terms, and the dynamics do not depend on θ.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>(Day 127) Why does a state-dependent baseline add no bias? What did a constant baseline do to gradient spread at init?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>E_a[∇log π·b(s)] = b(s)·∇Σ_a π = 0. Spread fell from 0.436 to 0.324.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>(Day 127) Why did the baseline runs use more environment steps, and why does that matter?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>They learned longer episodes under a fixed episode budget, so they saw 45,666-48,298 steps against 8,383-19,571; the comparison is confounded (fixed on Day 133).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>(Day 128) Write the one-step TD advantage. Why bootstrap on truncation?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>δ = r + γV(s') − V(s). Truncation at 500 steps is not a real terminal state, so its value is not 0.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>(Day 128) What happened in A2C n = 1, seed 2?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It collapsed to greedy eval 9.3 at 20k and 30k steps (2,117 episodes), then recovered to 500.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>(Day 129) Write PPO's clipped objective and explain the A &lt; 0 case.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>E[min(rA, clip(r, 1−ε, 1+ε)A)]. With A &lt; 0, there is no further gain from pushing r below 1−ε.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>(Day 129) What did removing clipping do to approximate KL and to evaluation?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Max KL rose from 0.017-0.019 to 2.352-2.790 and the clip fraction from about 0.06 to about 0.5; evaluations repeatedly collapsed to about 10 steps, and seed 1 ended at 121.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>(Day 130) Rank Thompson, UCB1 and ε-greedy by regret in the log, and explain the surprise.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Thompson 30.5 &lt; ε-greedy 112.7 &lt; UCB1 183.3. UCB1's bonus over-explores at a 2,000-pull horizon.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>(Day 130) Why did LinUCB beat ε-greedy so clearly in the recommender?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Different users prefer different items; only LinUCB uses the context (CTR 0.876 vs 0.399).</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>(Day 131) Why did naive shaping break even value iteration, and what is potential-based shaping?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The shaped MDP's optimum is to loop for repeated +0.1 rewards. Potential-based: F = γΦ(s') − Φ(s), which leaves the optimal policy unchanged (but was not reliably faster: 9/10 seeds, median 38 vs 54).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>(Day 132) Where does the KL go in InstructGPT-style PPO and in GRPO, and why did our GRPO not reach π*?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>PPO: in the per-token reward, −β·log(π/π_ref). GRPO: added to the loss with the k3 estimator. Std normalisation changes the reward scale and identical groups get zero advantage, so the effective β differs: GRPO reached reward about 0.93-0.95 at KL about 2.4-2.5, against π*'s 0.799 at 1.193.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>(Day 133) Summarise the project result and one limitation.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>At about 50k steps on fresh seeds, PPO reached 500 greedy on 5/5, A2C 4/5 (mean 499.8), REINFORCE 3/5 (mean 421.3, min 137.5). Limitation: five seeds, one easy-to-saturate environment, final policy only.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> Days 127-133 (Month 5, policy-gradient RL, exploration, reward shaping and the RL-for-LLMs link-back) are written in full. Every number comes from <code>code/week-19/day127_*.py</code> to <code>day133_*.py</code>, each run once on this box (CPU only, <code>torch.set_num_threads(1)</code>, torch 2.15 CPU, gymnasium 1.4.0), with logs in <code>code/week-19/out/</code>. Shared helpers are in <code>code/week-19/_pg.py</code>.</p>
+<p><strong>Compute note.</strong> Everything here uses 4-64-64-2 MLPs on CartPole-v1, tabular grids, or bandits with 5-20 arms. A GPU would not speed these up: the cost is the Python loop that steps the environment one transition at a time, not matrix maths. What a GPU (or several) changes is the Day 132 setting: PPO/GRPO on a real language model, where every "action" is a token from a 50k-way softmax, a rollout is autoregressive generation, and you hold a policy, a reference model and (for PPO) a value model in memory at once. None of that is run here; Day 132 uses a 5-answer toy so that the exact optimum is known.</p>
+<p><strong>Sources used for Day 132 (all opened and checked):</strong> PPO, https://arxiv.org/abs/1707.06347; InstructGPT, https://arxiv.org/abs/2203.02155; DPO, https://arxiv.org/abs/2305.18290; DeepSeekMath (introduces GRPO), https://arxiv.org/abs/2402.03300.</p>
+<hr />
+<h2 id="weekly-quiz-week-19-12-questions-40-minutes-covers-days-127-133">Weekly quiz: Week 19 (12 questions; 40 minutes; covers Days 127-133)</h2>
+<ol>
+<li>(Day 127) Write the REINFORCE gradient and say why environment dynamics do not appear in it.</li>
+<li>(Day 127) Why does a state-dependent baseline add no bias? What did a constant baseline do to gradient spread at init?</li>
+<li>(Day 127) Why did the baseline runs use more environment steps, and why does that matter?</li>
+<li>(Day 128) Write the one-step TD advantage. Why bootstrap on truncation?</li>
+<li>(Day 128) What happened in A2C n = 1, seed 2?</li>
+<li>(Day 129) Write PPO's clipped objective and explain the A &lt; 0 case.</li>
+<li>(Day 129) What did removing clipping do to approximate KL and to evaluation?</li>
+<li>(Day 130) Rank Thompson, UCB1 and ε-greedy by regret in the log, and explain the surprise.</li>
+<li>(Day 130) Why did LinUCB beat ε-greedy so clearly in the recommender?</li>
+<li>(Day 131) Why did naive shaping break even value iteration, and what is potential-based shaping?</li>
+<li>(Day 132) Where does the KL go in InstructGPT-style PPO and in GRPO, and why did our GRPO not reach π*?</li>
+<li>(Day 133) Summarise the project result and one limitation.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>∇J = E[Σ_t ∇log π(a_t|s_t)·G_t]; the trajectory probability factorises into policy terms and dynamics terms, and the dynamics do not depend on θ.</li>
+<li>E_a[∇log π·b(s)] = b(s)·∇Σ_a π = 0. Spread fell from 0.436 to 0.324.</li>
+<li>They learned longer episodes under a fixed episode budget, so they saw 45,666-48,298 steps against 8,383-19,571; the comparison is confounded (fixed on Day 133).</li>
+<li>δ = r + γV(s') − V(s). Truncation at 500 steps is not a real terminal state, so its value is not 0.</li>
+<li>It collapsed to greedy eval 9.3 at 20k and 30k steps (2,117 episodes), then recovered to 500.</li>
+<li>E[min(rA, clip(r, 1−ε, 1+ε)A)]. With A &lt; 0, there is no further gain from pushing r below 1−ε.</li>
+<li>Max KL rose from 0.017-0.019 to 2.352-2.790 and the clip fraction from about 0.06 to about 0.5; evaluations repeatedly collapsed to about 10 steps, and seed 1 ended at 121.</li>
+<li>Thompson 30.5 &lt; ε-greedy 112.7 &lt; UCB1 183.3. UCB1's bonus over-explores at a 2,000-pull horizon.</li>
+<li>Different users prefer different items; only LinUCB uses the context (CTR 0.876 vs 0.399).</li>
+<li>The shaped MDP's optimum is to loop for repeated +0.1 rewards. Potential-based: F = γΦ(s') − Φ(s), which leaves the optimal policy unchanged (but was not reliably faster: 9/10 seeds, median 38 vs 54).</li>
+<li>PPO: in the per-token reward, −β·log(π/π_ref). GRPO: added to the loss with the k3 estimator. Std normalisation changes the reward scale and identical groups get zero advantage, so the effective β differs: GRPO reached reward about 0.93-0.95 at KL about 2.4-2.5, against π*'s 0.799 at 1.193.</li>
+<li>At about 50k steps on fresh seeds, PPO reached 500 greedy on 5/5, A2C 4/5 (mean 499.8), REINFORCE 3/5 (mean 421.3, min 137.5). Limitation: five seeds, one easy-to-saturate environment, final policy only.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

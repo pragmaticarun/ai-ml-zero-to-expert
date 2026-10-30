@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 25 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="25">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-024.html">← Day 24</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-026.html">Day 26 →</a></nav>
+<h1>Day 25: Feature scaling and conditioning</h1>
+<p class="meta">Week 4 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-04.md">source: weeks/week-04.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-04/day25_feature_scaling.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-04/day25_feature_scaling.py"><code>code/week-04/day25_feature_scaling.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 24 (+1), Day 22 (+3), Day 18 (+7), Day 4 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> If one feature ranges over hundreds (area, std ≈ 346) and another over single digits (bedrooms, std ≈ 1.1), the cost bowl is a long, narrow canyon. One learning rate must be small enough for the steep direction, so progress along the shallow direction crawls (Day 18's condition number). Scaling the features turns the canyon into a round bowl, and GD heads straight to the bottom.</p>
+<p><strong>Concrete example (verified, same housing data, tolerance 1e-6 on the change in J, cap 200,000 iterations):</strong></p>
+<table>
+<thead>
+<tr>
+<th>setup</th>
+<th>α</th>
+<th>iterations</th>
+<th>final J</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>raw features</td>
+<td>1e-6</td>
+<td>200,000 (hit the cap)</td>
+<td>39.70</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>1e-7</td>
+<td>76,539 (stopped by tolerance, far from optimum)</td>
+<td>52.89</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>2.5e-7</td>
+<td>55,245</td>
+<td>50.86</td>
+</tr>
+<tr>
+<td>z-score</td>
+<td>0.1</td>
+<td><strong>83</strong></td>
+<td><strong>19.22</strong></td>
+</tr>
+<tr>
+<td>min-max [0, 1]</td>
+<td>0.5</td>
+<td>472</td>
+<td>19.22</td>
+</tr>
+</tbody>
+</table>
+<p>The condition number of XᵀX is <strong>9.63e4</strong> raw vs <strong>1.16</strong> after z-scoring. The raw runs "converge" by the tolerance rule while still far from the optimum (J ≈ 19.2) because progress is so slow per step. This is a nasty trap: <strong>a flat learning curve doesn't always mean you've reached the minimum.</strong></p>
+<p><strong>Plain-language maths.</strong>
+- <strong>Z-score (standardisation):</strong> x′ = (x − μ)/σ, giving mean 0 and std 1. This is the default choice.
+- <strong>Min-max:</strong> x′ = (x − min)/(max − min), giving the range [0, 1]. It is sensitive to outliers.
+- Compute μ and σ (or min/max) on the <strong>training set only</strong>, and apply the same numbers to validation, test and production data. Fitting on all the data is leakage (Day 6).
+- Trees (Month 2) don't need scaling. GD-based models, k-NN, SVMs, PCA and neural nets do.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Areas (800, 1200, 1600): μ = 1200 and σ = √((400² + 0 + 400²)/3) = 326.6, so the z-scores are (−1.22, 0, 1.22).
+Min-max gives (0, 0.5, 1).
+A new house of 2000 sq ft gets z = (2000 − 1200)/326.6 = 2.45 using the <em>training</em> μ and σ, not recomputed. Min-max gives 1.5, outside [0, 1], which is fine.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-04day25_feature_scalingpy">Block 3: Coding lab (2h): <code>code/week-04/day25_feature_scaling.py</code></h3>
+<p>Tasks:
+1. Plot the learning curves (log J vs iteration) for raw and scaled data on the same axes.
+2. Compute the eigenvalues of XᵀX/m for raw and scaled data and verify that the ratio equals the printed condition number.
+3. Find the largest stable α for scaled features (it is about 2/λ_max) and test α slightly above it.
+4. Write <code>StandardScalerNP</code> with <code>fit</code>/<code>transform</code> methods (it becomes part of <code>mlscratch.py</code>), and check it against <code>sklearn.preprocessing.StandardScaler</code>.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Feature values (2, 4, 6). Z-scores? <em>Answer:</em> μ = 4, σ = 1.633, giving (−1.22, 0, 1.22).</li>
+<li>Why not fit the scaler on the test set? <em>Answer:</em> leakage, and it isn't available at prediction time.</li>
+<li>Does scaling change the least-squares <em>predictions</em>? <em>Answer:</em> no (with an intercept). It only changes the weights and the speed of GD.</li>
+<li>Which models don't care about scaling? <em>Answer:</em> tree-based models.</li>
+<li>Why is a tolerance-based stop dangerous on unscaled data? <em>Answer:</em> progress per step is tiny, so the stop fires far from the optimum.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 24 (+1):</strong> the vectorised gradient, and R² = 0.9216.</li>
+<li><strong>Day 22 (+3):</strong> why were the J contours elongated?</li>
+<li><strong>Day 18 (+7):</strong> the stability condition α &lt; 2/λ_max.</li>
+<li><strong>Self-check:</strong>
+  1. What does scaling do to the cost geometry?
+  2. Z-score vs min-max?
+  3. Fit the scaler on what?
+  4. What were the condition numbers before and after?
+  5. Iterations before and after?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Robust scaling.</strong> If a feature has big outliers, its mean and std are distorted. <code>RobustScaler</code> uses the median and inter-quartile range instead. For heavy right skew (incomes, prices), apply a log transform <em>before</em> scaling.</p>
+<p><strong>Pipelines prevent leakage.</strong> <code>make_pipeline(StandardScaler(), LinearRegression())</code> fits the scaler inside <code>fit</code> on whatever data it is given. Combined with cross-validation (Day 33), this guarantees each fold's scaler sees only that fold's training data. Make it a habit now: never scale "by hand" on the full dataset.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Scaling the target y by accident and then reporting errors in scaled units.</li>
+<li>A σ = 0 column (a constant feature) gives division by zero. Drop it or add an epsilon.</li>
+<li>Scaling one-hot columns. Usually harmless, but unnecessary.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Next we switch from predicting numbers to predicting categories. Logistic regression is trained by the same gradient descent, so everything you learned today about scaling carries over unchanged. Keep your <code>StandardScalerNP</code> handy.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-024.html">← Day 24</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-026.html">Day 26 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

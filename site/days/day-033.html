@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 33 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="33">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-032.html">← Day 32</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-034.html">Day 34 →</a></nav>
+<h1>Day 33: Cross-validation and hyperparameter search</h1>
+<p class="meta">Week 5 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-05.md">source: weeks/week-05.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-05/day33_cv_search.py"><code>code/week-05/day33_cv_search.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 32 (+1), Day 30 (+3), Day 26 (+7), Day 12 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> One validation split is one roll of the dice. <strong>k-fold cross-validation</strong> cuts the training data into k folds, trains on k−1 and scores on the held-out fold, then rotates. Every row gets exactly one turn as validation. You end up with k scores: their <strong>mean</strong> estimates performance and their <strong>standard deviation</strong> tells you how much to trust a difference.</p>
+<p><strong>Variants.</strong>
+- <code>StratifiedKFold</code>: keeps class ratios in each fold (the default for classifiers).
+- <code>GroupKFold</code>: keeps all rows of one entity (user, patient) in one fold (Day 6).
+- <code>TimeSeriesSplit</code>: train on the past and validate on the future (Day 53).</p>
+<p><strong>Searching hyperparameters.</strong> <code>GridSearchCV</code> tries every combination. <code>RandomizedSearchCV</code> samples a fixed budget, and on log-uniform ranges it often finds good regions with far fewer fits. After the search, <code>best_score_</code> is <strong>optimistically biased</strong>, because you picked the maximum of noisy estimates. <strong>Nested CV</strong> puts the whole search inside an outer CV loop to get an honest number for "this procedure, including tuning".</p>
+<p><strong>Golden rule.</strong> Every data-dependent step (scaling, feature selection, imputation, polynomial expansion) must happen <em>inside</em> the CV loop. Wrapping it in a <code>Pipeline</code> makes that automatic.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-05/day33_cv_search.py</code> runs California housing (16,512 training rows) through polynomial degree 2 + scaling + ridge.</p>
+<p><strong>A real failure first.</strong> On the <em>raw</em> features the five fold R² scores were −0.0675, 0.6385, 0.6589, 0.5421, 0.6808. One fold is worse than predicting the mean! The cause is heavy tails: max AveOccup is 599.7 against a median of 2.82, and squaring it creates extreme columns. Unseen extreme rows then get wild predictions.</p>
+<p><strong>Fix:</strong> log1p the four heavy-tailed columns before expanding. Verified results:
+- Manual 5-fold R²: [0.6941, 0.7116, 0.6998, 0.6833, 0.7146], mean <strong>0.7007</strong>, std 0.0115. <code>cross_val_score</code> gives identical numbers (your loop is correct).
+- Grid search over 13 α values: best α = 0.00316, CV R² 0.7099, 1.1 s.
+- Random search with 6 draws: best α = 0.348, CV R² 0.7035, 0.5 s.
+- The CV R² curve is flat from 0.001 to 0.03 (0.7091–0.7099), so the exact α hardly matters.
+- Nested CV: <strong>0.7046 ± 0.0186</strong>, slightly below the optimistic <code>best_score_</code> of 0.7099.
+- Test R² of the refit winner, touched once: 0.7172, consistent with nested CV.</p>
+<p><strong>Lesson.</strong> Variance across folds is information. A fold that collapses is a data problem to investigate, not noise to average away.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Run the script. Then write <code>kfold_indices(m, k, seed)</code> yourself and check it against <code>KFold(k, shuffle=True, random_state=seed)</code>.</li>
+<li>Reproduce the raw-feature collapse, then find <em>which rows</em> the bad fold mispredicts most. Print their AveOccup and Population.</li>
+<li>Add <code>PolynomialFeatures</code> degree (1, 2, 3) to the grid alongside α. How many fits does a 5-fold grid of 3×13 need? <em>(195.)</em></li>
+<li>Use <code>RandomizedSearchCV</code> with <code>n_iter=10</code> over the same space and compare time and score.</li>
+<li>Stretch: write the nested loop by hand (outer <code>KFold</code>, inner <code>GridSearchCV</code>) and confirm the 0.7046 figure.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Model A scores 0.712 ± 0.010 over 5 folds and model B 0.708 ± 0.012. Is A clearly better? <em>(No. The difference is well inside one std. Use a paired comparison on the same folds, or prefer the simpler model.)</em></li>
+<li>Why is <code>best_score_</code> optimistic? <em>(It's the max over many noisy estimates, a selection effect.)</em></li>
+<li>Leave-one-out CV on 1M rows: is it a good idea? <em>(No, a million fits. Use k = 5–10.)</em></li>
+<li>Your scaler was fitted on all training rows before CV. What leaks? <em>(Validation-fold statistics. The effect is mild for scaling but serious for feature selection, as Day 46 shows.)</em></li>
+<li>When is random search better than grid search? <em>(Many hyperparameters with only a few that matter, and continuous ranges.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Describe k-fold CV in two sentences.
+  2. Name three CV splitters and when each is used.
+  3. What is nested CV for?
+  4. What caused the raw-poly fold collapse, and what fixed it?
+  5. Why must preprocessing live inside the pipeline?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>How many folds?</strong> Larger k means each model trains on more data (less pessimistic bias), but costs more and gives correlated fold scores. k = 5 or 10 is the usual compromise. <strong>Repeated CV</strong> (<code>RepeatedKFold</code>) reshuffles and repeats to shrink the estimate's variance when the data is small. <strong>Successive halving</strong> (<code>HalvingGridSearchCV</code>, experimental in scikit-learn) gives many candidates a small budget and the survivors more. That is the same idea behind Hyperband-style tuners you will meet in Month 3.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Shuffling time-ordered data in CV, which lets you predict the past from the future.</li>
+<li>Reporting <code>best_score_</code> as the final performance.</li>
+<li>Using the test set inside the search "just to check".</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: more than two classes. Softmax generalises the sigmoid, and you will implement it from scratch.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-032.html">← Day 32</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-034.html">Day 34 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

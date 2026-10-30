@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 146 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="146">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-145.html">← Day 145</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-147.html">Day 147 →</a></nav>
+<h1>Day 146: A/B tests, canary rollouts, cost and latency budgets, Docker and CI</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 145 (+1), Day 143 (+3), Day 139 (+7), Day 125 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Offline wins are not online wins.</strong> A new model that is better on the test set can be worse for users: different traffic, feedback loops, latency. Two rollout tools:</p>
+<ul>
+<li><strong>A/B test.</strong> Randomly split users between model A and model B and compare a business metric, such as conversion.</li>
+<li>Fix the sample size <em>in advance</em> from the smallest effect worth detecting. The required n grows like 1/effect², so halving the effect needs about 4× the users.</li>
+<li>Test once at the end. <strong>Peeking</strong> (checking repeatedly and stopping at the first p &lt; 0.05) inflates false positives. If you must monitor continuously, use sequential methods designed for it.</li>
+<li><strong>Canary.</strong> Send a small slice of traffic (here 5%) to the new model and watch guardrail metrics: errors, latency, complaint rate. Promote step by step if nothing is significantly worse; roll back automatically if it is. A canary protects against <em>bad</em> releases. It is not powered to prove small <em>improvements</em>.</li>
+<li><strong>Shadow mode</strong> runs the new model on real traffic without acting on its outputs, so you can compare predictions and latency at zero user risk.</li>
+</ul>
+<p><strong>Cost and latency budgets.</strong> Start from requirements (peak requests/s, p95 SLO, predictions/day). Measure throughput per core, size the fleet with headroom (we target 60% utilisation), and price it. Ask whether online serving is needed at all: if predictions can be precomputed, batch scoring is often orders of magnitude cheaper.</p>
+<p><strong>Docker and CI concepts:</strong>
+- A <strong>container image</strong> packages the OS libraries, Python, pinned dependencies, code and artefacts, so "works on my machine" becomes "works in this image". Practices: pin versions, use a slim base image, run as a non-root user, add a health check, and keep artefacts versioned (or pulled by hash at start-up).
+- <strong>CI</strong> runs on every push. For ML it should cover unit tests, data-validation tests, <em>golden-prediction</em> tests (fixed inputs, expected outputs), a metric floor (block release if accuracy falls below X), and building the image.
+- <strong>CD</strong> then deploys the image through canary to production.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day146_ab_canary_cost.py</code>:
+- computes per-arm sample sizes with the normal approximation (alpha 0.05, power 0.8);
+- simulates 2000 A/A experiments, tested once and with 10 peeks, plus A/B experiments at 10% → 11%, all with a two-proportion z-test;
+- simulates a canary rule: after each 1000 canary requests, roll back if a one-sided z-test says the canary's error rate is worse at p &lt; 0.01, up to 10 steps; two random seeds per scenario;
+- builds a cost table from Day 144's measured numbers plus <strong>assumed</strong> workload and price.</p>
+<p><strong>Verified (out/day146_ab_canary_cost.log):</strong>
+- Users per arm at a 10% baseline: 3841 to detect 12%; 14,751 for 11%; 57,763 for 10.5%. Halving the effect needs about 4× the users.
+- 2000 simulated experiments at n = 14,751 per arm: A/A tested once, false-positive rate 0.046 (nominal 0.05); <strong>A/A with 10 peeks, 0.191</strong>; true 10% → 11% tested once, power 0.791 (designed 0.8).
+- Canary, both seeds: equal error rates (0.035) → PROMOTED after 10,000 canary requests; 0.045 vs 0.035 → ROLLED BACK after 6000; 0.07 vs 0.035 → ROLLED BACK after 1000.
+- Cost. Measured: 650 req/s, p95 52.5 ms at c16, 24,991 rows/s batched. <strong>Assumed</strong> (not measured, not a quoted price): peak 200 req/s, 2,000,000 predictions/day, $0.05 per core-hour. Online at 60% utilisation: 1 core, $1.20/day. Batch scoring the same 2M rows: 1.3 core-minutes, $0.0011/day.</p>
+<p>Readings:
+- Peeking quadrupled the false-positive rate, from 0.046 to 0.191.
+- The canary catches a 2× error-rate jump at the first check but needs 6000 requests for a 0.035 → 0.045 regression. Small regressions take traffic to detect.
+- Batch was about 1000× cheaper than online here. For this model, the cost is the always-on core, not the compute. Note also that the measured c16 p95 of 52.5 ms already misses a 50 ms SLO on this shared-CPU test, so the "1 core" sizing needs a real load test on the target hardware.</p>
+<p><strong>Untested files (no Docker on this box):</strong> <code>project/Dockerfile</code> (python:3.13-slim, pinned <code>requirements-serve.txt</code>, non-root user, HEALTHCHECK on <code>/health</code>, uvicorn 1 worker) and <code>project/ci/github-actions-ci.yml</code> (checkout, set up Python 3.13, install, run <code>day147_project.py</code> and pytest, upload the model card). Both start with the comment <strong>"UNTESTED"</strong>. They show the shape of the setup; I have not built or run either, and they may need fixes.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Re-run the peeking simulation with 3 and 30 peeks. Plot false-positive rate against the number of peeks.</li>
+<li>Change the canary to 20% traffic. How much sooner is the 0.045 regression caught?</li>
+<li>Redo the cost table with your own cloud's real price per core-hour, and with a 3-replica minimum for availability.</li>
+<li>Read the Dockerfile reference and list two things that could break this untested Dockerfile. (Hint: the build context and the paths in COPY.)</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why does detecting 10% → 10.5% need about 15× the users of 10% → 12%? <em>n ∝ 1/effect², and the effect is 4× smaller, so about 16×: 57,763 vs 3841.</em></li>
+<li>What did peeking do? <em>It raised the A/A false-positive rate from 0.046 to 0.191.</em></li>
+<li>What is a canary for? <em>Catching harmful releases early with limited exposure, not proving small gains.</em></li>
+<li>Why is batch so much cheaper here? <em>You pay only for compute minutes, not an always-on core sized for peak.</em></li>
+<li>What makes the Docker/CI files trustworthy? <em>Nothing yet. They are untested until built and run in CI.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Which of your course models genuinely needs online predictions, and which could be precomputed nightly?</p>
+<p><strong>Extra notes.</strong> Guardrail metrics (latency, errors, crash rate) should be able to roll back a canary even when the business metric looks good.</p>
+<p><strong>Going deeper.</strong> Read the GitHub Actions docs on workflow syntax and caching, and compare the untested YAML against them.</p>
+<p><strong>Interview-style question (15 min).</strong> "The new model wins offline by 1 point. How do you launch it?" Shadow it to compare predictions and latency, then canary with guardrails and automatic rollback. If the business impact matters, run a pre-registered A/B test sized for the minimum effect worth detecting. Don't peek; document it; keep the old model ready for rollback.</p>
+<p><strong>Common mistakes.</strong> Peeking. Underpowered tests. Canaries without automatic rollback. Costing at average load instead of peak. Calling untested Dockerfiles "production-ready".</p>
+<p><strong>What to do next.</strong> Day 147 assembles it all into one production-style service with tests, monitoring, a load test and a model card.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-145.html">← Day 145</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-147.html">Day 147 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

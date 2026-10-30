@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 31 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="31">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-030.html">← Day 30</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-032.html">Day 32 →</a></nav>
+<h1>Day 31: Regularisation deep dive: ridge, lasso, elastic net</h1>
+<p class="meta">Week 5 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-05.md">source: weeks/week-05.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-05/day31_regularisation.py"><code>code/week-05/day31_regularisation.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 30 (+1), Day 28 (+3), Day 24 (+7), Day 10 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A linear model with many features can bend itself to the noise in a small training set. Regularisation adds a "tax" on large weights to the cost, so the optimiser only pays for a big weight when it buys a real drop in error. The tax works like a spring that pulls every weight back towards zero. How it pulls decides what you get:
+- <strong>Ridge (L2):</strong> cost = MSE + λ‖w‖². It shrinks every weight smoothly and rarely makes one exactly zero. When two features are near-duplicates, ridge splits the weight between them.
+- <strong>Lasso (L1):</strong> cost = MSE + λ‖w‖₁. The absolute value has a corner at zero, so the optimum often sits <em>exactly</em> on zero for weak features. Lasso therefore does feature selection.
+- <strong>Elastic net:</strong> a blend of both, controlled by <code>l1_ratio</code>. You get some sparsity without lasso's habit of picking one feature arbitrarily from a correlated group.</p>
+<p><strong>Small example.</strong> Picture a single weight w with data pulling it towards 3. Ridge adds λw², whose slope is 2λw. Near zero that slope is tiny, so ridge never quite reaches zero. Lasso adds λ|w|, whose slope is ±λ no matter how small w is. Once the data's pull drops below λ, w snaps to zero.</p>
+<p><strong>Math in plain words.</strong> Ridge has a closed form: w = (XᵀX + λI)⁻¹ Xᵀy, using centred X and y so the intercept is not taxed. The +λI also fixes the ill-conditioning from Day 10: it lifts the smallest eigenvalue of XᵀX by λ. Lasso has no closed form, and scikit-learn solves it by coordinate descent. Always standardise first. The tax is per unit of weight, so a feature measured in rupees would be punished differently from the same feature measured in lakhs.</p>
+<p><strong>Naming trap.</strong> scikit-learn calls λ <code>alpha</code>. Its Lasso objective is (1/2m)‖y − Xw‖² + α‖w‖₁, while its Ridge objective is ‖y − Xw‖² + α‖w‖² with no 1/m. So "alpha = 1" means different strengths in the two classes. Tune each on its own grid.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-05/day31_regularisation.py</code> on scikit-learn's bundled <strong>diabetes</strong> data (442 patients, 10 standardised features, target = disease progression after one year). Verified output (75/25 split, random_state=0):</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>test R²</th>
+<th>non-zero weights</th>
+<th>‖w‖₂</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OLS</td>
+<td>0.3594</td>
+<td>10/10</td>
+<td>56.8</td>
+</tr>
+<tr>
+<td>Ridge α=10</td>
+<td>0.3580</td>
+<td>10/10</td>
+<td>44.0</td>
+</tr>
+<tr>
+<td>Lasso α=1</td>
+<td>0.3557</td>
+<td>8/10</td>
+<td>44.3</td>
+</tr>
+<tr>
+<td>Lasso α=5</td>
+<td>0.3448</td>
+<td>5/10</td>
+<td>37.5</td>
+</tr>
+<tr>
+<td>ElasticNet α=1, l1_ratio=0.5</td>
+<td><strong>0.3787</strong></td>
+<td>9/10</td>
+<td>31.4</td>
+</tr>
+</tbody>
+</table>
+<p>How to read it:
+1. Our closed-form ridge matches <code>Ridge(alpha=10)</code> to 3.9e-14, so you have verified the formula, not just trusted it.
+2. Lasso at α=5 keeps only half the features and loses about 0.015 R². That is often a good trade when features cost money to collect.
+3. On this split elastic net wins. With 111 test patients, a 0.02 R² gap is within split-to-split noise (Day 33 will measure that spread).
+4. The lasso path drops features in the order s2, s4, age, s6, s1, sex, s3, bp, bmi, s5. <strong>bmi</strong> and <strong>s5</strong> survive longest.
+5. <strong>Twin features demo.</strong> Two copies of the same signal plus tiny noise: ridge gives [1.72, 1.308] (shared), lasso gives [2.931, 0] (one picked, one dropped).</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Read and run the script. Open <code>out/day31_paths.png</code> and describe both panels in one sentence each.</li>
+<li>Implement <strong>lasso by coordinate descent</strong> yourself. Loop over features. For feature j, compute ρⱼ = xⱼᵀ(y − ŷ + wⱼxⱼ)/m, then set wⱼ = S(ρⱼ, α)/(xⱼᵀxⱼ/m), where S(z, α) = sign(z)·max(|z| − α, 0) is soft-thresholding. Compare with <code>Lasso(alpha=1)</code> on the standardised diabetes data. You should match to about 1e-4 after a few hundred sweeps.</li>
+<li>Plot test R² against α for ridge on a log grid (1e-3 … 1e3) and mark the best α. Note that you picked it using the test set. Tomorrow and Day 33 show why that is cheating.</li>
+<li>Stretch (systems angle): time <code>Ridge(solver=...)</code> for "cholesky", "svd" and "lsqr" on a 20000×200 random matrix. Explain the ranking using the FLOP counts from Day 9.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>With X = I (2×2), y = (2, 4) and λ = 1, compute the ridge solution by hand. <em>(w = y/(1+λ) = (1, 2).)</em></li>
+<li>With orthonormal features, lasso's solution is soft-thresholding of the OLS weights. Apply S(·, 1) to OLS weights (3, −0.5, 1.2). <em>(2, 0, 0.2.)</em></li>
+<li>Why must the intercept not be penalised? <em>(Shifting y by a constant should shift predictions, not change the fit.)</em></li>
+<li>Which model would you pick for 2000 genes and 100 patients, and why? <em>(Lasso or elastic net: you need sparsity, and elastic net handles correlated genes.)</em></li>
+<li>Ridge always makes XᵀX + λI invertible for λ &gt; 0. Why? <em>(Its eigenvalues are ≥ λ &gt; 0.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Write the ridge and lasso costs.
+  2. Why does lasso produce exact zeros and ridge does not?
+  3. What happens to correlated twin features under each?
+  4. Why standardise before regularising?
+  5. What does <code>alpha</code> mean in scikit-learn's Lasso vs Ridge?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>Bayesian view.</strong> Ridge is the MAP estimate under a Gaussian prior on w. Lasso is MAP under a Laplace prior (Day 21's MLE plus a prior). The sharp peak of the Laplace density at zero is the geometric reason for sparsity. <strong>Constraint view.</strong> Minimising MSE subject to ‖w‖₁ ≤ t means the elliptical error contours first touch a diamond, usually at a corner where some coordinates are zero. With ‖w‖₂ ≤ t they touch a circle, which has no corners.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting to scale, so the penalty hits features unequally. Put the scaler <em>inside</em> a pipeline.</li>
+<li><code>ConvergenceWarning</code> from Lasso: raise <code>max_iter</code>, or check for unscaled features.</li>
+<li>Reading lasso's dropped features as "not causal". With correlated features, which one survives can change from split to split.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow you create <em>more</em> features (polynomials), deliberately overfit, and watch regularisation pull the model back. You will also measure bias and variance directly instead of just talking about them.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-030.html">← Day 30</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-032.html">Day 32 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

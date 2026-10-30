@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 28 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="28">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-027.html">← Day 27</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-029.html">Day 29 →</a></nav>
+<h1>Day 28: Week 4 project: housing regression with error analysis, plus Quiz 4</h1>
+<p class="meta">Week 4 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-04.md">source: weeks/week-04.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 4 (1h), answers below)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-04/day28_week_project.py"><code>code/week-04/day28_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 27 (+1), Day 25 (+3), Day 21 (+7), Day 7 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A model's average error tells you <em>how bad</em> it is. Error analysis tells you <em>where and why</em>, and therefore what to do next. The habit: after every model, slice the errors by meaningful groups and look for systematic patterns, meaning slices where the mean residual is far from zero.</p>
+<p><strong>Setup (<code>code/week-04/day28_week_project.py</code>).</strong> 2000 synthetic homes, with a twist the linear model can't see: homes over 1800 sq ft get a hidden "luxury premium" of 0.04 lakh per extra sq ft. Split 80/20, standardise on train, and fit least squares.</p>
+<p><strong>Verified results:</strong>
+- v1 (linear): test <strong>MAE 4.899, RMSE 6.375</strong>
+- residual (actual − predicted) by area bucket:</p>
+<table>
+<thead>
+<tr>
+<th>area</th>
+<th>mean residual</th>
+<th>MAE</th>
+<th>count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>350-800</td>
+<td>+0.90</td>
+<td>4.62</td>
+<td>45</td>
+</tr>
+<tr>
+<td>800-1200</td>
+<td>−0.72</td>
+<td>4.84</td>
+<td>158</td>
+</tr>
+<tr>
+<td>1200-1500</td>
+<td>−0.30</td>
+<td>4.82</td>
+<td>120</td>
+</tr>
+<tr>
+<td>1500-1800</td>
+<td>+0.41</td>
+<td>4.66</td>
+<td>59</td>
+</tr>
+<tr>
+<td><strong>1800-2200</strong></td>
+<td><strong>+5.31</strong></td>
+<td>6.73</td>
+<td>17</td>
+</tr>
+<tr>
+<td>2200+</td>
+<td>+19.47</td>
+<td>19.47</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>The big homes are systematically <strong>under-predicted</strong>. That is a pattern, not noise. The fix suggested by the analysis is a hinge feature max(area − 1800, 0), which lets the slope change at 1800.
+- v2 (+hinge): test <strong>MAE 4.830, RMSE 6.171</strong>. RMSE improves more than MAE because the fix targets the few large errors.</p>
+<p>The overall gain looks small because only about 4.5% of homes are affected. For those buyers, though, the bias was 5+ lakh. Always check slices, not just averages: this is also how fairness problems are found.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Why does the hinge work? The model becomes ŷ = … + w_a·area + w_h·max(area − 1800, 0). Below 1800 the slope is w_a. Above 1800 it is w_a + w_h. The true extra slope is 0.04 per sq ft, so expect w_h ≈ 0.04 in original units. (Task 2 asks you to check, after un-scaling.) A 2000 sq ft home gets an extra 0.04·200 = 8 lakh, roughly what the 1800-2200 bucket was missing on average (+5.31 for homes spread through that range).</p>
+<h3 id="block-3-coding-lab-project-2h">Block 3: Coding lab: project (2h)</h3>
+<p>Deliverables (<code>notes/week04_report.md</code>):
+1. Reproduce v1 and v2, and the bucket table.
+2. Un-scale the v2 weights and compare the hinge weight with 0.04.
+3. Slice the residuals by bedrooms and by distance as well. Are there other patterns? (There shouldn't be, because the generator is linear in those. Confirming "no pattern" is also a result.)
+4. Try a degree-2 polynomial on area instead of the hinge. Compare test RMSE and explain which is more appropriate.
+5. Write half a page: "If this were real data, what would I collect next?"</p>
+<p><strong>Suggested timeline (2h).</strong>
+- 0:00-0:20: reproduce v1, v2 and the bucket table, and check them against the worked example.
+- 0:20-0:40: un-scale the v2 weights (w_raw = w_scaled/σ, with the intercept adjusted) and compare the hinge weight with the generator's 0.04. Explain any gap: noise, and correlation with the other features.
+- 0:40-1:05: residual slices by bedrooms and by distance. Plot the mean residual per bucket with error bars (std/√n). A flat pattern within the error bars counts as a finding.
+- 1:05-1:35: the degree-2 polynomial against the hinge. Compare test RMSE on the same split, and plot both fitted curves of price against area.
+- 1:35-2:00: the "what would I collect next" half page.</p>
+<p><strong>Rubric (self-grade out of 20).</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1, v2 and the bucket table reproduced</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Correct un-scaling, and comparison with the true hinge weight</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Residual slices with error bars, honestly interpreted (including "no pattern")</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Polynomial vs hinge: same split, RMSE plus a plot, and a reasoned choice</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Data-collection memo: specific, prioritised, and tied to the observed residuals</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Every number traceable to a file your code wrote</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What separates a strong report from a weak one.</strong> A weak report picks whichever model has the lower RMSE. A strong one asks which <em>shape</em> matches the mechanism. A hinge encodes "the price per sq ft changes above a size", while a polynomial bends everywhere and extrapolates badly. Choose using both the numbers and that reasoning, and flag that on real data you would check the hinge location rather than assume it.</p>
+<h3 id="block-4-practice-quiz-4-1h-answers-below">Block 4: Practice: Quiz 4 (1h), answers below</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 27 (+1):</strong> precision/recall at threshold 0.1.</li>
+<li><strong>Day 25 (+3):</strong> z-score formula, and fit on train only.</li>
+<li><strong>Day 21 (+7):</strong> the link between MLE and log-loss.</li>
+<li><strong>Self-check:</strong>
+  1. What is error analysis?
+  2. What signals a systematic error?
+  3. What is a hinge feature?
+  4. Why did RMSE improve more than MAE?
+  5. Why check slices?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Doing error analysis on the test set and then iterating on it repeatedly. Use a validation set for analysis, and touch test once at the end. (We used test here for simplicity. Redo it properly as a stretch task.)</li>
+<li>Slices with tiny counts (the 2200+ bucket has 1 home). Don't over-interpret them.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Next is the Month-1 capstone (Day 29): package your from-scratch learners into a mini library and benchmark them against scikit-learn and a Rust kernel. Then the checkpoint (Day 30).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-027.html">← Day 27</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-029.html">Day 29 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 29 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="29">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-028.html">← Day 28</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-030.html">Day 30 →</a></nav>
+<h1>Day 29: MONTH-1 CAPSTONE: scratch models vs scikit-learn (plus a Rust/PyO3 kernel)</h1>
+<p class="meta">Week 5 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-05.md">source: weeks/week-05.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: reading the benchmark (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: capstone (2h): `code/week-05/day29_capstone_benchmark.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-05/rust_gd/src/lib.rs"><code>code/week-05/rust_gd/src/lib.rs</code></a></li><li><a href="../../code/week-05/rust_gd"><code>code/week-05/rust_gd</code></a></li><li><a href="../../code/week-05/day29_capstone_benchmark.py"><code>code/week-05/day29_capstone_benchmark.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 28 (+1), Day 26 (+3), Day 22 (+7), Day 8 (+21).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Libraries like scikit-learn are not magic. Underneath, they run the same maths you wrote this month, with better numerics and decades of engineering. Today you check that claim in two ways. Your code must give the <strong>same answers</strong>, and you measure <strong>how much slower</strong> it is and why. As a systems engineer, you also see what it takes to move a hot loop into Rust and call it from Python, the same pattern used by tokenizers, Polars and many inference runtimes.</p>
+<p><strong>What <code>mlscratch.py</code> contains</strong> (read it before the lab, about 50 lines):
+- <code>StandardScalerNP</code> with fit/transform (Day 25)
+- <code>LinearRegressionGD</code> with fit/predict/score (Days 23-24)
+- <code>LogisticRegressionGD</code> with an L2 penalty and early stopping (Day 26)</p>
+<p><strong>Design choices worth noticing.</strong>
+1. The scikit-learn-style API (fit returns self, predict, score) lets your models drop into the same evaluation code.
+2. The tolerance-based stop makes the iteration count data-dependent (Day 25's trap).
+3. Regularisation scaling differs between libraries (λ/m vs C = 1/λ). That is why coefficients can differ slightly while predictions agree.</p>
+<p><strong>Python ↔ Rust boundary (PyO3 + maturin).</strong> <code>code/week-05/rust_gd/src/lib.rs</code> implements batch GD for linear regression. It takes NumPy arrays as read-only views (<code>PyReadonlyArray2</code>), with no copy for C-contiguous input, and returns (w, b). Build it once:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<span class="nb">cd</span><span class="w"> </span>code/week-05/rust_gd<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>maturin<span class="w"> </span>develop<span class="w"> </span>--release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>-
+</code></pre></div>
+
+<p>Verified on this box: it builds and imports as <code>rust_gd</code>. (The C++/pybind11 alternative couldn't be tested here because no C++ compiler is installed on the box. See PROGRESS.md.)</p>
+<h3 id="block-2-worked-example-reading-the-benchmark-45-min">Block 2: Worked example: reading the benchmark (45 min)</h3>
+<p>Verified output of <code>day29_capstone_benchmark.py</code> (best of 3 runs; times vary by about ±10% between runs on this shared machine):</p>
+<p><strong>Linear regression</strong> (synthetic housing, 16,000 train rows, 4 standardised features):</p>
+<table>
+<thead>
+<tr>
+<th>method</th>
+<th>test MAE</th>
+<th>test R²</th>
+<th>time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scratch NumPy GD (500 steps)</td>
+<td>4.7498</td>
+<td>0.91501</td>
+<td>42-45 ms</td>
+</tr>
+<tr>
+<td>sklearn LinearRegression (lstsq)</td>
+<td>4.7498</td>
+<td>0.91501</td>
+<td>~1.5 ms</td>
+</tr>
+<tr>
+<td>sklearn SGDRegressor (50 epochs)</td>
+<td>4.7498</td>
+<td>0.91507</td>
+<td>28-30 ms</td>
+</tr>
+<tr>
+<td>Rust/PyO3 GD (500 steps)</td>
+<td>4.7498</td>
+<td>0.91501</td>
+<td>19-20 ms</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Logistic regression</strong> (breast cancer, standardised, positive = malignant): scratch accuracy <strong>0.9860</strong>, F1 <strong>0.9808</strong> in 110-120 ms (3648 iterations), vs sklearn's identical 0.9860 / 0.9808 in about 2-3 ms. Max |coefficient difference| is 0.0153, explained by the different regularisation scaling.</p>
+<p>How to read it:
+- <strong>Accuracy is identical.</strong> Every method finds the same convex optimum, which validates all of Month 1.
+- <strong>The closed form wins on time</strong> at n = 4 features: one small QR solve vs 500 passes over the data. With n = 100,000 features the ranking would flip (Day 23).
+- <strong>Rust is about 2× faster than NumPy GD, not 100×.</strong> NumPy already runs its inner loops in compiled BLAS. Python overhead is only about 2 calls per step. Rust wins by fusing the prediction, error and gradient into one pass over memory (fewer temporary arrays, better cache use). Lesson: <strong>move code to Rust when Python overhead or memory traffic dominates, not when the work is already a big BLAS call.</strong>
+- <strong>sklearn's logistic solver (L-BFGS) uses curvature information</strong>, so it needs far fewer iterations than plain GD. You'll meet second-order and quasi-Newton ideas again in Month 3.</p>
+<h3 id="block-3-coding-lab-capstone-2h-codeweek-05day29_capstone_benchmarkpy">Block 3: Coding lab: capstone (2h): <code>code/week-05/day29_capstone_benchmark.py</code></h3>
+<p>Deliverables (<code>notes/month01_capstone.md</code>, 1-2 pages):
+1. Build <code>rust_gd</code> and run the benchmark. Paste <em>your</em> table, since your timings will differ.
+2. Add a multithreaded version of the Rust gradient loop with <code>rayon</code>, splitting rows across threads and reducing the partial gradients. Report the speedup on 16k and 1.6M rows. When does threading start to pay off?
+3. Add <code>LinearRegressionNormalEq</code> to <code>mlscratch.py</code> (via <code>np.linalg.lstsq</code>) and add it to the table.
+4. Scale test: rerun with 200,000 rows. Which method's time grows linearly?
+5. Write a "what I learned" section: 5 bullet points linking each Month-1 week to a line of the benchmark.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why are the MAEs identical to 4 decimals across four very different methods? <em>Answer:</em> convex problem, same optimum, all converged.</li>
+<li>Why doesn't SGDRegressor match exactly (R² 0.91507 vs 0.91501)? <em>Answer:</em> stochastic updates and a small default regularisation leave it slightly off the exact optimum.</li>
+<li>PyO3 with a non-contiguous (e.g. transposed) array: what goes wrong, and how do you fix it? <em>Answer:</em> the row-major assumption breaks or a copy is needed. Call <code>np.ascontiguousarray</code> first.</li>
+<li>Estimate the FLOPs per GD step here, and the achieved GFLOP/s for Rust. <em>Answer:</em> about 4mn = 4·16000·4 = 256k FLOPs per step × 500 = 1.28e8 FLOPs in about 0.02 s, so about 6 GFLOP/s. That is close to the naive matmul rate from Day 9.</li>
+<li>When would you <em>not</em> bother with Rust? <em>Answer:</em> when the time is already inside BLAS or library calls, or the code isn't the bottleneck (profile first).</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 28 (+1):</strong> what did error analysis find?</li>
+<li><strong>Day 26 (+3):</strong> log-loss and its gradient.</li>
+<li><strong>Day 22 (+7):</strong> the cost function.</li>
+<li><strong>Day 8 (+21):</strong> cosine similarity in one line of NumPy.</li>
+<li><strong>Self-check:</strong>
+  1. Why do all the methods agree?
+  2. Why is lstsq fastest here?
+  3. Where does the Rust speedup come from?
+  4. Why does L-BFGS need fewer iterations?
+  5. What would change with 100k features?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><code>ImportError: rust_gd</code>: you built it outside the venv. Activate <code>.venv</code> before <code>maturin develop</code>.</li>
+<li>Benchmarking a debug build: always use <code>--release</code>.</li>
+<li>Timing a single run: take the best of several, and warm up first (the first call includes import and JIT/cache effects).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Commit everything. Tomorrow is the checkpoint, so skim your Anki "leech" cards tonight.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-028.html">← Day 28</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-030.html">Day 30 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

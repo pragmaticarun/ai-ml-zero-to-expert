@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 119 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="119">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-118.html">← Day 118</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-120.html">Day 120 →</a></nav>
+<h1>Day 119: PROJECT W17: RAG over the notes with a quantised generator; Quiz 17</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/day119_project.py"><code>code/week-17/day119_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 118 (+1), Day 116 (+3), Day 112 (+7), Day 98 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Project brief.</strong> Build a question-answering system over Weeks 1-16 of these notes:
+1. Index: 128-word chunks with 32-word overlap, MiniLM embeddings, plus BM25.
+2. Retrieval: hybrid RRF, cross-encoder rerank of the top 20, keep the top 3.
+3. Generator: SmolLM2-135M-Instruct in fp32, int8 per-channel, and int4 group-64 (RTN from Day 116).
+4. Evaluation: the 12 QA questions (context recall@3, accuracy, agreement with fp32 answers, seconds per answer) and perplexity on Shakespeare validation text.
+5. Write a one-page report with the system diagram, the table and honest limits.</p>
+<p><strong>What the project tests.</strong> Whether you can connect components and measure each one: retrieval quality independent of generation, generation quality given retrieval, and the cost of compression. "Same answers as fp32" is a useful extra metric for quantisation: it measures change in behaviour even when accuracy is too coarse to see it.</p>
+<p><strong>Design questions to answer in the report:</strong> how much would a bigger generator help (Day 115's diagnosis), which quantisation you would deploy, and what you would change for 100× more documents (ANN index, metadata filters, caching).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/day119_project.py</code>.</p>
+<p><strong>Verified (out/day119_project.log):</strong> index of 1,037 chunks built in 10.1 s; retrieval with reranking 250 ms per question; context recall@3 <strong>0.92</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Generator</th>
+<th>Accuracy</th>
+<th>Same answer as fp32</th>
+<th>s/answer</th>
+<th>Perplexity</th>
+<th>Linear weights</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fp32</td>
+<td>0.25</td>
+<td>12/12</td>
+<td>0.77</td>
+<td>32.05</td>
+<td>425 MB</td>
+</tr>
+<tr>
+<td>int8 per-channel</td>
+<td>0.25</td>
+<td>9/12</td>
+<td>0.78</td>
+<td>32.11</td>
+<td>106 MB</td>
+</tr>
+<tr>
+<td>int4 group-64</td>
+<td>0.17</td>
+<td>0/12</td>
+<td>0.94</td>
+<td>43.69</td>
+<td>53 MB</td>
+</tr>
+</tbody>
+</table>
+<p>(Perplexity here is of the Instruct model, so it differs from Day 116's base model numbers. The int4 size is integer storage without scales.)</p>
+<p>Reading: int8 kept accuracy and perplexity (32.05 → 32.11) but changed 3 of 12 answers, showing that "no perplexity change" does not mean "identical behaviour". int4 group-64 changed every answer and lost one correct answer (0.25 → 0.17, i.e. 3 → 2 of 12). Speed did not improve because quantisation is simulated; int4 was even slower per answer (probably because it produced longer answers; not measured). Retrieval was not the bottleneck: generation was.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the project (about 1-2 minutes) and check every number against the log.</li>
+<li>Swap int4 RTN for the AWQ-style group-64 quantisation from Day 117 and re-measure.</li>
+<li>Log the number of generated tokens per answer to test the explanation for int4's slower answers.</li>
+<li>Write the report (one page): diagram, table, three findings, three limits.</li>
+<li>Optional: with a GPU or a C++ toolchain elsewhere, export the model to GGUF and serve it with llama.cpp; compare real int4 speed with this simulation.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why report "same answers as fp32" in addition to accuracy?</li>
+<li>Accuracy 0.25 vs 0.17: is that a significant difference?</li>
+<li>What would you change first to raise accuracy?</li>
+<li>Why didn't int8 make answers faster?</li>
+</ol>
+<p><strong>Answers.</strong> (1) It detects behaviour change that 12-question accuracy is too coarse to show. (2) No: it is one question out of 12. (3) The generator (a larger instruction-tuned model), because context recall is already 0.92. (4) The weights were dequantised to fp32; a real int8 kernel would be needed.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] My project reproduces the logged numbers.
+- [ ] I can explain each component's contribution with a number.
+- [ ] I can state the limits: 12 questions, a 135M generator, simulated quantisation, notes written by us.
+- [ ] I completed Quiz 17 below.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Limits, stated plainly: the eval sets are small (58 retrieval queries, 12 QA questions); the corpus and the queries were written by the same author; the generator hallucinates even with correct context; nothing was measured on a GPU; llama.cpp and vLLM were not run.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the RAG paper and the vLLM paper again with the project in mind.</li>
+<li>Look up RAG evaluation frameworks (for example, RAGAS) and compare their metrics with the ones here.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Walk me through a RAG system you built and how you evaluated it." Use this project: components, context recall 0.92 vs accuracy 0.25, the diagnosis that generation was the bottleneck, the int8/int4 trade-off and the honest limits.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting only end-to-end accuracy.</li>
+<li>Quantising and claiming speed without real kernels.</li>
+<li>Drawing conclusions from one-question differences.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 18 starts with the Month-4 checkpoint exam (Day 120), then reinforcement learning basics.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-118.html">← Day 118</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-120.html">Day 120 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

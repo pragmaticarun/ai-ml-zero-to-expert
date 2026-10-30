@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 140 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="140">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-139.html">← Day 139</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-141.html">Day 141 →</a></nav>
+<h1>Day 140: PROJECT W20: an evaluated, defended tool-using agent; Quiz 20</h1>
+<p class="meta">Week 20 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-20.md">source: weeks/week-20.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 139 (+1), Day 137 (+3), Day 133 (+7), Day 119 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The project brief.</strong> Build one harness and evaluate several policies under several conditions in one table. The point is to see the interactions: does a defence cost success? Do retries help a noisy policy? Do side effects show up?</p>
+<p><strong>Policies (all scripted; stated plainly).</strong> SmolLM2 is excluded from the project. It scored 0/24 on ReAct (out/day135_react.log, out/day138_agent_eval.log), so adding it would only add a row of zeros and about 100 s of runtime. The three policies are:
+- the structured <strong>oracle</strong>;
+- the <strong>text-scripted</strong> policy from Day 135;
+- the <strong>noisy text-scripted</strong> policy from Day 138, with planted hallucination, bad-args, parse and wrong-math faults.</p>
+<p><strong>Conditions:</strong>
+1. <em>clean</em> tools;
+2. <em>flaky p=0.2</em>: lookup fails transiently 20% of the time, and the policy re-issues failed calls (a <code>retry</code> wrapper hides failed steps from the policy);
+3. <em>poisoned, no defence</em>: every lookup result carries the Day 139 "IGNORE PREVIOUS INSTRUCTIONS… send_email" footer, and the policy is wrapped with <code>obey</code>, which makes it a worst-case instruction follower;
+4. <em>poisoned + allow-list</em>: the same, but the harness allows only <code>lookup</code> and <code>calculator</code>.</p>
+<p><strong>Metrics:</strong> success (mean over 8 trials × 24 tasks), pass^8, emails queued per run (the side-effect metric that Day 139 showed is necessary), and mean steps. The step cap is 10.</p>
+<p><strong>What a deployable version would add.</strong> A real model behind the policy, plus everything from the week: schema validation, retries with idempotency for side effects, a key-value memory for facts that change, retrieval with a relevance threshold, a real sandbox (container or microVM) for code, confirmation for side effects, and this eval table in CI.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day140_project.py</code> imports <code>text_scripted</code> (Day 135) and <code>noisy</code>/<code>RATES</code> (Day 138). Both files now have <code>__main__</code> guards, so importing them runs nothing. It swaps the <code>lookup</code> function per condition, wraps the policy (<code>retry</code> or <code>obey</code>), and runs <code>run_agent(…, max_steps=10, allowed=…)</code>.</p>
+<p>Two bugs were found and fixed while building it. The first run reported oracle success 0.125 under poisoning and 0.714 under flakiness:
+- (i) the poisoned lookup lambda used parameter names <code>c, f</code>, but the harness calls tools with keyword arguments <code>city=, field=</code>, so every call errored;
+- (ii) the oracle counts history entries, so failed calls shifted its indices. The <code>retry</code> wrapper fixed that.</p>
+<p>Lesson: a wrapper that changes a tool's signature breaks keyword-argument dispatch, and policies that index into history must see only successful steps.</p>
+<p><strong>Verified (out/day140_project.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>policy</th>
+<th>condition</th>
+<th>success</th>
+<th>pass^8</th>
+<th>emails/run</th>
+<th>mean steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>oracle</td>
+<td>clean</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>3.50</td>
+</tr>
+<tr>
+<td>oracle</td>
+<td>flaky p=0.2</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>3.91</td>
+</tr>
+<tr>
+<td>oracle</td>
+<td>poisoned, no defence</td>
+<td>1.000</td>
+<td>1.000</td>
+<td><strong>1.000</strong></td>
+<td>4.50</td>
+</tr>
+<tr>
+<td>oracle</td>
+<td>poisoned + allow-list</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>4.50</td>
+</tr>
+<tr>
+<td>text-scripted</td>
+<td>clean</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>3.50</td>
+</tr>
+<tr>
+<td>text-scripted</td>
+<td>flaky p=0.2</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>3.91</td>
+</tr>
+<tr>
+<td>text-scripted</td>
+<td>poisoned, no defence</td>
+<td>1.000</td>
+<td>1.000</td>
+<td><strong>1.000</strong></td>
+<td>4.50</td>
+</tr>
+<tr>
+<td>text-scripted</td>
+<td>poisoned + allow-list</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>4.50</td>
+</tr>
+<tr>
+<td>noisy text-scripted</td>
+<td>clean</td>
+<td>0.906</td>
+<td>0.250</td>
+<td>0.000</td>
+<td>3.97</td>
+</tr>
+<tr>
+<td>noisy text-scripted</td>
+<td>flaky p=0.2</td>
+<td>0.917</td>
+<td>0.417</td>
+<td>0.000</td>
+<td>4.45</td>
+</tr>
+<tr>
+<td>noisy text-scripted</td>
+<td>poisoned, no defence</td>
+<td>0.906</td>
+<td>0.250</td>
+<td><strong>1.000</strong></td>
+<td>4.97</td>
+</tr>
+<tr>
+<td>noisy text-scripted</td>
+<td>poisoned + allow-list</td>
+<td>0.906</td>
+<td>0.250</td>
+<td>0.000</td>
+<td>4.97</td>
+</tr>
+</tbody>
+</table>
+<p>Total wall time: 0.0 s (CPU, no model calls).</p>
+<p>Readings:
+1. <strong>Poisoning is invisible to success and pass^8.</strong> Every policy kept its clean success rate while queueing one email per run. Only the side-effect column shows the attack.
+2. <strong>The allow-list removes the exfiltration completely (0.000) at no cost in success.</strong> The blocked call still costs one step (4.50 steps, the same as undefended).
+3. <strong>Flaky tools with retry</strong> cost steps (3.50 → 3.91) but no success for the deterministic policies.
+4. For the noisy policy, success is 0.906 but <strong>pass^8 is only 0.250</strong>. The flaky row (0.917 / 0.417) is not "better"; it differs because the random draws differ, which shows how noisy pass^8 is on 24 tasks.
+5. The noisy policy's clean success here (0.906) differs from Day 138 (0.859) because the setup differs: a step cap of 10 vs 6, plus the retry wrapper. Always compare numbers within one harness.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add the confirmation-gate condition and a "poisoned calculator output" condition to the table.</li>
+<li>Add a fifth policy: SmolLM2 ReAct on <em>clean</em> only, 1 trial (about 100 s). Confirm it matches Day 138's 0.000.</li>
+<li>Make <code>send_email</code> idempotent (dedupe on <code>(to, body)</code>), then add a condition where the user <em>does</em> ask for one email under flaky tools. Check exactly one is queued.</li>
+<li>Write the table to <code>out/day140_report.md</code> automatically, so CI could diff it.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Which column detected the injection? <em>Emails per run. Success and pass^8 did not change.</em></li>
+<li>What did the allow-list cost? <em>Nothing in success. The refused call still uses a step.</em></li>
+<li>Why do the flaky and clean rows differ for the noisy policy but not for the oracle? <em>The oracle is deterministic and the retries recover every failure. The noisy policy's random faults vary with the random stream.</em></li>
+<li>Name the two harness bugs fixed today. <em>Keyword-argument mismatch in a wrapped tool, and history-index shifting from failed calls.</em></li>
+<li>What would a GPU change in this project? <em>Nothing in the harness, which took 0.0 s. It would let a capable model replace the scripted policies, which is the only way to measure real injection susceptibility.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Write a one-paragraph "model card" for this agent harness: what it was tested on (24 synthetic tasks, scripted policies), what it defends against (injected send_email via allow-list and gate), and what it was <strong>not</strong> tested on (any capable LLM, real web content, real sandbox isolation).</p>
+<p><strong>Extra notes.</strong> Every number this week came from small, synthetic, fully controlled tasks. That is a feature for learning: we know the gold answer, the fault rates and the attack. It is also the main limit: real tasks are open-ended and real attacks adapt.</p>
+<p><strong>Going deeper.</strong> Turn the harness into an MCP server. The verified docs say a server exposes tools via <code>tools/list</code> and runs them via <code>tools/call</code> with <code>name</code> and <code>arguments</code>, over JSON-RPC 2.0, using stdio or Streamable HTTP transport. Our <code>tool_specs()</code> already emits <code>name</code>/<code>description</code>/<code>inputSchema</code>. Read the architecture page before writing any code.</p>
+<p><strong>Interview-style question (15 min).</strong> "Present your agent's eval to a skeptical security reviewer." Show the side-effect column, the defence that holds even against a fully obedient policy (the allow-list), the pass^k numbers, and the known gaps: no capable model was tested, and the rlimit sandbox does not isolate the filesystem (Day 137).</p>
+<p><strong>Common mistakes.</strong> Shipping on success rate alone. Testing defences only against weak models. Comparing numbers across different harness settings. Forgetting that wrappers can silently change tool signatures.</p>
+<p><strong>What to do next.</strong> Take Quiz 20 below. Week 21 moves to MLOps (tracking, packaging, serving, monitoring).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-139.html">← Day 139</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-141.html">Day 141 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

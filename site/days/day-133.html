@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 133 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="133">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-132.html">← Day 132</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-134.html">Day 134 →</a></nav>
+<h1>Day 133: PROJECT W19: REINFORCE vs A2C vs PPO on CartPole at an equal step budget; Quiz 19</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day133_project.py"><code>code/week-19/day133_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 132 (+1), Day 130 (+3), Day 126 (+7), Day 112 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The question.</strong> Days 127-129 each used a different budget and evaluation schedule, so their numbers cannot be compared. The project fixes the protocol: every method gets about 50,000 environment steps; five fresh seeds (10-14) that were not used during development, to avoid tuning on the test seeds; and the final policy (not the best checkpoint) is scored two ways, by greedy and by sampled evaluation, 20 episodes each, capped at 500.</p>
+<p><strong>Why both evaluations.</strong> Greedy evaluation shows what the policy's most likely action achieves; sampled evaluation shows how the stochastic policy that was actually trained behaves. A big gap means the policy is still uncertain, which matters if you deploy it stochastically, and is the analogue of temperature sampling versus greedy decoding in an LLM.</p>
+<p><strong>What a good report contains.</strong> The protocol, every seed's result (not just the mean), the minimum, the wall-clock cost, and the limits of what five seeds can show. The code reuses the <code>train</code> functions from Days 127-129 unchanged; the only edits were adding <code>if __name__ == "__main__":</code> guards and a <code>max_steps</code> argument to REINFORCE, so importing does not re-run those days.</p>
+<p><strong>Rubric (for self-marking, 10 points).</strong> Protocol stated (2); per-seed table (2); greedy and sampled reported (2); compute cost reported (1); at least one honest limitation (2); one concrete next experiment (1).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day133_project.py</code> (about 4 minutes on this CPU).</p>
+<p><strong>Verified (out/day133_project.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Greedy eval, seeds 10-14</th>
+<th>Sampled eval, seeds 10-14</th>
+<th>Time / seed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REINFORCE + value baseline</td>
+<td>500.0, 137.5, 500.0, 500.0, 469.0</td>
+<td>354.1, 130.2, 404.4, 360.8, 445.9</td>
+<td>5-6 s</td>
+</tr>
+<tr>
+<td>A2C n = 32</td>
+<td>500.0, 498.8, 500.0, 500.0, 500.0</td>
+<td>499.1, 485.8, 500.0, 500.0, 500.0</td>
+<td>8-9 s</td>
+</tr>
+<tr>
+<td>PPO clip 0.2</td>
+<td>500.0 on all five</td>
+<td>497.4, 500.0, 500.0, 500.0, 500.0</td>
+<td>30-31 s</td>
+</tr>
+</tbody>
+</table>
+<p>Summary lines: REINFORCE greedy mean 421.3 (min 137.5), sampled mean 339.1, 3/5 seeds at 500; A2C greedy mean 499.8 (min 498.8), sampled mean 497.0, 4/5 at 500; PPO greedy mean 500.0 (min 500.0), sampled mean 499.5, 5/5 at 500.</p>
+<p><strong>Reading it.</strong> At 50k steps, PPO was the most reliable (every seed at 500, greedy and almost so sampled), A2C was nearly as good, and REINFORCE was the weakest and least consistent, with one poor seed (137.5) and a large greedy-sampled gap (mean 421.3 vs 339.1), meaning its policies were still quite random. PPO cost about 4-5 times more wall-clock time than the others because of its 10 epochs of minibatch updates; per environment step it extracted more learning. Limitations: five seeds; one environment, which a 500-step cap makes easy to saturate; only the final policy scored, so the mid-run collapses seen on Days 128-129 for A2C are not visible here; hyper-parameters were the ones from earlier days, not tuned per method. Do not generalise "PPO &gt; A2C" from a 0.2-point mean difference.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Reproduce the table, then add learning curves: evaluate every 5k steps for each method (keep the total runtime to a few minutes by using 3 seeds).</li>
+<li>Halve the budget to 25k steps. Does the ranking change?</li>
+<li>Write a one-page report using the rubric above.</li>
+<li>Next-experiment candidate: Acrobot-v1 (also in gymnasium), where rewards are −1 per step until success.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<p>Take the Week 19 quiz below, closed notes, 40 minutes; then mark yourself.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days. Re-mark the quiz after 24 hours and turn every wrong answer into a flashcard.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Equal step budgets are fair for sample efficiency; equal wall-clock budgets would favour the cheaper updates. State which one you used.</li>
+<li>Fresh seeds are a cheap way to avoid tuning on the evaluation set.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Re-read Days 127-129 and write a one-paragraph "lab notebook" entry per method: what it estimates, what it re-uses, and how it failed this week.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Present this table to a manager who asks which algorithm to use." Recommend PPO for reliability at this budget, mention that A2C is cheaper and close, and state the five-seed, one-environment limits.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting the best checkpoint as "final".</li>
+<li>Re-using development seeds for the final comparison.</li>
+<li>Hiding the worst seed in a mean.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 20 moves from RL to agents (tool use, planning, ReAct-style loops), then agent evaluation and MLOps.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-132.html">← Day 132</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-134.html">Day 134 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

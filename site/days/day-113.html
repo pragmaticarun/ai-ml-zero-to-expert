@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 113 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="113">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-112.html">← Day 112</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-114.html">Day 114 →</a></nav>
+<h1>Day 113: Embeddings, chunking and vector search</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/day113_embed_search.py"><code>code/week-17/day113_embed_search.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 112 (+1), Day 110 (+3), Day 106 (+7), Day 92 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why retrieval?</strong> A language model only knows what is in its weights, frozen at training time, and small models know little. Retrieval-augmented generation (RAG) fetches relevant text at query time and puts it in the prompt. It lets a model use private, recent or large documents without retraining, and it makes answers checkable against a source.</p>
+<p><strong>Sentence embeddings.</strong> An embedding model maps a text to a vector so that texts with similar meaning are close. MiniLM-L6 produces 384-dimensional vectors: run the encoder, average the token vectors weighted by the attention mask (<em>mean pooling</em>), and L2-normalise. With unit vectors, cosine similarity is just a dot product. These models are trained contrastively on (query, relevant passage) pairs, so "close" means "likely relevant", not "same words".</p>
+<p><strong>Chunking.</strong> Documents are too long to embed as one vector (MiniLM is used with at most 256 tokens here, and longer input is truncated), and one vector for a whole document blurs its topics. So we split into <em>chunks</em>. Trade-offs:
+- Small chunks are precise but may lose context ("it" without the noun).
+- Large chunks keep context but dilute the vector and cost more prompt tokens; beyond the model's limit they are silently truncated.
+- <em>Overlap</em> between consecutive windows avoids cutting an idea in half.
+- <em>Structure-aware</em> chunking (by heading or section) follows the author's own boundaries.
+Prepending the document title ("Day 108 DPO from scratch: …") to each chunk is a cheap way to keep context.</p>
+<p><strong>Vector search.</strong> With N chunks and d dimensions, exact (brute-force) search is a matrix product: N·d multiply-adds per query. For a few thousand chunks that is microseconds. Approximate nearest-neighbour indexes (HNSW graphs, IVF clustering, product quantisation) matter at millions of vectors, trading a little recall for speed and memory.</p>
+<p><strong>Evaluating retrieval.</strong> Recall@k: is a relevant chunk among the top k? MRR (mean reciprocal rank): average of 1/rank of the first relevant chunk. You need queries with known relevant documents; here they come from the notes' own interview questions.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/day113_embed_search.py</code> parses the notes into 112 days, extracts 58 queries and compares four chunkings. Example query: "Why not train ten separate yes/no classifiers instead of one softmax model?" → gold day 34.</p>
+<p><strong>Verified (out/day113_embed_search.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Chunking</th>
+<th>Chunks</th>
+<th>Embed time</th>
+<th>recall@1</th>
+<th>recall@5</th>
+<th>MRR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>64 words, overlap 16</td>
+<td>2,012</td>
+<td>18.3 s</td>
+<td>0.43</td>
+<td>0.62</td>
+<td>0.52</td>
+</tr>
+<tr>
+<td>128 words, overlap 32</td>
+<td>1,037</td>
+<td>14.5 s</td>
+<td>0.40</td>
+<td>0.64</td>
+<td>0.51</td>
+</tr>
+<tr>
+<td>256 words, overlap 64</td>
+<td>550</td>
+<td>4.7 s</td>
+<td>0.34</td>
+<td>0.64</td>
+<td>0.50</td>
+</tr>
+<tr>
+<td>by section</td>
+<td>1,099</td>
+<td>9.4 s</td>
+<td>0.40</td>
+<td><strong>0.71</strong></td>
+<td><strong>0.54</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Searching all 58 queries took 0.4-1.5 ms in total (brute force).</li>
+<li>The 128-word index is 1.59 MB in fp32 and 0.40 MB as int8 (per-vector scale); int8 retrieval gave recall@1 0.40, recall@5 0.62, MRR 0.51, almost the same as fp32.</li>
+</ul>
+<p>Reading: section chunking was best at recall@5 (0.71), because the notes' headings are good boundaries. 256-word windows were worst at recall@1 (0.34), partly because many of them exceed MiniLM's 256-token input and are truncated. With 58 queries a difference of 0.03 is about two queries, so only the larger gaps mean anything (Day 110).</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (under a minute) and compare with the log.</li>
+<li>Remove the "Day N title:" prefix from chunks and re-run. How much does recall drop?</li>
+<li>Add chunking by paragraph (split on blank lines, merge paragraphs to about 128 words).</li>
+<li>Print the top 5 chunks for three failed queries. Are they wrong, or relevant but from another day (the gold label is strict)?</li>
+<li>Implement a tiny IVF index: k-means the chunk vectors into 32 clusters (your Week 8 code), search only the 4 nearest clusters, and measure recall loss and speed.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why normalise embeddings before a dot product?</li>
+<li>Why can very large chunks hurt even when the answer is inside them?</li>
+<li>What is the cost of brute-force search for 1M chunks of dimension 384, per query?</li>
+<li>Why is "relevant chunk = same day" a strict, imperfect label?</li>
+</ol>
+<p><strong>Answers.</strong> (1) Then dot product = cosine similarity, independent of vector length. (2) One vector must summarise many topics, and text past the model's limit is truncated (MiniLM 256 tokens here). (3) 384M multiply-adds, about 1.5 GB of fp32 vectors in memory; fine on a GPU, slow per query on a CPU, hence ANN indexes. (4) Other days may also answer the question (topics repeat in reviews), so some "misses" are actually useful.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain mean pooling and why embeddings are normalised.
+- [ ] I can list three chunking strategies and their trade-offs.
+- [ ] I can compute recall@k and MRR by hand for a small example.
+- [ ] I can read the Day 113 table and say which differences are meaningful.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>The eval set is built from the same notes, so it is "in-domain" and the queries use the notes' vocabulary. Real users phrase questions differently; collect real queries when you can. The int8 index result shows that embedding vectors tolerate quantisation well, which is why vector databases routinely compress them.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the Sentence-BERT paper ("Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks") for how bi-encoders are trained.</li>
+<li>Read the HNSW paper ("Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs").</li>
+<li>Read the FAISS documentation's overview of index types.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"How would you choose a chunk size for a RAG system over internal documentation?" Points: build a labelled query set first; test several sizes and structure-aware chunking; respect the embedding model's token limit; include titles or headers in chunks; consider the generator's context budget (k × chunk size); measure recall@k and end-to-end answer quality, not one of them alone.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Exceeding the embedding model's maximum length without noticing truncation.</li>
+<li>Mixing embeddings from different models, or forgetting to normalise.</li>
+<li>Evaluating retrieval on two or three hand-picked queries.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: BM25, hybrid retrieval and a cross-encoder reranker on the same 58 queries.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-112.html">← Day 112</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-114.html">Day 114 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

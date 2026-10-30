@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 64 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="64">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-063.html">← Day 63</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-065.html">Day 65 →</a></nav>
+<h1>Day 64: PyTorch tensors, autograd, nn.Module, training loop</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day64_autograd.py"><code>code/week-10/day64_autograd.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 63 (+1), Day 61 (+3), Day 57 (+7), Day 43 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> In Week 9 you wrote every derivative by hand. That was the point: you now know what a framework is doing. PyTorch gives you three things on top of NumPy: (1) tensors that can live on different devices, (2) <em>autograd</em>, which records the operations you run and replays them backwards to produce gradients, and (3) building blocks (<code>nn.Module</code>, <code>nn.Linear</code>, losses, optimisers) so a training loop is ten lines instead of a hundred.</p>
+<p><strong>Tensors.</strong> A <code>torch.Tensor</code> is an n-dimensional array with a <code>dtype</code> (float32 by default), a <code>shape</code>, and a <code>device</code>. Most NumPy habits carry over: slicing, broadcasting, <code>@</code> for matmul, reductions with <code>dim=</code> instead of <code>axis=</code>. <code>torch.from_numpy(a)</code> shares memory with the NumPy array; <code>t.numpy()</code> does the same in reverse (CPU only). Changing one changes the other, which is fast but can surprise you.</p>
+<p><strong>Autograd in one paragraph.</strong> If a tensor has <code>requires_grad=True</code>, every operation that uses it adds a node to a graph. Calling <code>loss.backward()</code> walks that graph in reverse, applying the chain rule, and <em>adds</em> the result into each leaf's <code>.grad</code>. Three consequences:
+1. Gradients <strong>accumulate</strong>. If you call <code>backward()</code> twice without zeroing, <code>.grad</code> holds the sum. That is why every loop has <code>opt.zero_grad()</code>.
+2. The graph is freed after <code>backward()</code> unless you pass <code>retain_graph=True</code>.
+3. Anything you do inside <code>with torch.no_grad():</code> is not recorded. Use it for evaluation and for manual parameter updates.</p>
+<p><strong>nn.Module.</strong> A module owns parameters (registered automatically when you assign an <code>nn.Parameter</code> or a submodule as an attribute) and defines <code>forward</code>. <code>model.parameters()</code> yields every parameter so an optimiser can update them. <code>model.train()</code> and <code>model.eval()</code> flip a flag that changes the behaviour of dropout and batch norm (Days 68-69).</p>
+<p><strong>The canonical loop.</strong></p>
+<div class="codehilite"><pre><span></span><code>for epoch in range(E):
+    model.train()
+    for xb, yb in loader:
+        loss = loss_fn(model(xb), yb)
+        opt.zero_grad(); loss.backward(); opt.step()
+    model.eval(); evaluate on validation with torch.no_grad()
+</code></pre></div>
+
+<p>Learn the order: forward, loss, zero, backward, step. <code>nn.CrossEntropyLoss</code> expects <strong>raw logits</strong> and integer class labels. It applies log-softmax itself.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-10/day64_autograd.py</code>. It does four things.</p>
+<ol>
+<li>A scalar check: f(x, y) = x³ + 2xy at (x, y) = (2, −1), so df/dx = 3x² + 2y = 10 and df/dy = 2x = 4. <strong>Verified:</strong> autograd prints df/dx = 10.0 and df/dy = 4.0, and calling <code>backward()</code> a second time without zeroing doubles df/dx to <strong>20.0</strong>. That is gradient accumulation, seen directly.</li>
+<li>It rebuilds the Week-9 two-layer network in PyTorch and compares autograd's gradients with the hand-derived NumPy ones on the same weights. <strong>Verified:</strong> max absolute difference <strong>2.08e-17</strong> for W1 and <strong>2.78e-17</strong> for W2. Autograd and your Week-9 backprop agree to floating-point round-off.</li>
+<li>It defines an <code>nn.Module</code> MLP 64-64-10 (<strong>4,810 parameters</strong>) and trains it with SGD (lr 0.2, batch 32) on scikit-learn's 8×8 digits (the Week-9 data), so you can compare directly with your NumPy network.</li>
+<li>It reports test accuracy at several epoch counts.</li>
+</ol>
+<p><strong>Verified (test accuracy / final train loss):</strong></p>
+<table>
+<thead>
+<tr>
+<th>epochs</th>
+<th>test acc</th>
+<th>train loss</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.5778</td>
+<td>1.4863</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.9400</td>
+<td>0.2110</td>
+</tr>
+<tr>
+<td>20</td>
+<td>0.9689</td>
+<td>0.0631</td>
+</tr>
+<tr>
+<td>60</td>
+<td>0.9578</td>
+<td>0.0416</td>
+</tr>
+</tbody>
+</table>
+<p>Training for 60 epochs took about 0.5 s on this CPU. Notice that train loss kept falling from 20 to 60 epochs while test accuracy <em>dropped</em>. That is overfitting on a small dataset (digits has under 1,800 images), and it sets up Day 68. From Day 65 on we switch to MNIST.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(30 min) Without looking, write the training loop for a 784-64-10 MLP on MNIST on the <code>_mnist.tensors(n_train=5000)</code> data. Use <code>torch.optim.SGD(lr=0.1)</code>.</li>
+<li>(30 min) Replace <code>nn.Linear</code> with your own <code>MyLinear(nn.Module)</code> that stores <code>self.W = nn.Parameter(...)</code> and <code>self.b</code>. Confirm <code>len(list(model.parameters()))</code> is unchanged.</li>
+<li>(30 min) Do one manual SGD step: compute the loss, call <code>backward()</code>, then update with <code>with torch.no_grad(): p -= lr * p.grad</code> and zero the grads. Check you get the same loss after the step as with <code>opt.step()</code>.</li>
+<li>(30 min) Break it on purpose: remove <code>zero_grad()</code> and record what happens to the loss over 3 epochs. Then pass softmax outputs into <code>CrossEntropyLoss</code>. Write two sentences on each symptom. (Day 75 measures these bugs systematically.)</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li><code>a = torch.ones(3, requires_grad=True); b = (a * 2).sum(); b.backward(); b = (a * 2).sum(); b.backward()</code>. What is <code>a.grad</code>? <em>Answer: [4., 4., 4.]: each backward adds 2.</em></li>
+<li>Why do we call <code>model.eval()</code> before validation even for a model without dropout? <em>Answer: habit and safety; as soon as dropout or BN is added, forgetting it silently changes the metric. It costs nothing.</em></li>
+<li>Count the parameters of the script's 64-64-10 MLP. <em>Answer: 64·64+64+64·10+10 = 4,810.</em></li>
+<li>What does <code>torch.no_grad()</code> save? <em>Answer: memory and time, because no graph is built and no intermediate activations are kept for backward.</em></li>
+<li>A tensor from <code>torch.from_numpy(a)</code> is modified in place. What happens to <code>a</code>? <em>Answer: it changes too; they share memory.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Rewrite the five-step loop from memory on paper. Then explain to an imaginary colleague why <code>loss.backward()</code> doesn't update weights. Self-check:
+- [ ] I can say what <code>requires_grad</code>, <code>.grad</code>, <code>backward()</code>, <code>zero_grad()</code> and <code>step()</code> each do.
+- [ ] I can explain the 20.0 vs 10.0 result above.
+- [ ] I know why CrossEntropyLoss takes logits.
+- [ ] I can say what changed between 20 and 60 epochs and why.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the PyTorch "Autograd mechanics" note (linked in <code>docs/resources.md</code>). Then try <code>torch.autograd.grad(loss, params, create_graph=True)</code> to get a gradient you can differentiate again: the basis of second-order methods and gradient penalties.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Explain what happens, step by step, between <code>loss = criterion(model(x), y)</code> and the weights changing." A strong answer mentions the recorded graph, the chain rule applied in reverse, accumulation into <code>.grad</code>, the optimiser reading <code>.grad</code>, and why <code>zero_grad</code> is required.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting <code>zero_grad()</code>: loss behaves erratically or barely moves. Print a parameter's grad norm on two consecutive steps.</li>
+<li><code>loss.item()</code> vs <code>loss</code>: storing <code>loss</code> (the tensor) in a list keeps the graph alive and leaks memory. Store <code>loss.item()</code>.</li>
+<li>Shape mistakes: <code>CrossEntropyLoss</code> wants logits <code>(N, C)</code> and labels <code>(N,)</code> of dtype long. A float label tensor gives a confusing error.</li>
+<li>In-place operations on tensors needed for backward raise "one of the variables needed for gradient computation has been modified by an inplace operation". Replace <code>x += 1</code> with <code>x = x + 1</code>.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 65 replaces manual slicing with Dataset and DataLoader, and measures what each option costs.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-063.html">← Day 63</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-065.html">Day 65 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

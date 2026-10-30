@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 125 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="125">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-124.html">← Day 124</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-126.html">Day 126 →</a></nav>
+<h1>Day 125: Deep Q-networks (DQN) on CartPole</h1>
+<p class="meta">Week 18 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-18.md">source: weeks/week-18.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 124 (+1), Day 122 (+3), Day 118 (+7), Day 104 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>DQN is Q-learning with a neural network q̂(s, ·; θ) that outputs one Q-value per action. Feeding neural-network updates straight into Q-learning hits the deadly triad hard. Consecutive samples are strongly correlated, and the target r + γ max q̂(s', ·; θ) moves every time θ changes. DQN adds two stabilisers:</p>
+<ol>
+<li><strong>Experience replay.</strong> Store transitions (s, a, r, s', done) in a buffer, and train on random minibatches. This breaks correlations and reuses each sample many times, which makes learning more data-efficient.</li>
+<li><strong>Target network.</strong> Compute targets with a frozen copy θ⁻ and copy θ into θ⁻ every C steps. The regression target then stays fixed for a while, so each phase is close to supervised learning.</li>
+</ol>
+<p>The loss is the Huber (smooth L1) loss between q̂(s, a; θ) and y = r + γ(1 − done) max_a' q̂(s', a'; θ⁻). It is optimised with Adam. Exploration is ε-greedy, with ε decaying over the first part of training.</p>
+<p>Well-known extensions are <strong>Double DQN</strong> (choose the next action with θ and score it with θ⁻, which reduces maximisation bias), <strong>dueling heads</strong>, <strong>prioritised replay</strong> and n-step returns. They are worth knowing by name. This course does not implement them this week.</p>
+<p><strong>CPU vs GPU.</strong> CartPole's network is tiny (4-64-64-2), so a GPU would not speed it up. The time goes on Python environment steps and small-batch overheads. GPUs matter for DQN on images, such as Atari frames through a convolutional network, where each update is far larger.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>day125_dqn_cartpole.py</code> setup:
+- Network: MLP 4-64-64-2.
+- Replay buffer: 20k transitions; batch 64; Adam 1e-3; Huber loss.
+- Target network synced every 500 steps.
+- ε from 1 to 0.05 over 10k steps.
+- 30k environment steps per seed; learning starts after 1k steps.
+- Greedy evaluation: 20 episodes after every 10k steps.
+- Ablation: no target network, where targets come from the online net.
+- <code>torch.set_num_threads(1)</code>, because for a net this small more threads only add overhead.</p>
+<p><strong>Verified (out/day125_dqn_cartpole.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Training episodes</th>
+<th>Mean length, last 20</th>
+<th>Greedy eval at 10k / 20k / 30k steps</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target net, seed 0</td>
+<td>307</td>
+<td>274.9</td>
+<td>165.2 / <strong>500.0</strong> / 176.8</td>
+<td>18 s</td>
+</tr>
+<tr>
+<td>Target net, seed 1</td>
+<td>411</td>
+<td>75.5</td>
+<td>85.5 / 85.2 / 167.1</td>
+<td>19 s</td>
+</tr>
+<tr>
+<td>Target net, seed 2</td>
+<td>332</td>
+<td>249.8</td>
+<td>102.6 / 177.9 / 116.7</td>
+<td>18 s</td>
+</tr>
+<tr>
+<td>No target net, seeds 0-2</td>
+<td>about 2,800</td>
+<td>9.2-9.8</td>
+<td>9.3-9.4 at every checkpoint</td>
+<td>17-18 s</td>
+</tr>
+</tbody>
+</table>
+<p>What this shows:
+1. With a target network, DQN clearly learns, from about 9 steps to between 85 and 500. But it is <strong>unstable</strong>: seed 0 reached the 500 cap at 20k steps and then fell back to 176.8. This rise and collapse is the typical DQN behaviour, and it is why people keep the best checkpoint, judged on a separate evaluation.
+2. Without a target network, all 3 seeds <strong>collapsed</strong> to the "always push one way" policy, the same failure as Day 124's badly scaled linear run.
+3. Day 124's well-tuned linear learner solved CartPole more reliably within this budget. A deep net is not automatically better on a 4-number state.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about 2 minutes) and reproduce one row.</li>
+<li>Add <strong>Double DQN</strong> (one line in the target), and compare the 30k-step evaluation over 3 seeds.</li>
+<li>Keep the best checkpoint by evaluation score, and report both the best and the final score.</li>
+<li>Try a target sync every 100 and every 2,000 steps. Predict the result first.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why does replay help? <strong>Answer:</strong> random minibatches are closer to independent samples, and each transition is used many times.</li>
+<li>Why multiply by (1 − done)? <strong>Answer:</strong> there is no future value after a true terminal state. For a time-limit truncation you should <em>not</em> zero the target, and this script stores only <code>terminated</code> as done.</li>
+<li>Why did training without a target net produce about 2,800 short episodes? <strong>Answer:</strong> the policy collapsed early, so every episode lasted about 9 steps, and 30k steps divided by 9-10 is about 3,000 episodes.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check: (a) write the DQN loss; (b) name the two stabilisers and what each one fixes; (c) explain why evaluation fell from 500 to 176.8; (d) say what a GPU would and would not change here.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Report mean and spread over seeds. RL results vary from seed to seed far more than supervised ones.</li>
+<li>Evaluate greedily with fixed seeds, separate from training episodes.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read about how DQN was scaled to Atari: frame stacking, reward clipping, and much larger replay buffers. Then list which of those parts a CartPole run does not need.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your DQN's reward climbs and then crashes. What do you do?" Good answer: lower the learning rate, sync the target less often or use soft (Polyak) updates, use Double DQN, enlarge the buffer, clip gradients, keep the best checkpoint, and check the terminal/truncation handling.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Gradients flowing through the target.</li>
+<li>Evaluating with ε &gt; 0 and calling it the policy's score.</li>
+<li>Reading too much into one lucky seed.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 126 brings the week together in a model-free vs model-based mini-project.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-124.html">← Day 124</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-126.html">Day 126 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

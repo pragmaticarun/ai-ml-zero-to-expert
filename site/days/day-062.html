@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 62 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="62">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-061.html">← Day 61</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-063.html">Day 63 →</a></nav>
+<h1>Day 62: Multilayer networks: forward propagation, activations, initialisation</h1>
+<p class="meta">Week 9 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/day62_forward_prop.py"><code>code/week-09/day62_forward_prop.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 61 (+1), Day 59 (+3), Day 55 (+7), Day 41 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>A layer</strong> maps a batch X (m × n) to Z = XW + b (W is n × h), then applies an activation element-wise, A = g(Z). Stack layers and the output layer produces scores. For K classes, apply <strong>softmax</strong>: pₖ = e^{zₖ}/Σⱼe^{zⱼ}, with each row summing to 1. Always subtract the row maximum first, for numerical stability.</p>
+<p><strong>Why non-linearity?</strong> Without g, two layers collapse into one: X W₁ W₂ = X W. Hidden layers give a network its power only if g is non-linear.</p>
+<p><strong>Activations.</strong>
+- <strong>sigmoid:</strong> saturates, σ′ ≤ 0.25.
+- <strong>tanh:</strong> zero-centred, also saturates.
+- <strong>ReLU</strong> max(0, z): cheap, gradient 1 when active, the modern default. Units can "die" (stay at 0).
+- Variants: Leaky ReLU, GELU.</p>
+<p><strong>Shapes are your best debugger.</strong> Write the shape of every array in a comment. Count the parameters: n·h + h + h·K + K.</p>
+<p><strong>Initialisation.</strong> If all the weights are equal, every hidden unit computes the same thing forever (symmetry), so initialise randomly. Scale matters. Each layer multiplies the signal's variance by about n·Var(w)·(gain of g). For ReLU the gain is ½, so <strong>He initialisation</strong> Var(w) = 2/n keeps the variance roughly constant through the layers. Too large and activations explode; too small and they vanish, and so do the gradients.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-09/day62_forward_prop.py</code>. Verified:
+- <strong>XOR by hand:</strong> two hidden step units with hand-set weights compute OR and AND. The hidden activations for the inputs (0,0), (0,1), (1,0), (1,1) are [0,0], [1,0], [1,0], [1,1]. The output unit computes OR AND NOT AND, giving <strong>[0, 1, 1, 0]</strong>. A hidden layer solves what Day 61's single unit could not.
+- <strong>Shapes</strong> for a 64→32→10 network on 5 digits: X (5, 64), W1 (64, 32), Z1 (5, 32), W2 (32, 10), Z2 (5, 10). Softmax rows sum to 1. <strong>Parameters: 2,410</strong> = 64·32 + 32 + 32·10 + 10. 52.5% of the ReLU units are active, and the per-row loop equals the batched matmul.
+- <strong>Initialisation experiment</strong> (activation std after 10 ReLU layers): std 1 → <strong>1.518e7</strong> (explodes). He √(2/n) → <strong>0.794</strong> (stable). std 0.01 → <strong>2.8e−13</strong> (vanishes).</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Write <code>dense(X, W, b)</code>, <code>relu</code>, <code>softmax</code> (stable) and <code>forward(params, X)</code> with shape asserts.</li>
+<li>Reproduce the hand-set XOR network, then find a <em>different</em> set of weights that also works.</li>
+<li>Initialisation study: plot the activation std per layer (1-10) for the three inits, plus Xavier (Var = 1/n). Which suits tanh?</li>
+<li>Count the parameters for 784→256→128→10 by hand, then check the count in code.</li>
+<li>Show that removing the activation collapses two layers into one. Compute W = W₁W₂ and compare the outputs.</li>
+<li>Stretch: plot the share of dead ReLU units as the bias init varies from −1 to +1.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Input 100 features, hidden 50, output 3. Parameter count? <em>(100·50 + 50 + 50·3 + 3 = 5,203.)</em></li>
+<li>Softmax of [2, 1, 0]? <em>(About [0.665, 0.245, 0.090].)</em></li>
+<li>Why subtract the maximum before exp? <em>(To avoid overflow; the result is unchanged.)</em></li>
+<li>What is the He initialisation variance for n = 64 inputs? <em>(2/64 = 0.03125.)</em></li>
+<li>What goes wrong if all weights start at 0? <em>(Symmetry: hidden units stay identical. With ReLU, everything stays at 0.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Write a layer's forward equation with shapes.
+  2. Why do we need non-linearity?
+  3. Compare ReLU and sigmoid in two ways.
+  4. What is He initialisation, and why does it work?
+  5. Give the activation std after 10 layers for the three inits.</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Work out why the ReLU gain is ½: if z is symmetric around 0, then E[ReLU(z)²] = ½E[z²]. Then derive Var(w) = 2/n by requiring Var(zₗ₊₁) = Var(zₗ). This is the argument of He et al. (2015), and it takes about ten lines.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Why not initialise all weights to small random numbers like 0.01?" Answer it with today's experiment. Through 10 ReLU layers the activation standard deviation fell to about 2.8e-13, so the output carries almost no information about the input, and the gradients flowing back shrink the same way. With std 1 it exploded to about 1.5e7. He initialisation (variance 2/n) kept it near 0.8. Explain the general rule: choose the weight variance so that each layer preserves the signal variance, accounting for the activation's gain. Note that normalisation layers (coming in Week 10) make networks less sensitive to this choice, but do not remove the need for a sensible start.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Broadcasting b with the wrong shape (h,) vs (1, h). Both work in NumPy, but know which one you have.</li>
+<li>Applying softmax to the hidden layers.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow's project: train a network yourself with backprop derived by hand, and prove your gradients right.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-061.html">← Day 61</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-063.html">Day 63 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

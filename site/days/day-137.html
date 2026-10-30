@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 137 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="137">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-136.html">← Day 136</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-138.html">Day 138 →</a></nav>
+<h1>Day 137: Retrieval as a tool, and a sandboxed code-execution tool</h1>
+<p class="meta">Week 20 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-20.md">source: weeks/week-20.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 136 (+1), Day 134 (+3), Day 130 (+7), Day 116 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Retrieval as a tool.</strong> In Week 17 RAG was a fixed pipeline: retrieve, then generate. As a <em>tool</em>, retrieval becomes something the agent chooses to call, with arguments it picks (query text, k). That buys flexibility: the agent can search twice, reformulate, or skip search for arithmetic. It also adds new failure points. The agent can pass bad arguments, search when it shouldn't, or trust a confident but irrelevant hit. The tool's schema is the place to bound it: <code>k</code> is an integer with <code>minimum 1, maximum 10</code>, so a request for 50 results is rejected before anything runs.</p>
+<p>Today <code>search_notes(query, k)</code> wraps the Month-4 hybrid retriever (BM25 + MiniLM dense, then the ms-marco cross-encoder rerank). It is the same code path as the Day 120 capstone, over the course notes. It returns <code>{day, text}</code> snippets.</p>
+<p><strong>Two properties that matter for an agent:</strong>
+- <em>Recall at small k.</em> The agent reads only what you return, so recall@1 and recall@3 matter more than recall@20.
+- <em>Behaviour out of domain.</em> A retriever always returns <em>something</em>. Ask it about a topic that is not indexed and it returns the nearest thing it has, with no "I don't know". The agent must be told, or must check, that a hit may be irrelevant.</p>
+<p><strong>Code execution as a tool.</strong> Letting the model write and run Python is powerful: it can do arithmetic, parse data and loop. It is also the most dangerous tool you can give it, because the model's output becomes code running on your machine. Day 139 shows that the model's output can be steered by attacker text. The goal is to bound four things: CPU time, wall time, memory and file output. And, much harder, to <strong>isolate</strong> what the code can see and touch.</p>
+<p><strong>What <code>_sandbox.run_python</code> does, and what it does not do.</strong>
+- It starts a fresh <code>python -I</code> subprocess (isolated mode: ignores user site-packages and PYTHON* env vars) in a temporary directory, with an empty environment.
+- It applies <code>resource</code> rlimits: 2 s CPU, 512 MB address space, 1 MB maximum file size.
+- It enforces a 5 s wall-clock timeout and truncates output to 2000 characters.
+- It does <strong>not</strong> isolate the filesystem or the network. The process runs as the same user and can read and write anything that user can. It is <strong>not a security boundary</strong>, and the file says so. Real isolation needs OS-level mechanisms: containers with a read-only root and no network, gVisor or Firecracker microVMs, seccomp profiles, a separate unprivileged user. None of these were set up on this box.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day137_rag_and_sandbox.py</code> runs the sandbox probes first, because they need no model. There are nine probes: benign code, an exception, an infinite loop, a 30 s sleep, a 2 GB allocation, a 5 MB file, environment variables, reading <code>/etc/hostname</code>, and writing to <code>/tmp</code> outside the working directory. The test file written to <code>/tmp</code> is deleted afterwards. Then it builds the RAG index, sends a deliberately bad call, scores 58 held-out questions (the Month-4 set) through the tool, and sends one query about a topic that is not indexed.</p>
+<p><strong>Verified (out/day137_rag_and_sandbox.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>probe</th>
+<th>result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>benign sum of squares</td>
+<td>rc 0, 0.03 s, output 332833500</td>
+</tr>
+<tr>
+<td>exception</td>
+<td>rc 1, ZeroDivisionError</td>
+</tr>
+<tr>
+<td>infinite loop</td>
+<td>rc −9 at 2.01 s (killed by the CPU rlimit)</td>
+</tr>
+<tr>
+<td>sleep (no CPU)</td>
+<td>killed by the wall-clock timeout at 5.01 s</td>
+</tr>
+<tr>
+<td>2 GB memory bomb</td>
+<td>rc 1, MemoryError</td>
+</tr>
+<tr>
+<td>5 MB file</td>
+<td>rc 1, OSError Errno 27 File too large</td>
+</tr>
+<tr>
+<td>env vars</td>
+<td>"1 env vars": we passed an empty environment, so one variable was added at start-up (exercise: print its name); nothing was inherited</td>
+</tr>
+<tr>
+<td>read /etc/hostname</td>
+<td><strong>succeeded</strong> (printed the first 3 characters)</td>
+</tr>
+<tr>
+<td>write /tmp outside cwd</td>
+<td><strong>succeeded</strong> ("escaped write ok")</td>
+</tr>
+</tbody>
+</table>
+<p>Notice the sleep row. A CPU limit does not catch code that sleeps or blocks; only the wall-clock timeout does. You need both. The last two rows are the honest result: the resource limits work, and isolation does not exist.</p>
+<p>Retrieval tool:
+- The index has 1037 chunks from 112 days and took 9.4 s to build.
+- The bad call <code>k=50</code> was rejected with "$.k: 50 &gt; maximum 10".
+- On 58 held-out questions: <strong>recall@1 0.48, recall@3 0.74</strong>, at 189 ms/call.
+- The out-of-index query about PPO (PPO is Week 19 and was not indexed) returned Day 106, the RLHF overview, as its top hit. That hit is related but cannot answer the question, and it came back with no signal that anything was missing.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add a "no match" rule to <code>search_notes</code>: if the reranker score is below a threshold, return <code>[]</code>. Pick the threshold on the 58 questions and report how many in-index questions you lose.</li>
+<li>Add a <code>cwd</code>-only file check to the sandbox by pre-pending a Python audit hook (<code>sys.addaudithook</code>) that blocks <code>open</code> outside the temp directory. Then find a way around it, which shows why in-process hooks are not a boundary.</li>
+<li>If Docker is available on your own machine (not this box), run the same probes inside <code>docker run --network none --read-only</code>. Record which rows change.</li>
+<li>Give <code>run_python</code> a schema (code: string, maxLength 4000) and register it as a tool. What should its description say to the model?</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why did the infinite loop die at 2.01 s but the sleep at 5.01 s? <em>The CPU rlimit counts CPU time, and sleeping uses none. The wall-clock timeout caught it.</em></li>
+<li>Why is the rlimit sandbox not a security boundary? <em>It runs as the same user with full filesystem (and network) access: it read /etc/hostname and wrote outside its directory.</em></li>
+<li>Why bound <code>k</code> in the schema? <em>It limits context cost and latency, and stops the agent from dumping the whole index into its context.</em></li>
+<li>What does recall@1 0.48 mean for an agent that reads one snippet? <em>About half the time the snippet it reads does not contain the answer.</em></li>
+<li>What should an agent do with an out-of-domain hit like Day 106 for PPO? <em>Check relevance (a score threshold, or ask whether the snippet answers the question) and be willing to say "not in the notes".</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>List the minimum isolation you would require before letting an agent run code on a machine that holds real credentials. Then compare it against what this box provides.</p>
+<p><strong>Extra notes.</strong> The empty environment matters more than it looks. API keys usually live in environment variables, and a tool subprocess that inherits them hands them to any code the model writes.</p>
+<p><strong>Going deeper.</strong> In MCP, servers expose tools and <em>resources</em> (read-only context such as files or database records), and the host decides what to connect. That puts the question "which tools does this agent get at all" in the host, before any sandbox. (Source: the MCP architecture page in the header.)</p>
+<p><strong>Interview-style question (15 min).</strong> "Design a code-interpreter tool for a SaaS product." Cover: a microVM or container per session; no network by default; read-only base image; CPU, memory, time and output limits; no secrets in the environment; file uploads copied in, not mounted; audit logs; and kill-on-timeout. Also say what you would <em>test</em>, using probes like today's table.</p>
+<p><strong>Common mistakes.</strong> Calling <code>exec</code> or <code>eval</code> in the agent process. Only a CPU limit (sleep beats it). Inheriting the environment. Believing an in-process audit hook is a sandbox. Treating a retriever's top hit as relevant just because it exists.</p>
+<p><strong>What to do next.</strong> Day 138 asks how to measure an agent's success at all: success rates with confidence intervals, pass@k vs pass^k, and a failure taxonomy.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-136.html">← Day 136</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-138.html">Day 138 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

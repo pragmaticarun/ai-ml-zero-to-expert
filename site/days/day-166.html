@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 166 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="166">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-165.html">← Day 165</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-167.html">Day 167 →</a></nav>
+<h1>Day 166: Robustness, adversarial examples, and distribution shift</h1>
+<p class="meta">Week 24 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-24.md">source: weeks/week-24.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Two failure modes (25 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 165 (+1), Day 163 (+3), Day 159 (+7), Day 145 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-two-failure-modes-25-min">Block 1: Two failure modes (25 min)</h3>
+<p><strong>Adversarial examples.</strong> Tiny, carefully chosen perturbations flip the prediction. FGSM takes one signed gradient step: x' = clip(x + ε·sign(∇_x L)). PGD repeats projected steps inside an L∞ ball. Random noise of the same size is the control: if random noise barely hurts but FGSM/PGD destroy accuracy, the failure is adversarial, not mere noise sensitivity.</p>
+<p><strong>Distribution shift.</strong> The test distribution differs from training. We measure (a) <strong>corruption shift</strong> on CIFAR (noise, blur, brightness, contrast) and (b) <strong>subpopulation shift</strong> on Adult (train on age&lt;40, test on age≥40), plus a <strong>domain classifier</strong> that tries to tell source from target.</p>
+<h3 id="block-2-run-it-40-min">Block 2: Run it (40 min)</h3>
+<p><code>python day166_robust_shift.py</code>.</p>
+<p><strong>Verified (out/day166_robust_shift.log):</strong>
+- Month 3 CNN, 500 CIFAR-10-small test images, clean acc <strong>0.7220</strong>.
+- L∞ ε in pixel scale (input clipped to valid range):</p>
+<table>
+<thead>
+<tr>
+<th>ε</th>
+<th>FGSM acc</th>
+<th>PGD-10 acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1/255</td>
+<td>0.4980</td>
+<td>0.4680</td>
+</tr>
+<tr>
+<td>2/255</td>
+<td>0.2980</td>
+<td>0.1940</td>
+</tr>
+<tr>
+<td>4/255</td>
+<td>0.0980</td>
+<td>0.0240</td>
+</tr>
+<tr>
+<td>8/255</td>
+<td>0.0420</td>
+<td><strong>0.0000</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Random-sign noise at 8/255: acc <strong>0.6720</strong> (barely below clean).</li>
+<li>Corruptions: gauss sd 0.05 → 0.6160; sd 0.1 → 0.3740; brightness +0.2 → 0.6860; contrast ×0.5 → 0.6000; 3×3 box blur → 0.3760.</li>
+<li>Adult subpopulation: train age&lt;40 → test age&lt;40 acc <strong>0.8954</strong> (all-ages model 0.8950); → test age≥40 <strong>0.6945</strong> (all-ages 0.8020). Base rates 0.155 vs 0.346.</li>
+<li>Domain classifier (age&lt;40 train vs age≥40 test, age column hidden): AUC <strong>0.800</strong>. Random split of test (no shift): AUC <strong>0.498</strong>.</li>
+</ul>
+<h3 id="block-3-interpretation-35-min">Block 3: Interpretation (35 min)</h3>
+<p><strong>The CNN is not robust.</strong> At ε=8/255 — imperceptible on a thumbnail — PGD drives accuracy to zero, while random noise of the same size leaves 0.672. The threat is the <em>direction</em> of the perturbation, not its size. FGSM is already enough to make the point at every ε we tried; PGD is strictly stronger (lower accuracy) at the same budget. This model was trained with flip/crop augmentation only; that does not buy adversarial robustness.</p>
+<p><strong>Corruptions are a different axis.</strong> Blur and sd-0.1 noise hurt about as much as FGSM at 2/255, without being adversarial. A deployment checklist needs both: adversarial eval <em>and</em> a corruption suite (or real camera/sensor noise).</p>
+<p><strong>Subpopulation shift is large and detectable.</strong> Training only on under-40s loses 20 points on over-40s (0.90→0.69), partly because base rates differ (0.155 vs 0.346). A domain classifier with age hidden still reaches AUC 0.800, while a random split sits at 0.498. So a monitor can fire before you look at labels. The all-ages model is better on the shifted slice (0.80) but still below its in-distribution number — coverage during training matters.</p>
+<p><strong>Connect to Week 21 drift.</strong> Day 147/150 used PSI and window checks on text features. Today's domain classifier is the same idea for tabular inputs: a secondary model whose only job is "has the world changed?". Pair it with a held-out performance slice you care about (here, age≥40) so a fired monitor has a business meaning.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why compare FGSM to random-sign noise? <em>To show the failure is directed, not just "noise sensitivity".</em></li>
+<li>What does PGD add over FGSM? <em>Iterative projected steps; usually a stronger (lower) robust accuracy.</em></li>
+<li>Why hide <code>age</code> in the domain classifier? <em>Otherwise the classifier cheats by reading the shifting variable itself; we want to know if the rest of the features already separate the domains.</em></li>
+<li>Name one mitigation direction for each failure. <em>Adversarial: adversarial training / certified defences. Shift: broader training coverage, importance weighting, monitoring + fallback.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Run PGD with 20 steps and step size ε/10 at ε=4/255. Then build a simple PSI monitor on Adult <code>education-num</code> between train and the age≥40 slice.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Pixel-space ε is converted through the per-channel CIFAR normalisation so the attack stays inside valid images.</li>
+<li>Transfer attacks (craft on one model, evaluate on another) are the next step; not run today.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read Goodfellow et al. (FGSM) and Madry et al. (PGD) abstracts; try one epoch of adversarial training on the CNN and re-measure ε=4/255.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Our clean accuracy is 72%, we are ready." Reply with today's table: at 4/255 PGD accuracy is 2.4%, and age-shift drops Adult from 0.90 to 0.69. Ask for the threat model and the shift monitor before calling it ready.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting only clean accuracy.</li>
+<li>Attacking in normalised space without clipping to valid pixels.</li>
+<li>Using the shifting feature itself as the only domain signal.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 167 covers LLM safety, documentation, governance sources, and energy accounting.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-165.html">← Day 165</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-167.html">Day 167 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

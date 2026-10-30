@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 4 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="4">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-003.html">← Day 3</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-005.html">Day 5 →</a></nav>
+<h1>Day 4: pandas for tabular ML data</h1>
+<p class="meta">Week 1 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-01.md">source: weeks/week-01.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-01/day04_pandas_basics.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-01/day04_pandas_basics.py"><code>code/week-01/day04_pandas_basics.py</code></a></li><li><a href="../../code/week-01/out/housing_synth.csv"><code>code/week-01/out/housing_synth.csv</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 3 (+1), Day 1 (+3).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Real data arrives as tables with named columns of mixed types (numbers, categories, dates) and holes in it. pandas is a labelled table on top of NumPy columns. The ML workflow is: <strong>load → inspect → clean → engineer features → convert to a NumPy matrix X and vector y.</strong> Models eat matrices, so pandas is the kitchen and NumPy is the plate.</p>
+<p><strong>Concrete example.</strong> Our synthetic table has 500 flats with <code>area_sqft</code>, <code>bedrooms</code>, <code>age_years</code> and <code>city</code> (Chennai, Bengaluru or Pune). Price comes from a known formula plus noise, which lets us later check whether a model recovers the truth. 25 ages are deliberately missing.</p>
+<p><strong>Plain-language "maths" of cleaning:</strong>
+- <strong>Missing values:</strong> filling with the median is a robust guess that outliers can't drag around (unlike the mean).
+- <strong>Categorical → numbers:</strong> "Pune" has no numeric value, and mapping Chennai=0, Bengaluru=1, Pune=2 invents an order that doesn't exist. <strong>One-hot encoding</strong> makes one 0/1 column per category, so the model learns a separate premium for each city.
+- <strong>Group-by</strong> is split-apply-combine: split rows by key, compute a statistic, and combine the results into a table. It is the quickest way to check a hypothesis like "Bengaluru is pricier".
+- <strong>Leakage:</strong> we create <code>price_per_sqft = price / area</code> for EDA. It is computed from the <strong>target</strong>, so it must never become a feature. The script drops it explicitly before building X.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>From the verified run: the mean price by city is Bengaluru <strong>77.2</strong>, Chennai <strong>62.6</strong> and Pune <strong>64.8</strong> lakh, with 189, 207 and 104 flats. The generator added a +15 premium for Bengaluru and +5 for Pune. The observed Bengaluru − Chennai gap of 14.6 is close to 15, and noise plus random area differences explain the rest. The Pune − Chennai gap is 2.2, much less than 5. With only 104 Pune flats and noise std 6 per flat, plus other features varying, this is a reminder that <strong>group means are noisy estimates, not truth</strong>. Regression (Week 4) separates the effect of city from the effect of area.</p>
+<p>Model-ready columns after one-hot (verified): <code>['area_sqft', 'bedrooms', 'age_years', 'city_Bengaluru', 'city_Chennai', 'city_Pune']</code>.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-01day04_pandas_basicspy">Block 3: Coding lab (2h): <code>code/week-01/day04_pandas_basics.py</code></h3>
+<p>It writes <code>code/week-01/out/housing_synth.csv</code>, which Day 7 uses. Tasks:
+1. <code>df.info()</code>, <code>df.describe(include="all")</code>: which column has missing values?
+2. Add a <code>size_band</code> column with <code>pd.cut(df.area_sqft, [0, 800, 1200, 1600, 5000])</code> and compute the mean price per band.
+3. Try <code>drop_first=True</code> in <code>get_dummies</code>. Why would a linear model with an intercept want that? (Collinearity: the city columns sum to 1, which duplicates the intercept. See Day 10's conditioning.)
+4. Load the same CSV with Python's <code>csv</code> module and compute the Chennai mean price by hand. Compare the code length.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why is the median preferred over the mean for imputing skewed data? <em>Answer:</em> it is robust to outliers.</li>
+<li>Which of these leak the target? (a) <code>rooms_per_floor</code>, (b) <code>price_rank</code>, (c) <code>days_on_market_before_sale</code> when predicting price at listing time. <em>Answer:</em> (b) definitely. (c) also, because it isn't known at prediction time.</li>
+<li>How many columns does one-hot add for a category with k levels? <em>Answer:</em> k, or k−1 with drop_first.</li>
+<li><code>df.groupby("city")["price_lakh"].mean()</code> returns what type? <em>Answer:</em> a Series indexed by city.</li>
+<li>What is the difference between <code>df.loc</code> and <code>df.iloc</code>? <em>Answer:</em> label-based vs position-based.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 3 (+1):</strong> rewrite the dot product timing from memory and get the speed-up order of magnitude.</li>
+<li><strong>Day 1 (+3):</strong> what are the three ingredients of learning? Compute MSE for w=5, b=0 again without notes.</li>
+<li><strong>Self-check:</strong>
+  1. Why one-hot instead of integer codes?
+  2. What is leakage? Give an example from today.
+  3. What does split-apply-combine mean?
+  4. How do you count missing values per column?
+  5. Why convert to NumPy before modelling?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Tidy data.</strong> Hadley Wickham's "tidy data" idea fits ML perfectly: one row per observation, one column per variable, one table per kind of entity. Most of your pandas time is spent reshaping toward that form. <code>melt</code> turns wide data into long, and <code>pivot_table</code> turns long into wide. Before modelling, ask of every column: <em>would I know this value at prediction time?</em> If not, it is leakage (Day 6).</p>
+<p><strong>Memory awareness.</strong> <code>df.info(memory_usage="deep")</code> shows the real footprint. Converting a low-cardinality string column such as <code>city</code> to <code>category</code> dtype often cuts its memory by more than 10×, and it speeds up <code>groupby</code>. Downcasting float64 to float32 halves the memory, which is fine for features but think twice for targets and sums. These are the same habits you'd use for a media pipeline buffer: know your bytes.</p>
+<p><strong>Mini exercise.</strong> With <code>housing_synth.csv</code>, compute the median price per city, and the share of homes with missing values per column (<code>df.isna().mean()</code>). Write both into your learning log.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><strong>SettingWithCopyWarning:</strong> assign through <code>df.loc[rows, col] = …</code> or work on an explicit <code>.copy()</code>.</li>
+<li><strong>Silent dtype objects:</strong> a numeric column read as strings (<code>object</code>/<code>str</code>) because of a stray "N/A". Use <code>pd.to_numeric(errors="coerce")</code>.</li>
+<li><strong>Imputing before splitting</strong> leaks test-set statistics. From Day 6 onward, compute medians and means on the train split only.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Pick any CSV you care about (Android crash stats, your app's media metadata) and run today's checklist on it: shape, dtypes, missing values, a group-by, and one-hot encoding.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-003.html">← Day 3</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-005.html">Day 5 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

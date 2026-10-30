@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 27 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="27">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-026.html">← Day 26</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-028.html">Day 28 →</a></nav>
+<h1>Day 27: Evaluating models: metrics, thresholds, bias/variance</h1>
+<p class="meta">Week 4 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-04.md">source: weeks/week-04.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-04/day27_evaluation.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-04/day27_evaluation.py"><code>code/week-04/day27_evaluation.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 26 (+1), Day 24 (+3), Day 20 (+7), Day 6 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> One number hides the kinds of mistakes a model makes. In cancer screening, missing a malignant tumour (false negative) is far worse than an extra biopsy (false positive). Choose metrics that reflect the real costs.</p>
+<p><strong>Confusion matrix (positive = malignant).</strong> TP = caught, FN = missed, FP = false alarm, TN = correctly cleared.
+- <strong>Precision</strong> = TP/(TP + FP): "when I say malignant, how often am I right?"
+- <strong>Recall</strong> = TP/(TP + FN): "of all malignant cases, how many did I catch?"
+- <strong>F1</strong> = the harmonic mean of the two, which punishes imbalance between them.
+- <strong>Threshold:</strong> predict positive if p ≥ t. Lowering t trades precision for recall.</p>
+<p><strong>Verified (breast cancer, positive = malignant, 143 test samples):</strong></p>
+<table>
+<thead>
+<tr>
+<th>threshold</th>
+<th>TP</th>
+<th>FP</th>
+<th>FN</th>
+<th>TN</th>
+<th>precision</th>
+<th>recall</th>
+<th>F1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.5</td>
+<td>51</td>
+<td>0</td>
+<td>2</td>
+<td>90</td>
+<td>1.000</td>
+<td>0.962</td>
+<td>0.981</td>
+</tr>
+<tr>
+<td>0.3</td>
+<td>51</td>
+<td>6</td>
+<td>2</td>
+<td>84</td>
+<td>0.895</td>
+<td>0.962</td>
+<td>0.927</td>
+</tr>
+<tr>
+<td>0.1</td>
+<td>53</td>
+<td>11</td>
+<td>0</td>
+<td>79</td>
+<td>0.828</td>
+<td><strong>1.000</strong></td>
+<td>0.906</td>
+</tr>
+</tbody>
+</table>
+<p>At t = 0.1 no cancers are missed, at the price of 11 false alarms. A clinician might prefer that. <strong>ROC-AUC</strong> = <strong>0.9958</strong>: the probability that a random malignant case scores higher than a random benign one, independent of threshold. The baseline that always says "benign" already gets <strong>0.6294</strong> accuracy, which is why accuracy alone misleads on imbalanced data (Day 19's base rates).</p>
+<p><strong>Bias vs variance (verified).</strong> Fit polynomials of degree 1, 3 and 15 to 40 noisy points from sin(x) (noise σ = 0.3, so the best achievable MSE is about 0.09), validating on 200 fresh points:</p>
+<table>
+<thead>
+<tr>
+<th>degree</th>
+<th>OLS train</th>
+<th>OLS val</th>
+<th>Ridge(α=1) train</th>
+<th>Ridge val</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.283</td>
+<td>0.282</td>
+<td>0.283</td>
+<td>0.281</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.072</td>
+<td><strong>0.097</strong></td>
+<td>0.094</td>
+<td>0.114</td>
+</tr>
+<tr>
+<td>15</td>
+<td>0.043</td>
+<td>0.144</td>
+<td>0.090</td>
+<td>0.129</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Degree 1 <strong>underfits</strong> (high bias): train and val errors are both high and similar.</li>
+<li>Degree 15 <strong>overfits</strong> (high variance): low train error, but the gap to val is large.</li>
+<li>Degree 3 is just right, close to the noise floor.</li>
+<li>Ridge regularisation shrinks the degree-15 gap (0.129 vs 0.144) but slightly hurts degree 3 here. Regularisation strength is a hyperparameter you tune (Day 31).</li>
+</ul>
+<p><strong>Diagnosis recipe (the most useful practical skill in ML):</strong>
+- High train error → bias. Use a bigger model, more features, less regularisation.
+- Low train error but high val error → variance. Get more data, regularise, simplify, use fewer features.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>From the t = 0.3 row: precision = 51/(51 + 6) = 0.895, recall = 51/53 = 0.962, F1 = 2·0.895·0.962/(0.895 + 0.962) = 1.722/1.857 = <strong>0.927</strong> ✓.
+Accuracy at t = 0.3 = (51 + 84)/143 = 0.944, lower than at 0.5 (141/143 = 0.986), yet clinically arguably better.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-04day27_evaluationpy">Block 3: Coding lab (2h): <code>code/week-04/day27_evaluation.py</code></h3>
+<p>Tasks:
+1. Plot precision and recall vs threshold (<code>sklearn.metrics.precision_recall_curve</code>), and the ROC curve.
+2. Choose the threshold that maximises recall subject to precision ≥ 0.85, <em>using a validation split</em>, not the test set.
+3. Plot train and val MSE vs degree 1-15 (the U-shaped val curve).
+4. Learning curve: for degree 15, train on 20, 40, 80, 160 points and plot train/val MSE. Does more data fix the variance?</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>TP = 8, FP = 2, FN = 4. Precision, recall and F1? <em>Answer:</em> 0.8, 0.667, 0.727.</li>
+<li>99% of transactions are legitimate. What accuracy does "always legit" get? <em>Answer:</em> 99%.</li>
+<li>Train error 2%, val error 15%. Bias or variance? <em>Answer:</em> variance.</li>
+<li>Train 14%, val 15%, and humans get 2%. <em>Answer:</em> bias.</li>
+<li>Why tune thresholds on validation, not test? <em>Answer:</em> tuning on test overfits the test set and gives optimistic estimates.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 26 (+1):</strong> log-loss for p = 0.2 and y = 1 (1.609).</li>
+<li><strong>Day 24 (+3):</strong> the R² formula.</li>
+<li><strong>Day 20 (+7):</strong> the uncertainty of an accuracy estimate measured on 143 samples (about 1-2%).</li>
+<li><strong>Self-check:</strong>
+  1. Define precision and recall.
+  2. What does lowering the threshold do?
+  3. What does AUC mean?
+  4. Bias vs variance symptoms?
+  5. Fixes for each?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reporting accuracy on imbalanced data.</li>
+<li>Picking the threshold on the test set.</li>
+<li>Mixing up which class is "positive". sklearn's breast-cancer target has 1 = benign, which is why the script flips it.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: a full project where the most important step is <em>error analysis</em>.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-026.html">← Day 26</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-028.html">Day 28 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

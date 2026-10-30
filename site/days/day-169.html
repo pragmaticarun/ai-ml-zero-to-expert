@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 169 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="169">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-168.html">← Day 168</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-170.html">Day 170 →</a></nav>
+<h1>Day 169: Capstone proposal, success metrics and budget table</h1>
+<p class="meta">Week 25 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-25.md">source: weeks/week-25.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: What &quot;done&quot; means for an end-to-end assistant (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run the proposal script (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Success metrics and budget table (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-25"><code>code/week-25</code></a></li><li><a href="../../code/capstone/out/budget.json"><code>code/capstone/out/budget.json</code></a></li><li><a href="../../code/capstone/README.md"><code>code/capstone/README.md</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 168 (+1), Day 165 (+3), Day 161 (+7), Day 148 (+21; quick skim of the Month-5 RAG/agent self-check).</p>
+<h3 id="block-1-what-done-means-for-an-end-to-end-assistant-30-min">Block 1: What "done" means for an end-to-end assistant (30 min)</h3>
+<p>A capstone that only trains a model is not done. Done means: a <strong>spec</strong> with measurable success metrics, a <strong>budget table</strong> that fits the hardware, a <strong>package</strong> others can run, and an explicit <strong>non-goal</strong> list. Today's deliverable is that spec. The rest of the week implements it.</p>
+<p>Non-goals for Week 25: no web browsing tool, no GPU training, no claim of production readiness, no personal-data corpus, no "own tokenizer from scratch" as a hard requirement (optional stretch — MiniLM's tokenizer is used for embeddings; SmolLM2's for generation).</p>
+<h3 id="block-2-run-the-proposal-script-30-min">Block 2: Run the proposal script (30 min)</h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>code/week-25<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>python<span class="w"> </span>day169_proposal.py
+</code></pre></div>
+
+<p>The script chunks all week files, times a 64-chunk MiniLM embed, loads SmolLM2, and writes <code>out/day169_budget.json</code> plus <code>code/capstone/out/budget.json</code>.</p>
+<p><strong>Verified (<code>out/day169_proposal.log</code>):</strong>
+- Corpus: <strong>26</strong> week files → <strong>1467</strong> chunks; <strong>1,075,590</strong> total chunk chars.
+- Embed 64 chunks: <strong>0.605 s</strong> (<strong>9.4 ms/chunk</strong>); dim 384. Full-index estimate ≈ <strong>13.9 s</strong>.
+- SmolLM2 params: <strong>134,515,008</strong>. Generate ~38 tokens: <strong>0.524 s</strong> (<strong>13.8 ms/tok</strong>).</p>
+<h3 id="block-3-success-metrics-and-budget-table-35-min">Block 3: Success metrics and budget table (35 min)</h3>
+<p>Copy these into your own design doc; they gate Days 173 and 175.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>retrieval recall@3</td>
+<td>≥ 0.70 on hand-labelled QA</td>
+</tr>
+<tr>
+<td>grounded answer rate</td>
+<td>≥ 0.60</td>
+</tr>
+<tr>
+<td>tool success</td>
+<td>≥ 0.80 on allow-listed tasks</td>
+</tr>
+<tr>
+<td>injection block</td>
+<td>≥ 0.80 (0 FP on 10 benign)</td>
+</tr>
+<tr>
+<td>p50 RAG+gen</td>
+<td>≤ 8.0 s (40 new toks, CPU)</td>
+</tr>
+<tr>
+<td>embed index build</td>
+<td>≤ 120 s</td>
+</tr>
+<tr>
+<td>LoRA train</td>
+<td>≤ 15 min</td>
+</tr>
+<tr>
+<td>int8 score vs numpy-int8</td>
+<td>≥ 1.5× (large matrix / fair baseline)</td>
+</tr>
+<tr>
+<td>release gate</td>
+<td>FAIL if recall drops &gt;10% relative or injection &lt; 0.70</td>
+</tr>
+<tr>
+<td>RAI</td>
+<td>model card + audit filed; no real-user deployment claim</td>
+</tr>
+</tbody>
+</table>
+<p>Budget rows: RAM growth ≤ 4 GiB for MiniLM+SmolLM2; LoRA r≤8 on q_proj/v_proj; max_new_tokens 40 default / 80 hard; top_k=3; tools = calc, course_search, get_day_title.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why is p50 ≤ 8 s a <em>latency</em> budget and not an accuracy one? <em>It bounds CPU UX; accuracy has its own recall/grounded rows.</em></li>
+<li>Why list non-goals? <em>Prevents scope creep into browsing agents or GPU-only tricks that the box cannot verify.</em></li>
+<li>What fails a release even if recall is 0.90? <em>Injection block &lt; 0.70, or a &gt;10% relative recall drop vs baseline.</em></li>
+<li>How many chunks does the proposal script report? <strong><em>1467.</em></strong></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Write a one-page design doc of your own: architecture diagram (boxes for embed / index / retrieve / generate / tools / guards / eval), the table above, and three risks with mitigations. Save it next to <code>code/capstone/README.md</code>.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>The "20-question" metric row was written before the final QA list landed at <strong>25</strong> pairs; Day 170+ use all 25. Keep the ≥0.70 threshold.</li>
+<li><code>embed_full_est_s</code> 13.9 was an extrapolation from 64 chunks; Day 170 measures the real full pass at <strong>16.11 s</strong>.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Re-read Week 21's agent gates and Week 22's LLMOps regression ideas. Capstone gates are those ideas applied to one product.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"We will ship when the demo looks good." Reply: demos lie. Ship when recall@3, grounded rate, tool rate, injection block, and p50 latency all clear the budget table on a frozen eval set, with a written model card.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Optimising generation style before measuring retrieval recall.</li>
+<li>Adding tools without an allow-list and AST/schema guard.</li>
+<li>Claiming "on-device" without a memory/KV budget (Day 172).</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Fork the budget JSON and change one latency number; justify the change in one paragraph tied to your CPU model.</li>
+<li>Sketch the sequence diagram for one <code>/ask</code> call: guard → route → tool or retrieve → generate → scorecard fields touched.</li>
+<li>List three metrics you will <em>not</em> optimise this week (e.g. BLEU, human Likert, GPU tokens/sec) and why they are out of scope on this box.</li>
+</ol>
+<p>A good proposal is boring on purpose. It names the corpus path, the exact Hugging Face model ids, the top_k, the max_new_tokens, and the freeze-set size. It also names what happens when a gate fails: the answer is "do not ship", not "add a disclaimer in the README". Week 22's LLMOps lesson applies unchanged — regression gates are product code.</p>
+<p>Hardware honesty matters in Month 6. This box is an 8-core Xeon with about 15 GB of RAM. SmolLM2-135M in fp32 is roughly half a gibibyte of weights; MiniLM is tiny beside it; the dangerous growth terms are the KV cache (Day 172) and Python allocator fragmentation under repeated generate calls. If you later move the same budget table to a phone, every millisecond and every mebibyte must be re-measured on that phone. Copying server-CPU numbers into an "on-device" slide is a integrity failure, not a documentation shortcut.</p>
+<p>The success-metric table mixes quality (recall, grounded, tools, injection) with performance (p50, index build, LoRA minutes, int8 speedup) and process (RAI artefacts). Mixing them in one table is intentional: a fast wrong system fails, and a correct un-audited system also fails. When two metrics conflict — for example, raising top_k to help recall while hurting p50 — write the trade-off in the design doc instead of silently moving the goalposts.</p>
+<p>Finally, freeze the eval pairs before you tune prompts. The 25 QA rows in <code>corpus_qa.py</code> are small enough to memorise; if you edit prompts while staring at them, you no longer have an eval set. Day 173's relative-drop gate only works if Day 171's scorecard stays immutable on disk.</p>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 170 builds the index and a LoRA baseline against the budget's train-time row.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-168.html">← Day 168</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-170.html">Day 170 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

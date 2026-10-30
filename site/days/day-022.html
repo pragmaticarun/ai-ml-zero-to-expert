@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 22 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="22">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-021.html">← Day 21</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-023.html">Day 23 →</a></nav>
+<h1>Day 22: Linear regression and the cost function</h1>
+<p class="meta">Week 4 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-04.md">source: weeks/week-04.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-04/day22_linreg_cost.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-04/day22_linreg_cost.py"><code>code/week-04/day22_linreg_cost.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 21 (+1), Day 19 (+3), Day 15 (+7), Day 1 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Supervised learning = "learn a function from examples of input → correct output". For housing, the input x is area and the output y is price. The <strong>model</strong> (hypothesis) is a family of functions with knobs: f_{w,b}(x) = wx + b. The <strong>cost</strong> J(w, b) is one number scoring how badly a particular setting of the knobs fits the training data. Learning means finding the knobs with the lowest cost.</p>
+<p><strong>Concrete example (verified, 200 synthetic homes, area in 1000s of sq ft):</strong>
+- w = 0, b = mean price (predict the average for everyone): J = <strong>222.69</strong>
+- w = 30, b = 30: J = <strong>95.83</strong>
+- best on a 120 × 120 grid: w = 52.10, b = 7.39, J = <strong>57.80</strong>
+- closed form (<code>np.polyfit</code>): w = 51.71, b = 7.86</p>
+<p>So each extra 1000 sq ft adds about 52 lakh. The true value is 0.05 lakh per sq ft = 50 per 1000 sq ft. The estimate is a bit higher because area here also stands in for omitted features.</p>
+<p><strong>Plain-language maths.</strong> J(w, b) = (1/2m) Σᵢ (f(xᵢ) − yᵢ)². In words: the average squared miss, halved. The ½ only makes the derivative tidier. Why squared? Day 21 showed squared error is the maximum-likelihood cost under Gaussian noise. It also punishes big misses heavily and is smooth for gradients. Plotted over (w, b), J is a <strong>bowl</strong> (convex quadratic) with one lowest point. The contour plot (<code>out/day22_cost_contour.png</code>) shows ellipses: the bowl is long and thin, because w multiplies a variable around 1.2 while b multiplies 1. That is a preview of the scaling problem on Day 25.</p>
+<p>Notation used all course: m = number of examples, n = number of features, x⁽ⁱ⁾ = example i, ŷ = prediction.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Three homes: x = (1, 2, 3) (1000 sq ft) and y = (60, 110, 150).
+- For w = 50, b = 0: predictions 50, 100, 150 and errors −10, −10, 0. J = (100 + 100 + 0)/(2·3) = <strong>33.3</strong>.
+- For w = 45, b = 17: predictions 62, 107, 152 and errors 2, −3, 2. J = (4 + 9 + 4)/6 = <strong>2.83</strong>. That is better.
+- The best fit via the Day-10 normal equation: x̄ = 2, ȳ = 106.67, w = Σ(x − x̄)(y − ȳ)/Σ(x − x̄)² = ((−1)(−46.67) + 0 + (1)(43.33))/2 = 90/2 = <strong>45</strong>, b = 106.67 − 90 = <strong>16.67</strong>.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-04day22_linreg_costpy">Block 3: Coding lab (2h): <code>code/week-04/day22_linreg_cost.py</code></h3>
+<p>Tasks:
+1. Plot J(w) for fixed b = 7.86 as a 1-D curve. It's a parabola. Mark the closed-form minimum.
+2. Make a 3-D surface plot (<code>ax = fig.add_subplot(projection="3d")</code>).
+3. Replace squared error with absolute error and redo the grid. Is the minimum in the same place? Is the surface still smooth?
+4. Rescale x to raw sq ft (not 1000s) and look at how the contour ellipses change. Write down your prediction first.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>What is J if every prediction is exactly right? <em>Answer:</em> 0.</li>
+<li>Errors are (3, −1, −2). What is J? <em>Answer:</em> (9 + 1 + 4)/6 = 2.33.</li>
+<li>Why is the "predict the mean" baseline useful? <em>Answer:</em> any real model must beat it. R² measures the improvement over it.</li>
+<li>Are model parameters and hyperparameters the same thing? <em>Answer:</em> no. Parameters are learned (w, b). Hyperparameters are chosen (learning rate, degree).</li>
+<li>Units of J in this problem? <em>Answer:</em> lakh².</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 21 (+1):</strong> why is MSE the Gaussian MLE?</li>
+<li><strong>Day 19 (+3):</strong> compute P(spam | word) with prior 0.5 and likelihoods 0.4 vs 0.1 (0.8).</li>
+<li><strong>Day 15 (+7):</strong> what is the central-difference formula, and the best h?</li>
+<li><strong>Self-check:</strong>
+  1. Model vs cost vs optimiser?
+  2. Formula for J(w, b)?
+  3. Why does J form a bowl?
+  4. What are m and n?
+  5. What J did the predict-the-mean baseline have?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Other regression losses.</strong> MAE (absolute error) is more robust to outliers but has a kink at zero. Huber loss is quadratic for small errors and linear for large ones, a compromise that keeps smooth gradients near the optimum. scikit-learn offers <code>HuberRegressor</code>. Fit it next to <code>LinearRegression</code> on the Day-22 data after adding three extreme outliers, and compare the slopes. The choice of loss is a statement about your noise (Day 21).</p>
+<p><strong>Prediction vs inference.</strong> In ML we mostly care about predictive accuracy on new data. Statisticians often care about the coefficients themselves (is the effect of age real?). Both use the same fit, but they need different checks: held-out error vs confidence intervals.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting the ½ or the 1/m: harmless for the location of the minimum, but it changes gradient scales and learning rates.</li>
+<li>Plotting y vs x and expecting to <em>see</em> the cost. The cost lives in parameter space.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow we find the bottom of the bowl by walking downhill instead of solving equations.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-021.html">← Day 21</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-023.html">Day 23 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

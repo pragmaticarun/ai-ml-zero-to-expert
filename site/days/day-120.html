@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 120 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="120">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-119.html">← Day 119</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-121.html">Day 121 →</a></nav>
+<h1>Day 120: MONTH-4 CAPSTONE: an end-to-end LLM question-answering system, plus the Month-4 checkpoint exam</h1>
+<p class="meta">Week 18 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-18.md">source: weeks/week-18.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-18/day120_capstone.py"><code>code/week-18/day120_capstone.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 119 (+1), Day 117 (+3), Day 113 (+7), Day 99 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>What the capstone is.</strong> Month 4 built the parts of a modern LLM stack from the inside:
+- attention, the transformer block and a tiny GPT (Weeks 13-14);
+- BPE, Hugging Face models, fine-tuning and LoRA (Weeks 14-15);
+- preference tuning with DPO and evaluation pitfalls (Week 16);
+- retrieval, quantisation and serving (Week 17).</p>
+<p>Today you put the parts into one system and, more importantly, <strong>evaluate it like an engineer</strong>. The system answers questions about these course notes:</p>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  Q[question] --&gt; B[BM25] &amp; E[MiniLM dense]
+  B &amp; E --&gt; F[RRF fusion, top 20]
+  F --&gt; X[cross-encoder rerank, top 3]
+  X --&gt; P[chat prompt]
+  P --&gt; G[SmolLM2-135M-Instruct, int8 weights]
+  G --&gt; K[our Llama forward + KV cache, greedy]
+  K --&gt; A[answer]
+</code></pre></div>
+
+<p>Every component is code you wrote: <code>_rag.py</code> (chunking, embeddings, BM25), <code>_quant.py</code> (RTN quantisation) and <code>_tinyllama.py</code> (the forward pass and KV cache), all from Week 17. The capstone script only wires them together.</p>
+<p><strong>How to evaluate a system, not a model.</strong> Measure each stage separately, then end to end:
+1. <strong>Retrieval quality</strong>: recall@k on questions with known answers. Here that is the 58 held-out interview questions from the notes; their own sections are removed from the index, so the system cannot simply find the question text.
+2. <strong>Context recall</strong>: for the 12 factual questions, is the answer string in the 3 chunks given to the model?
+3. <strong>Answer accuracy</strong>: does the answer contain the gold string?
+4. <strong>Behaviour change from compression</strong>: do the int8 answers match the fp32 answers?
+5. <strong>Correctness of your own components</strong>: does your decoder give the same text as a reference (Hugging Face <code>generate</code>)?
+6. <strong>Latency breakdown</strong>: retrieval, prefill and decode, since each is optimised differently.
+7. <strong>Failure analysis</strong>: sort every wrong answer into "retrieval miss" (the answer was not in the context) or "generation error" (it was there and the model got it wrong). Then read every one.</p>
+<p><strong>Honest reporting.</strong> State the sample sizes, show the failures next to the successes, say what was simulated, and do not claim more than the numbers support. With 12 questions, one question is 0.08 of accuracy.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-18/day120_capstone.py</code>. It takes about 50 seconds on this box.</p>
+<p><strong>Verified (out/day120_capstone.log):</strong>
+- Index: 1,037 chunks from 112 days, built in 9.8 s.
+- Retrieval (hybrid + rerank) on 58 held-out questions: <strong>recall@1 0.48, recall@5 0.79</strong>, 214 ms per query.
+- Our KV-cache decoder produced exactly the same answer as HF <code>generate</code> on the int8 model for Q1 (<code>True</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Generator</th>
+<th>Accuracy (12 Q)</th>
+<th>Mean prompt</th>
+<th>Prefill</th>
+<th>Decode speed</th>
+<th>Mean answer length</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fp32</td>
+<td>0.25</td>
+<td>816 tokens</td>
+<td>330 ms</td>
+<td>60.4 tok/s</td>
+<td>26.6 tokens</td>
+</tr>
+<tr>
+<td>int8 per-channel</td>
+<td>0.25</td>
+<td>816 tokens</td>
+<td>313 ms</td>
+<td>61.1 tok/s</td>
+<td>28.3 tokens</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>int8 answers identical to the fp32 answers: 9 of 12.</li>
+<li><strong>Failure categories (int8 system):</strong> 3 correct, 1 retrieval miss, <strong>8 generation errors</strong> (the answer was in the context).</li>
+</ul>
+<p><strong>Examples from the log:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Category</th>
+<th>Gold answer</th>
+<th>What the model said</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q03</td>
+<td>correct</td>
+<td>0.70</td>
+<td>"SFT on chosen answers reached 0.70…"</td>
+</tr>
+<tr>
+<td>Q04</td>
+<td>generation error</td>
+<td>32.05</td>
+<td>"…got 192 perplexity…"</td>
+</tr>
+<tr>
+<td>Q06</td>
+<td>generation error</td>
+<td>2,442,817</td>
+<td>"…had 2 trainable parameters…"</td>
+</tr>
+<tr>
+<td>Q07</td>
+<td>retrieval miss</td>
+<td>[0.07, 0.30]</td>
+<td>a different interval</td>
+</tr>
+<tr>
+<td>Q12</td>
+<td>generation error</td>
+<td>−10.3</td>
+<td>"…120.8 nats…"</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reading the results:</strong>
+- <strong>Retrieval is good enough:</strong> 0.79 recall@5 on held-out questions, and 11 of 12 factual questions had their answer in the top 3.
+- <strong>The generator is the bottleneck.</strong> In 8 of 12 cases it had the answer in front of it and still produced a wrong number, often a number copied from elsewhere in the context, or an invented one.
+- <strong>int8 did not change accuracy or speed.</strong> Speed did not change because the weights were dequantised to fp32. It did change 3 of 12 answers.
+- <strong>Latency:</strong> per question, about 0.2 s goes to retrieval and 0.3 s to prefill, then about 0.45 s to decode the roughly 27 answer tokens at about 60 tok/s.
+- <strong>Next step:</strong> improving the system means a stronger generator, not better retrieval.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<p>Build, then write the report.
+1. <strong>Reproduce:</strong> run the script and check every number against the log.
+2. <strong>Extend:</strong> add int4 group-64 with the AWQ-style scaling from Day 117 as a third generator, and report accuracy and agreement with fp32.
+3. <strong>Grounding check:</strong> for each answer, list the numbers it contains and test whether each appears in the context. How many answers contain a number found nowhere in the context (a hallucination)?
+4. <strong>Prompt ablation:</strong> try k = 1 against k = 3 chunks, and an instruction such as "Reply with only the number". Keep the 12 questions fixed. Note that this is now tuning on the test set, so label the results as exploratory.
+5. <strong>Write the report</strong> (<code>code/week-18/out/report.md</code>, one to two pages):
+   - the diagram;
+   - a table per stage;
+   - the failure table with every question;
+   - three findings, each backed by a number;
+   - limits;
+   - what you would do with a GPU.</p>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Context recall was 11 of 12, but accuracy was 3 of 12. Which component would you change first, and why?</li>
+<li>Why check your decoder against HF <code>generate</code>?</li>
+<li>int8 kept accuracy at 0.25 but changed 3 of 12 answers. How can both be true?</li>
+<li>Why is the 12-question accuracy weak evidence, and how would you strengthen it?</li>
+<li>Which latency stage would batching help most, and which would a smaller reranker help?</li>
+</ol>
+<p><strong>Answers.</strong>
+1. The generator. Retrieval already delivers the answer in 11 of 12 prompts, so better retrieval could add at most one correct answer.
+2. It is a correctness test for your own code. A silent bug in RoPE positions or the cache would otherwise look like "the model is bad".
+3. The changed answers were wrong before and after, or switched between wrong variants. Accuracy only counts the contains-gold result.
+4. One question equals 0.08, so a confidence interval would be very wide (Day 110). Use more questions, written independently of the notes' author, and normalise answer strings.
+5. Batching helps decode throughput across users (Day 118), and a smaller reranker would cut the roughly 0.2 s retrieval stage.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] My capstone reproduces the log: recall@5 0.79, accuracy 0.25, 8 generation errors.
+- [ ] I can draw the system and name the week where each part was built.
+- [ ] I can explain the failure categories and why generation dominates.
+- [ ] I wrote the report with honest limits.
+- [ ] I completed the Month-4 checkpoint exam below without notes, then marked it.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p><strong>Limits:</strong>
+- The QA set is small (12) and was written by the same author as the notes.
+- Accuracy is measured by string containment, so "2442817" written without commas would count as wrong.
+- The generator is tiny.
+- Quantisation is simulated.
+- No GPU was used, and no production server (vLLM, llama.cpp) was run; llama.cpp cannot be built here without <code>g++</code>/<code>cmake</code>.</p>
+<p>These limits are not embarrassing. Stating them is part of the deliverable.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Re-read the RAG paper (Lewis et al., 2020) and the PagedAttention paper (Kwon et al., 2023) with your system in mind.</li>
+<li>Compare your metrics with a RAG evaluation framework's (for example RAGAS: context recall, faithfulness, answer relevance).</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Describe an LLM system you built end to end and what limited its quality." Use this capstone:
+- the components and the week each came from;
+- recall@5 0.79 and context recall 11/12, against accuracy 3/12;
+- the diagnosis that the generator caused 8 of the 9 errors;
+- the int8 result (same accuracy, 9/12 identical answers, no speed change because it is simulated);
+- what you would change with more compute.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting only one end-to-end number.</li>
+<li>Not testing your own decoder against a reference.</li>
+<li>Hiding the failure cases, or tuning prompts on the 12 test questions and reporting the result as final.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Month 5 starts on Day 121 with reinforcement learning. Before then, review the Month-4 flashcards (<code>flashcards/month-04.csv</code>).</p>
+<hr />
+<h2 id="month-4-checkpoint-exam-15-questions-90-minutes-closed-notes-then-mark-yourself">Month 4 checkpoint exam (15 questions; 90 minutes; closed notes, then mark yourself)</h2>
+<ol>
+<li>Write scaled dot-product attention and explain the √d_k factor.</li>
+<li>What does RoPE do to queries and keys, and why does it give relative-position behaviour?</li>
+<li>Draw a pre-norm transformer block (attention and MLP sub-layers with residuals).</li>
+<li>How does BPE build its vocabulary?</li>
+<li>What is perplexity, and how does it relate to cross-entropy?</li>
+<li>What does LoRA train, and how many parameters does a rank-r adapter on a d×k matrix add?</li>
+<li>Why are only assistant tokens included in the SFT loss with a chat template?</li>
+<li>Write the Bradley-Terry preference probability, and say what a reward model learns from it.</li>
+<li>Write the DPO loss. What role does β play?</li>
+<li>Name three pitfalls in LLM evaluation from Week 16.</li>
+<li>Why does hybrid retrieval (BM25 + dense) often beat either one alone?</li>
+<li>Why does int4 per-tensor quantisation fail while group-wise int4 works?</li>
+<li>What problem do GPTQ and AWQ solve that plain RTN does not, and how does each approach it?</li>
+<li>Why does a KV cache speed up decoding, and what is its memory cost per token?</li>
+<li>In the capstone, retrieval delivered the answer in 11 of 12 prompts, but accuracy was 3 of 12. What do you conclude, and what are the main limits of that conclusion?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>softmax(QKᵀ/√d_k)V. Without the scaling, the dot products of unit-variance vectors have standard deviation √d_k, which saturates the softmax.</li>
+<li>It rotates each pair of query and key dimensions by an angle proportional to the token's position. The dot product of rotated q and k then depends only on the position difference.</li>
+<li>x → x + Attn(Norm(x)) → x + MLP(Norm(x)); a final norm comes before the output head.</li>
+<li>Start from characters or bytes, then repeatedly merge the most frequent adjacent pair into a new token until the vocabulary reaches its target size.</li>
+<li>Perplexity = exp(mean cross-entropy per token in nats). It is the "effective number of choices" per token.</li>
+<li>It trains low-rank matrices B (d×r) and A (r×k) with W' = W + (α/r)·BA, while W stays frozen. That adds r(d + k) parameters.</li>
+<li>The model should learn to produce answers, not to predict the user's prompt. Masking the user and system tokens focuses the gradient on the responses.</li>
+<li>P(a ≻ b) = σ(r(a) − r(b)). The reward model learns a scalar score whose differences predict human (or labelled) preferences.</li>
+<li>−log σ(β[(log π(y_w) − log π_ref(y_w)) − (log π(y_l) − log π_ref(y_l))]). β sets how strongly the policy may move away from the reference (it acts like a KL strength).</li>
+<li>Any three of:<ul>
+<li>test-set contamination;</li>
+<li>tiny eval sets with wide confidence intervals;</li>
+<li>LLM-judge biases (position, length, self-preference);</li>
+<li>prompt-format sensitivity;</li>
+<li>string-match brittleness.</li>
+</ul>
+</li>
+<li>They make different errors: BM25 matches rare exact terms, while dense retrieval matches paraphrases. Rank fusion combines both without calibrating scores (Week 17: recall@5 0.67 for BM25 and 0.64 for dense alone, 0.76 fused).</li>
+<li>Outlier weights set a single huge scale, so most weights round to zero (Day 116: perplexity 1,561,367.93). Group-wise scales follow the local range (group-64: 36.89, against 26.29 for fp32).</li>
+<li>RTN ignores the inputs, but output error depends on the activations. GPTQ compensates the rounding error in the remaining weights using the Hessian XᵀX. AWQ scales up the weight channels that meet large activations. On Day 117, int4 per-channel perplexity fell from 64.84 (RTN) to about 44 with both methods.</li>
+<li>Past keys and values do not change, so each decode step processes only the new token (Day 118: 27.3 → 67.8 tok/s). Memory per token is 2 × layers × KV heads × head dim × bytes; for SmolLM2 that is 23.6 MB per sequence at 512 tokens in fp32.</li>
+<li>The generator, not retrieval, limits quality (8 of 9 errors were generation errors). Limits:<ul>
+<li>only 12 questions, written by the notes' author;</li>
+<li>string-match scoring;</li>
+<li>one tiny model;</li>
+<li>simulated quantisation;</li>
+<li>CPU only.</li>
+</ul>
+</li>
+</ol>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-119.html">← Day 119</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-121.html">Day 121 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

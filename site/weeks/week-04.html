@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 4 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="4">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-03.html">← Week 3</a><a href="../syllabus.html">Syllabus</a><a href="week-05.html">Week 5 →</a></nav>
+<h1>Week 4 (Days 22-28): Classic supervised learning I: linear and logistic regression</h1><p class="meta"><a href="../../weeks/week-04.md">source: weeks/week-04.md</a> · <a href="../../pdf/week-04.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-022.html">Day 22: Linear regression and the cost function</a> <span class="st" data-st="22"></span></li><li><a href="../days/day-023.html">Day 23: Gradient descent for linear regression</a> <span class="st" data-st="23"></span></li><li><a href="../days/day-024.html">Day 24: Multiple linear regression, vectorised</a> <span class="st" data-st="24"></span></li><li><a href="../days/day-025.html">Day 25: Feature scaling and conditioning</a> <span class="st" data-st="25"></span></li><li><a href="../days/day-026.html">Day 26: Logistic regression</a> <span class="st" data-st="26"></span></li><li><a href="../days/day-027.html">Day 27: Evaluating models: metrics, thresholds, bias/variance</a> <span class="st" data-st="27"></span></li><li><a href="../days/day-028.html">Day 28: Week 4 project: housing regression with error analysis, plus Quiz 4</a> <span class="st" data-st="28"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-04"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Write the linear-regression cost J(w, b).</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>J = (1/2m) Σ (wxᵢ + b − yᵢ)².</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Give the GD updates for w and b.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>w ← w − α·mean((ŷ − y)x) and b ← b − α·mean(ŷ − y), updated simultaneously.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>J rises during batch GD. Name two possible causes.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>α too large, a gradient sign bug, unscaled features (or a non-simultaneous update bug).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Shapes: X is (m × n). What shapes are w, Xw and Xᵀe?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>(n,), (m,), (n,).</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why scale features before GD? Give the z-score formula and say what to fit it on.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It makes the cost bowl round (better conditioned), so a single α works and convergence is fast. x′ = (x − μ)/σ, with μ and σ from the training data only.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What iteration counts and condition numbers did you measure, raw vs scaled?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Raw data hit the 200,000 cap (or stopped early, far from the optimum). Z-scored data converged in 83 iterations. κ was 9.63e4 vs 1.16.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Write the sigmoid and the log-loss.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>σ(z) = 1/(1 + e^(−z)). L = −[y log p + (1 − y) log(1 − p)].</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What is the logistic-regression gradient form?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>∇_w = Xᵀ(p − y)/m and ∂b = mean(p − y).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>TP = 30, FP = 10, FN = 20. Precision, recall and F1?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>P = 0.75, R = 0.6, F1 = 0.667.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Train MSE 0.04, val MSE 0.14, noise floor 0.09. Diagnosis and two fixes?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Overfitting (variance). Get more data, add regularisation, or use a simpler model.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>What does ROC-AUC = 0.5 mean?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>No better than random ranking.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>What did error analysis reveal in the Day-28 project, and what was the fix?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Homes over 1800 sq ft were under-predicted (+5.31 mean residual). Adding a hinge feature max(area − 1800, 0) brought RMSE from 6.375 to 6.171.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Month 1, Foundations.</strong> Time budget: 42 h. Optional reading: the scikit-learn user guide sections on linear models and model evaluation (https://scikit-learn.org/stable/user_guide.html), and <em>An Introduction to Statistical Learning</em>, ch. 3-4 (https://www.statlearning.com/).</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Frame supervised learning as model + cost + optimiser, and visualise the cost surface J(w, b).</li>
+<li>Implement batch gradient descent for linear regression and read learning curves.</li>
+<li>Vectorise to many features, and match the normal equation and scikit-learn to 4 decimals.</li>
+<li>Explain <em>why</em> feature scaling speeds up GD (conditioning), and measure it.</li>
+<li>Implement logistic regression with log-loss, and match scikit-learn.</li>
+<li>Evaluate classifiers properly (confusion matrix, precision/recall/F1, thresholds, ROC-AUC) and diagnose bias vs variance.</li>
+</ol>
+<p><strong>Weekly project (Day 28):</strong> an end-to-end housing regression with <strong>error analysis</strong>, finding which homes the model gets wrong and fixing it with one feature.</p>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  D[data X,y] --&gt; S[split + scale on train only] --&gt; M[model f_w]
+  M --&gt; C[cost J]
+  C --&gt; O[gradient descent]
+  O --&gt; M
+  M --&gt; E[evaluate on held-out set]
+  E --&gt; A[error analysis → next idea]
+</code></pre></div>
+
+<p>All Week-4 scripts use <code>code/week-04/housing.py</code>, a deterministic synthetic generator. The true rule is price (lakh) = 0.05·area + 4·beds − 0.4·age − 0.8·dist_km + 20 + noise(σ = 6). Because we know the truth, we can check whether our learners recover it.</p>
+<hr />
+<h2 id="weekly-quiz-week-4-answers-below">Weekly quiz: Week 4 (answers below)</h2>
+<ol>
+<li>Write the linear-regression cost J(w, b).</li>
+<li>Give the GD updates for w and b.</li>
+<li>J rises during batch GD. Name two possible causes.</li>
+<li>Shapes: X is (m × n). What shapes are w, Xw and Xᵀe?</li>
+<li>Why scale features before GD? Give the z-score formula and say what to fit it on.</li>
+<li>What iteration counts and condition numbers did you measure, raw vs scaled?</li>
+<li>Write the sigmoid and the log-loss.</li>
+<li>What is the logistic-regression gradient form?</li>
+<li>TP = 30, FP = 10, FN = 20. Precision, recall and F1?</li>
+<li>Train MSE 0.04, val MSE 0.14, noise floor 0.09. Diagnosis and two fixes?</li>
+<li>What does ROC-AUC = 0.5 mean?</li>
+<li>What did error analysis reveal in the Day-28 project, and what was the fix?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>J = (1/2m) Σ (wxᵢ + b − yᵢ)².</li>
+<li>w ← w − α·mean((ŷ − y)x) and b ← b − α·mean(ŷ − y), updated simultaneously.</li>
+<li>α too large, a gradient sign bug, unscaled features (or a non-simultaneous update bug).</li>
+<li>(n,), (m,), (n,).</li>
+<li>It makes the cost bowl round (better conditioned), so a single α works and convergence is fast. x′ = (x − μ)/σ, with μ and σ from the training data only.</li>
+<li>Raw data hit the 200,000 cap (or stopped early, far from the optimum). Z-scored data converged in 83 iterations. κ was 9.63e4 vs 1.16.</li>
+<li>σ(z) = 1/(1 + e^(−z)). L = −[y log p + (1 − y) log(1 − p)].</li>
+<li>∇_w = Xᵀ(p − y)/m and ∂b = mean(p − y).</li>
+<li>P = 0.75, R = 0.6, F1 = 0.667.</li>
+<li>Overfitting (variance). Get more data, add regularisation, or use a simpler model.</li>
+<li>No better than random ranking.</li>
+<li>Homes over 1800 sq ft were under-predicted (+5.31 mean residual). Adding a hinge feature max(area − 1800, 0) brought RMSE from 6.375 to 6.171.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 107 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="107">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-106.html">← Day 106</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-108.html">Day 108 →</a></nav>
+<h1>Day 107: Reward modelling on a small LM, and shortcuts</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day107_reward_model.py"><code>code/week-16/day107_reward_model.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 106 (+1), Day 104 (+3), Day 100 (+7), Day 86 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Architecture.</strong> A reward model is usually the SFT model with its language-model head replaced by a <em>scalar head</em>: a linear layer from the final hidden state of the <em>last token</em> to one number. The whole prompt + answer is read, and the last position summarises it. Training uses the BT loss from Day 106 on (prompt, chosen, rejected) triples. In practice people fine-tune the full network or add LoRA; here we add LoRA r=8 to every linear layer of SmolLM2-135M plus a fresh head (2,442,817 trainable parameters).</p>
+<p><strong>What the RM actually learns.</strong> The RM learns whatever feature best separates chosen from rejected <em>in its training data</em>. If the data contain a spurious correlation (chosen answers are longer, more polite, use bullet points, end with "!"), the RM can learn that instead of the property you care about. During policy optimisation the policy then produces more of that feature: <em>reward hacking</em>. Length bias is the best-documented real example: human and AI raters tend to prefer longer answers, RMs pick this up, and optimised policies get longer.</p>
+<p><strong>Generalisation.</strong> An RM is only trusted near its training distribution. If training rejections are always of one kind, the RM may learn "detect that kind of mistake" rather than "detect correctness". A policy being optimised will quickly leave the training distribution, so this matters.</p>
+<p><strong>Evaluating an RM.</strong> The basic metric is held-out <em>pairwise accuracy</em>: the fraction of pairs where r(chosen) &gt; r(rejected). Good practice also tests pairs built differently from the training pairs, and checks for known biases (length, format, sycophancy).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-16/day107_reward_model.py</code> trains two RMs for 120 steps × 8 pairs each with AdamW (lr 5e-4).</p>
+<p><em>RM A</em>: rejected = unreversed words. Tested on held-out prompts with (i) the same kind of rejection and (ii) a <em>random other order</em> as the rejection, which it never saw.</p>
+<p><em>RM B</em>: a planted shortcut. Every chosen training answer ends with "!", and rejected answers (random other orders) never do. Tested with the "!" as in training, with no "!" anywhere, and with the "!" moved to the wrong answer.</p>
+<p><strong>Verified (out/day107_reward_model.log):</strong>
+- RM A trained in 90 s; last batch loss 0.000.
+- RM A held-out accuracy: 1.00 with the training kind of rejection, but only 0.68 when the rejection is a random other order.
+- Example rewards from RM A on one test prompt: correct 12.02, unreversed −4.59, correct + " Great question!" 9.29.
+- RM B trained in 105 s; held-out accuracy 1.00 with "!" as in training, 0.62 with no "!" anywhere, and <strong>0.00</strong> when "!" is moved to the wrong answer.</p>
+<p>So RM A partly learned "is this the unreversed order?" rather than "is this correctly reversed?", and RM B learned almost only the "!". A 135M model with 120 steps is a small RM, but the pattern (perfect in-distribution accuracy, poor out-of-distribution accuracy, shortcuts) is the general one.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about 3.5 minutes) and check your numbers against the log.</li>
+<li>Train RM A on a mix: half the rejections unreversed, half random orders. Re-measure the 0.68.</li>
+<li>Make a <em>length</em> shortcut: append " Here you go." to every chosen answer. Then test with the suffix on the rejected answer. Compare with RM B.</li>
+<li>Print the reward for a correct answer followed by an increasing number of random words. Does reward fall smoothly?</li>
+<li>Replace the last-token readout with mean pooling over the answer tokens. Does that change the shortcut behaviour?</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why read the reward from the last token rather than the first?</li>
+<li>RM A gives 12.02 to the correct answer and −4.59 to the unreversed one. What BT probability does that imply?</li>
+<li>Why is held-out accuracy of 1.00 on same-type pairs not enough evidence that an RM is good?</li>
+<li>Name two real-world spurious features an RM might learn.</li>
+</ol>
+<p><strong>Answers.</strong> (1) In a causal LM only the last position has attended to the whole sequence. (2) σ(12.02 − (−4.59)) = σ(16.61), essentially 1.0: the RM is extremely confident, which is itself a warning sign of over-fitting synthetic data. (3) Because the policy will produce <em>different</em> kinds of answers; RM A falls to 0.68 on a new kind of wrong answer. (4) Length, politeness phrases, markdown formatting, agreeing with the user, confident tone.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can describe the RM architecture (backbone + scalar head on the last token).
+- [ ] I can state the RM loss and the pairwise-accuracy metric.
+- [ ] I can explain the RM A result (1.00 vs 0.68) and the RM B result (0.00 with the "!" moved).
+- [ ] I can explain how an RM shortcut becomes reward hacking during policy optimisation.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Real mitigations include more diverse rejected answers, training on pairs that differ in one feature only, ensembles of RMs, length-normalised or length-penalised rewards, and keeping the KL penalty. None of these makes an RM "correct"; they make specific failures less likely. Training loss of 0.000 on the last batch should also worry you: the RM separates training pairs by huge margins, which is over-confidence, not quality.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Search for "reward model overoptimization scaling laws" (Gao et al.) to see how true quality first rises and then falls as a policy optimises a proxy RM harder.</li>
+<li>Search for "RewardBench" to see how RMs are compared on standard pair sets.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your RM scores 98% on its validation pairs, but after RL the model writes long, padded answers. What happened and what would you do?" Expected points: the validation pairs share the training distribution and the length bias; the policy found the bias; check RM reward against length; add length-controlled pairs, penalise length or normalise reward, raise β, use an RM ensemble, and evaluate with humans or a held-out judge on length-matched comparisons.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Testing the RM only on pairs built like its training pairs.</li>
+<li>Comparing rewards across different prompts.</li>
+<li>Forgetting the padding side: with right padding the "last token" index must come from the attention mask (as in the script), not position −1.</li>
+<li>Reading a training loss of 0 as success.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow you skip the reward model entirely: DPO optimises the same KL-regularised objective directly from the pairs.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-106.html">← Day 106</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-108.html">Day 108 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

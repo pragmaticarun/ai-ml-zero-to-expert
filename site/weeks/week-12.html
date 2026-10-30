@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 12 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="12">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-11.html">← Week 11</a><a href="../syllabus.html">Syllabus</a><a href="week-13.html">Week 13 →</a></nav>
+<h1>Week 12 (Days 78-84): Sequences, attention&#x27;s motivation, and performance engineering</h1><p class="meta"><a href="../../weeks/week-12.md">source: weeks/week-12.md</a> · <a href="../../pdf/week-12.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-078.html">Day 78: RNNs and backprop through time</a> <span class="st" data-st="78"></span></li><li><a href="../days/day-079.html">Day 79: LSTMs and GRUs</a> <span class="st" data-st="79"></span></li><li><a href="../days/day-080.html">Day 80: Embeddings and word2vec intuition</a> <span class="st" data-st="80"></span></li><li><a href="../days/day-081.html">Day 81: Seq2seq and the motivation for attention</a> <span class="st" data-st="81"></span></li><li><a href="../days/day-082.html">Day 82: Mixed precision; profiling a PyTorch training run</a> <span class="st" data-st="82"></span></li><li><a href="../days/day-083.html">Day 83: JAX quick tour (optional): jit, grad, vmap</a> <span class="st" data-st="83"></span></li><li><a href="../days/day-084.html">Day 84: PROJECT W12: character-level language model; Quiz 12</a> <span class="st" data-st="84"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-12"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Write the BPTT recursion for ∂L/∂h_{t−1} in a tanh RNN.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>∂L/∂h_{t−1} = W_hᵀ (diag(1 − h_t²) ∂L/∂h_t) + direct loss terms at t−1.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>With W_h spectral radius 0.51, what was |∂L/∂h| at t = 0 (T = 50)?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1.01e-19.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>What happened on the Day-78 memory task at T = 20?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>MSE 2.303, worse than predicting 0 (0.931): training failed.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Give the LSTM cell update equation.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>c_t = f ⊙ c_{t−1} + i ⊙ g; h_t = o ⊙ tanh(c_t).</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Parameter counts of RNN, GRU, LSTM with I = 10, H = 32.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1,408; 4,224; 5,632.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What did forget-bias 1 change on Day 79, and what happened at T = 50?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>At T = 20 the LSTM went from 0.7520 to 1.0; at T = 50 all models stayed near chance (about 0.25).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What is the SGNS loss for one positive pair and k negatives?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>−log σ(u_ctx·v) − Σ_k log σ(−u_k·v).</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Why were raw cosines misleading in the first Day-80 version?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Anisotropy: all vectors shared a direction, so cos(king, the) was 0.874; centring fixed it.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Exact-match at length 16 without vs with attention?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.000 vs 0.292.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why does fp16 need loss scaling? Use the Day-82 example.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1e-8 underflows to 0 in fp16; scaling by 65,536 keeps it (6.55e-4) and it unscales to 9.997e-9.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Name the three JAX transformations and what the 101 ms measured.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>grad, jit, vmap; 101 ms was the first-call compile time of a fresh jit.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Validation bits/char of the trigram and of the GRU LM after 1,500 steps.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>2.984 and 2.159.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 3). Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Derive backpropagation through time and <em>measure</em> why plain RNN gradients vanish or explode.</li>
+<li>Use LSTMs and GRUs, count their parameters, and know their limits on long-range memory.</li>
+<li>Train word embeddings (skip-gram with negative sampling) and read them critically.</li>
+<li>Build an encoder-decoder and see attention fix its bottleneck.</li>
+<li>Understand number formats and mixed precision; profile a training run; write a small Rust/PyO3 data kernel.</li>
+<li>Get a quick tour of JAX (grad, jit, vmap).</li>
+<li>Train a character-level language model and compare it with count baselines (weekly project).</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 78 RNN + BPTT] --&gt; B[Day 79 LSTM/GRU]
+  B --&gt; C[Day 80 embeddings]
+  C --&gt; D[Day 81 seq2seq + attention]
+  D --&gt; E[Day 82 mixed precision, profiling, Rust]
+  E --&gt; F[Day 83 JAX tour]
+  F --&gt; G[Day 84 char-LM project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note.</strong> CPU-only box. Models are small and training is short. The point is to see mechanisms, not to set records.</p>
+<p><strong>Datasets:</strong> Tiny Shakespeare (<code>https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt</code>, 1,115,394 characters, public-domain text), cached in <code>data/</code> by <code>code/common.py</code>. Synthetic sequence tasks generated by the scripts. MNIST and CIFAR-10-small as in earlier weeks.</p>
+<hr />
+<h2 id="weekly-quiz-week-12">Weekly quiz: Week 12</h2>
+<ol>
+<li>Write the BPTT recursion for ∂L/∂h_{t−1} in a tanh RNN.</li>
+<li>With W_h spectral radius 0.51, what was |∂L/∂h| at t = 0 (T = 50)?</li>
+<li>What happened on the Day-78 memory task at T = 20?</li>
+<li>Give the LSTM cell update equation.</li>
+<li>Parameter counts of RNN, GRU, LSTM with I = 10, H = 32.</li>
+<li>What did forget-bias 1 change on Day 79, and what happened at T = 50?</li>
+<li>What is the SGNS loss for one positive pair and k negatives?</li>
+<li>Why were raw cosines misleading in the first Day-80 version?</li>
+<li>Exact-match at length 16 without vs with attention?</li>
+<li>Why does fp16 need loss scaling? Use the Day-82 example.</li>
+<li>Name the three JAX transformations and what the 101 ms measured.</li>
+<li>Validation bits/char of the trigram and of the GRU LM after 1,500 steps.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>∂L/∂h_{t−1} = W_hᵀ (diag(1 − h_t²) ∂L/∂h_t) + direct loss terms at t−1.</li>
+<li>1.01e-19.</li>
+<li>MSE 2.303, worse than predicting 0 (0.931): training failed.</li>
+<li>c_t = f ⊙ c_{t−1} + i ⊙ g; h_t = o ⊙ tanh(c_t).</li>
+<li>1,408; 4,224; 5,632.</li>
+<li>At T = 20 the LSTM went from 0.7520 to 1.0; at T = 50 all models stayed near chance (about 0.25).</li>
+<li>−log σ(u_ctx·v) − Σ_k log σ(−u_k·v).</li>
+<li>Anisotropy: all vectors shared a direction, so cos(king, the) was 0.874; centring fixed it.</li>
+<li>0.000 vs 0.292.</li>
+<li>1e-8 underflows to 0 in fp16; scaling by 65,536 keeps it (6.55e-4) and it unscales to 9.997e-9.</li>
+<li>grad, jit, vmap; 101 ms was the first-call compile time of a fresh jit.</li>
+<li>2.984 and 2.159.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

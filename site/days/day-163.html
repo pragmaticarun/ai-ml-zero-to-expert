@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 163 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="163">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-162.html">← Day 162</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-164.html">Day 164 →</a></nav>
+<h1>Day 163: Bias mitigation: reweighing and group thresholds</h1>
+<p class="meta">Week 24 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-24.md">source: weeks/week-24.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Two families of fix (25 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 162 (+1), Day 160 (+3), Day 156 (+7), Day 142 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-two-families-of-fix-25-min">Block 1: Two families of fix (25 min)</h3>
+<p><strong>Pre-processing / in-processing:</strong> change the training distribution. <em>Reweighing</em> (Kamiran &amp; Calders) sets sample weight w(g,y) = P(g)P(y)/P(g,y) so that, in the weighted training set, the label is independent of the group. The learner then fits as usual.</p>
+<p><strong>Post-processing:</strong> keep the scores, change the decision. <em>Group-specific thresholds</em> pick a threshold per group to hit a target (equal selection rate, equal TPR, …). Thresholds must be chosen on a held-out <em>train-side</em> split, never on the test set.</p>
+<p>Neither is free. Reweighing changes what the model learns; group thresholds change who is selected at the same score. Both can hurt overall accuracy or another fairness metric.</p>
+<h3 id="block-2-run-it-35-min">Block 2: Run it (35 min)</h3>
+<p><code>python day163_mitigation.py</code>.</p>
+<p><strong>Verified (out/day163_mitigation.log):</strong>
+- Baseline t=0.5: acc 0.8542; DI 0.29; TPR 0.624 / 0.489; FPR 0.096 / 0.021; prec 0.739 / 0.741.
+- Reweighing weights: g0y0 1.093, g0y1 0.788, g1y0 0.853, g1y1 <strong>2.204</strong> (Female positives up-weighted most).
+- Reweighing (with sex), t=0.5: acc <strong>0.8469</strong> (−0.7 points); DI <strong>0.57</strong>; TPR 0.540 / 0.647; FPR 0.067 / 0.054; prec 0.780 / <strong>0.600</strong>.
+- Reweighing without sex: almost the same (acc 0.8473, DI 0.55).
+- Group thresholds for demographic parity (target sel=0.18), chosen on a 30% train-side split: Male 0.65, Female 0.15. Test: acc 0.8339; sel 0.176 / 0.178 (DI <strong>1.01</strong>); TPR 0.473 / 0.783; FPR 0.046 / 0.102; prec 0.819 / <strong>0.488</strong>.
+- Group thresholds for equal opportunity (target TPR=0.60): Male 0.52, Female 0.40. Test: acc <strong>0.8534</strong>; TPR 0.608 / 0.568; DI 0.37; prec 0.747 / 0.685.
+- Single-threshold sweep t=0.3…0.6: DI stays ≈0.28–0.29; accuracy peaks near 0.5 (0.8541).</p>
+<h3 id="block-3-interpretation-35-min">Block 3: Interpretation (35 min)</h3>
+<p><strong>Reweighing buys a better DI and closer TPRs, and sells Female precision.</strong> The weight 2.204 on Female positives pulls the decision boundary toward selecting more women, so Female TPR rises (0.489→0.647) while Female precision falls (0.741→0.600). Overall accuracy drops 0.7 points. That is a real trade-off, not a free improvement.</p>
+<p><strong>Equal-opportunity thresholds are the cheapest fairness win here.</strong> Matching TPR≈0.60 costs almost no accuracy (0.8534 vs 0.8541) and does not wreck precision. Demographic-parity thresholds equalise selection rates perfectly (DI 1.01) but cut Female precision to 0.488 and overall accuracy by two points: many of the newly selected women are false positives under this label.</p>
+<p><strong>A single shared threshold cannot fix DI.</strong> Sweeping t from 0.3 to 0.6 leaves DI stuck near 0.29. The score distributions differ by group; one cut cannot equalise selection rates without group-specific thresholds or a different training objective. Plotting selection rate against t for each group (a homework plot) makes the gap visible at every operating point.</p>
+<p><strong>Never tune on the test set.</strong> Thresholds were fit on a train-side validation split. Reporting the test numbers after that choice is fine; searching thresholds on the test set is not. The same discipline applies to picking the reweighing objective or the equal-opportunity target TPR: freeze the rule on validation, then touch the test set once.</p>
+<p><strong>Which mitigation to reach for.</strong> If the product requirement is "same TPR" (equal opportunity), today's group thresholds almost free. If it is "same selection rate" (demographic parity), expect a precision cost on the up-selected group. If it is "same precision and same TPR", the impossibility result of Day 162 says you need a better model or different base rates, not a smarter threshold.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why is Female-positive weight 2.204? <em>P(F)P(Y=1)/P(F,Y=1) &gt; 1 because Female positives are rarer than the product of the margins.</em></li>
+<li>What did demographic-parity thresholds cost? <em>~2 accuracy points and Female precision 0.488.</em></li>
+<li>Why does a single threshold fail to fix DI? <em>Score distributions differ by group; one cut scales both selection rates roughly together.</em></li>
+<li>Where must group thresholds be chosen? <em>On a held-out train-side split, never on the test set.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Implement reject-option classification around the decision boundary (defer the least-confident band to a human) and measure how DI and accuracy move as the band widens.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Reweighing is one pre-processing method. Others (massaging, preferential sampling) change labels or sampling; treat them carefully — changing labels is a strong intervention.</li>
+<li>Post-processing needs the protected attribute at decision time. That may be unavailable or illegal to use; check the deployment context.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Compare today's equal-opportunity thresholds with Hardt, Price &amp; Srebro's derived optimal thresholds for equalised odds (which also match FPR).</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Just reweight the minority and ship." Reply with today's numbers: DI improves to 0.57, Female precision falls to 0.60, accuracy −0.7 points. Ask which metric the product owns, then measure that one before and after.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Tuning fairness thresholds on the test set.</li>
+<li>Reporting only DI after mitigation and hiding precision.</li>
+<li>Assuming the protected attribute is available at serving time.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 164 asks <em>why</em> the model decides: permutation importance, Shapley, LIME-style, saliency, probing.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-162.html">← Day 162</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-164.html">Day 164 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

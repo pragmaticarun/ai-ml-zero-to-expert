@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 171 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="171">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-170.html">← Day 170</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-172.html">Day 172 →</a></nav>
+<h1>Day 171: RAG retrieval and tool-using agent</h1>
+<p class="meta">Week 25 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-25.md">source: weeks/week-25.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Grounded generation pattern (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run RAG + agent (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Read the failure modes in the successes (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 170 (+1), Day 167 (+3), Day 163 (+7), Day 150 (+21).</p>
+<h3 id="block-1-grounded-generation-pattern-30-min">Block 1: Grounded generation pattern (30 min)</h3>
+<p><code>CourseRAG.answer</code> retrieves top-3, builds a chat template that says <em>Answer using ONLY the context. Cite chunk ids.</em>, then greedily generates ≤40 new tokens with SmolLM2. Groundedness heuristic: chunk id / week stub appears in the answer, or (≥2) overlapping content words with the context.</p>
+<h3 id="block-2-run-rag-agent-40-min">Block 2: Run RAG + agent (40 min)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>day171_rag_agent.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day171_rag_agent.log</code>, <code>day171_stats.json</code>):</strong>
+- recall@3: <strong>18/25 = 0.720</strong>; p50 retrieve <strong>118.3 ms</strong>.
+- Grounded on 8 questions: <strong>8/8 = 1.000</strong>; p50 RAG+gen <strong>0.78 s</strong> (≪ 8 s).
+- Agent tools: <code>calc: (2+3)*4</code> → <strong>20</strong>; day-155 title returned; RAG path answered "What is RAG?" without blocking. Tool/agent success <strong>3/3</strong>.
+- Injection: blocked <strong>3/3</strong> attacks; false positives <strong>0/10</strong> benign.</p>
+<h3 id="block-3-read-the-failure-modes-in-the-successes-35-min">Block 3: Read the failure modes in the successes (35 min)</h3>
+<p>Several grounded=True answers are still factually soft: k-means described as "k-nearest neighbors"; random-forest answer pasted a week status blurb. <strong>Grounding ≠ correctness.</strong> The gate still passes because the budget measures citation/overlap, not a human factuality rubric. Capstone write-ups must say this out loud (Day 174 limitations).</p>
+<p>Agent routing is pattern-based (math → calc; "title"+"day N" → syllabus map; else course_search + RAG). That is enough for the allow-list demo; it is not a learned router.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>p50 RAG+gen? <strong><em>0.78 s.</em></strong></li>
+<li>Injection FP rate? <strong><em>0/10.</em></strong></li>
+<li>Why keep top_k=3? <em>Budget row; more context blows the 1024-token prompt truncate and CPU decode time.</em></li>
+<li>What does <code>guard_user</code> return on "Ignore previous instructions…"? <em>blocked, reason injection pattern.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Add a fourth tool <code>list_weeks</code> that returns the sorted week filenames (read-only). Extend <code>TOOLS</code> and a routing branch. Confirm injection still blocks before any tool runs.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li><code>INJECTION_PAT</code> is a regex — paraphrases can evade (Week 21 lesson). Defence in depth: allow-list + AST calc + no filesystem tools.</li>
+<li>Day titles are scraped from <code>## Day N:</code> headings in <code>weeks/*.md</code> at Agent init.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Replace the heuristic grounded flag with a tiny entailment check (e.g. overlap + "cite [id]" regex). Re-measure the 8-question set.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Our agent has tools and a system prompt — we are safe." Reply: show the injection suite and the AST calc rejects. System prompts are not a control boundary; code is.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Calling <code>eval</code> on calc expressions.</li>
+<li>Measuring only attack block rate and ignoring false positives on benign study questions.</li>
+<li>Shipping LoRA path as default after Day 170's nonsense generations.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Log the three hit ids for each of the 25 questions to a CSV; sort by whether the week-tag matched. Spot patterns in the seven misses.</li>
+<li>Time <code>answer(..., use_context=False)</code> vs <code>use_context=True</code> on the same eight questions; compare grounded flags.</li>
+<li>Feed the agent the string <code>calc: 2**10</code> and a blocked injection in the same session; confirm order of checks (guard runs first).</li>
+</ol>
+<p>Routing policy is intentionally dumb. Learned routers need data you do not have on Day 171. Pattern routing plus an allow-list gives you a testable control plane: every tool name is known, every argument schema is known, every rejection path returns JSON instead of a stack trace (after Day 174's calc hardening).</p>
+<p>Context formatting matters. The template truncates each hit to 400 characters and the whole prompt to 1024 tokens. If your week files have the thesis of a section after character 400, retrieval can be "correct" by week-tag while the generator never sees the sentence that answers the question. That is a chunking/truncation bug, not an LM bug. Fix by moving key definitions earlier in sections or by raising the per-hit character cap inside the latency budget.</p>
+<p>Injection testing must include benign study questions. A guard that blocks "ignore previous instructions" but also blocks "What is attention?" is useless for a course assistant. The 0/10 FP result is as important as the 3/3 attack result. When you tighten the regex on Day 174's paraphrases, re-run the benign list every time.</p>
+<p>Tool traces belong in the response. Day 175's tests assert on <code>answer</code> and <code>blocked</code>, but production debugging wants <code>trace</code> with tool name, args, and raw tool JSON. Keep traces; strip them only at a user-facing presentation layer if needed.</p>
+<h3 id="timed-6-hour-schedule-suggested">Timed 6-hour schedule (suggested)</h3>
+<ul>
+<li>0:00–0:20 Review; re-read Day 169 budget rows for grounded and injection.</li>
+<li>0:20–1:20 Implement or run RAG answer loop; fill the 8-question table by hand from the log.</li>
+<li>1:20–2:20 Agent tools + injection suite.</li>
+<li>2:20–3:20 Error analysis on grounded-but-wrong answers (k-means, forest blurb).</li>
+<li>3:20–4:20 Practice: fourth tool or CSV of hit ids.</li>
+<li>4:20–5:20 Interview + harden any crash paths you notice.</li>
+<li>5:20–6:00 Update design doc with measured p50 0.78 s and 3/3 tools.</li>
+</ul>
+<p>Notice that retrieve p50 (~118 ms) is a small slice of RAG p50 (~0.78 s). Generation dominates on CPU. That tells you where optimisation time goes on Day 172: shaving int8 microseconds off retrieval will not move the user-visible p50 until decode gets faster (quantised generate, fewer new tokens, smaller context). Keep retrieval correct; spend performance energy on decode and on not blowing the prompt length.</p>
+<p>The agent return type is a dict with <code>blocked</code>, <code>answer</code>, optional <code>trace</code>, optional <code>hits</code>. Day 175's HTTP layer JSON-encodes that dict directly. Stable keys are part of the API contract — rename carefully and update tests in the same change.</p>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 172 attacks latency and memory: int8 Rust scoring + KV budget.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-170.html">← Day 170</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-172.html">Day 172 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

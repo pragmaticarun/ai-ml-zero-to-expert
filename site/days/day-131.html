@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 131 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="131">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-130.html">← Day 130</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-132.html">Day 132 →</a></nav>
+<h1>Day 131: Reward shaping pitfalls</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day131_reward_shaping.py"><code>code/week-19/day131_reward_shaping.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 130 (+1), Day 128 (+3), Day 124 (+7), Day 110 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Sparse rewards are slow.</strong> If the only reward is +1 at the goal, an agent must stumble onto the goal by chance before anything is learned. A natural fix is <strong>reward shaping</strong>: add intermediate rewards that hint at progress. The danger is that the agent optimises the reward you wrote, not the goal you meant.</p>
+<p><strong>The classic failure.</strong> Reward the agent +0.1 every time it moves closer to the goal, and nothing for moving away. A loop "step closer, step back, step closer…" now earns 0.1 every two steps, forever. With γ = 0.99 that stream is worth about 0.1/(1−0.99²) ≈ 5, far more than the single +1 at the goal. The optimal policy for the shaped MDP is to never finish. This is <strong>reward hacking</strong> in miniature, and it is the same phenomenon Month 4 met when reward models were exploited by RLHF policies.</p>
+<p><strong>Potential-based shaping.</strong> Ng, Harada and Russell (1999) showed that if the shaping term has the form F(s, s') = γΦ(s') − Φ(s) for any function Φ of state, the optimal policy is unchanged. Intuition: along any path the terms telescope, so the total shaping bonus depends only on the start and end states, and loops earn exactly zero (minus discounting). You can encode a heuristic (here Φ = −0.1 × Manhattan distance) without creating a loophole. With Φ(goal) = 0, the shaped values are V'(s) = V(s) − Φ(s).</p>
+<p><strong>But "preserves the optimal policy" is not "always faster".</strong> Shaping changes the values the learner starts from and the paths it explores. A potential can help on average while still sending some runs down an unlucky road. Always measure.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day131_reward_shaping.py</code>. Setup: a deterministic 10x10 grid from (0,0) to (9,9), +1 on reaching the goal, γ 0.99, a 200-step cap. Two checks: (1) value iteration on each reward, and whether its greedy policy reaches the goal; (2) tabular Q-learning (α 0.5, ε 0.1, Q0 = 0), 10 seeds, recording the first episode at which the greedy policy follows an 18-step shortest path (within 1,000 episodes).</p>
+<p><strong>Verified (out/day131_reward_shaping.log):</strong>
+- <strong>Base reward:</strong> the value-iteration policy reaches the goal in 18 steps. Q-learning first-success episodes: 70, 80, 58, 49, 53, 38, 63, 55, 53, 51; 10/10 seeds, median 54.
+- <strong>Naive shaping (+0.1 per step closer):</strong> the value-iteration policy does <strong>not</strong> reach the goal (it loops). Q-learning: 0/10 seeds ever found the shortest path.
+- <strong>Potential-based (Φ = −0.1·distance):</strong> the value-iteration policy reaches the goal in 18 steps. Q-learning: 2, 95, 4, 38, 2, 70, 3, none, 94, 73; 9/10 seeds, median 38.</p>
+<p><strong>Reading it.</strong> The naive reward did not just slow learning; it changed the optimal behaviour, so even exact dynamic programming learned to loop. Potential-based shaping kept the optimum, and four seeds solved it within 4 episodes, but the spread is huge (2 to 95) and one seed never got there in 1,000 episodes. The median improved (38 vs 54), yet a safe claim from 10 seeds is "faster on most runs, not reliably faster". The base reward was the most consistent.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Add a penalty of −0.1 for moving away (so loops net zero, undiscounted). Does VI now reach the goal? Why is this close to, but not exactly, potential-based?</li>
+<li>Try Φ = −0.5·distance and Φ = −0.01·distance; record median and failures.</li>
+<li>Investigate the failed potential-based seed: print its greedy path at episode 1,000.</li>
+<li>Write a short note: three real-world reward specifications that could be hacked the same way.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Write the potential-based shaping term.</li>
+<li>Why does it not change the optimal policy?</li>
+<li>Estimate the discounted value of the naive loop.</li>
+<li>Why did VI fail under naive shaping, not just Q-learning?</li>
+<li>What is the honest summary of the potential-based result?</li>
+</ol>
+<p><strong>Answers.</strong> 1) F = γΦ(s') − Φ(s). 2) Sums telescope; every policy's return shifts by the same −Φ(s0). 3) About 0.1/(1−γ²) ≈ 5 (versus 1 for finishing). 4) The optimum of the shaped MDP itself is to loop. 5) Median faster (38 vs 54), high spread, one seed in ten failed.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days. Flashcards: reward hacking; potential-based shaping; telescoping; "policy-preserving ≠ faster".</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Reward models in RLHF are learned shaping functions with no such guarantee, which is one reason RLHF keeps a KL penalty to a reference model (Day 132).</li>
+<li>Termination rewards and penalties are also shaping: a per-step −1 makes the agent want to end episodes, which can mean failing fast.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Search for Ng, Harada and Russell, "Policy invariance under reward transformations" (ICML 1999), and read the main theorem and its proof sketch.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your agent maximises a shaped reward but ignores the real goal. How do you diagnose and fix it?" Evaluate on the true objective separately; look at trajectories, not just returns; replace ad-hoc bonuses with potential-based ones or remove them; and treat any learned reward as exploitable.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Evaluating with the shaped reward instead of the true one.</li>
+<li>Rewarding progress without penalising regress.</li>
+<li>Claiming a speed-up from one or two seeds.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow links all of this back to Month 4: PPO with a KL penalty (RLHF), GRPO, and DPO, on a toy where the answer is known exactly.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-130.html">← Day 130</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-132.html">Day 132 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

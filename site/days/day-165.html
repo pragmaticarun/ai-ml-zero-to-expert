@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 165 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="165">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-164.html">← Day 164</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-166.html">Day 166 →</a></nav>
+<h1>Day 165: Privacy: differential privacy, DP-SGD, membership inference</h1>
+<p class="meta">Week 24 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-24.md">source: weeks/week-24.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: What DP promises (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 164 (+1), Day 162 (+3), Day 158 (+7), Day 144 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-what-dp-promises-30-min">Block 1: What DP promises (30 min)</h3>
+<p><strong>Differential privacy (ε, δ)</strong> bounds how much any single training example can change the distribution of a randomised algorithm's output. Smaller ε is stronger privacy. δ is a small failure probability (we use 1e-5).</p>
+<p>The <strong>Laplace mechanism</strong> adds Laplace(0, Δ/ε) noise to a query with sensitivity Δ. For a count, Δ=1, so the scale is 1/ε.</p>
+<p><strong>DP-SGD</strong> (Abadi et al.) makes SGD private: clip each example's gradient to an L2 norm C, sum the clipped gradients, add Gaussian noise σ·C, then step. Privacy cost is tracked with an <strong>accountant</strong>. We implement a Rényi-DP (RDP) accountant for Poisson-subsampled Gaussian noise and cross-check it with Opacus's <code>RDPAccountant</code>.</p>
+<p><strong>Membership inference (MIA)</strong> asks whether a particular example was in the training set. A simple attack thresholds on loss: members tend to have lower loss. AUC 0.5 means the attack does no better than chance.</p>
+<h3 id="block-2-run-it-40-min">Block 2: Run it (40 min)</h3>
+<p><code>python day165_privacy.py</code>.</p>
+<p><strong>Verified (out/day165_privacy.log):</strong>
+- Count of &gt;50K in train = 8,181. Laplace over 1,000 releases: ε=0.1 → mean abs error 9.85 (95th pct 30.98); ε=1.0 → 1.06 (3.14); ε=10 → 0.10 (0.29).
+- DP-SGD logistic regression: N=34,189, D=108, Poisson batch L=256 (q≈0.00749), 5 epochs, C=1.0, δ=1e-5, 667 steps.
+  - Non-private same loop: test acc <strong>0.8512</strong>.
+  - σ=0.6: acc 0.8481 (sd 0.0004); ε 7.176 (classic conversion) / <strong>6.221</strong> (Balle et al. 2020) / <strong>6.167</strong> (Opacus).
+  - σ=1.0: acc 0.8481; ε 1.831 / <strong>1.438</strong> / <strong>1.436</strong>.
+  - σ=2.0: acc 0.8479; ε 0.533 / <strong>0.407</strong> / <strong>0.407</strong>.
+  - σ=4.0: acc 0.8467; ε 0.243 / <strong>0.178</strong> / <strong>0.181</strong>.
+- Loss-threshold MIA AUC: Adult logreg <strong>0.4989</strong>; Month 3 CNN (2,500 members vs 2,500 non-members) <strong>0.5297</strong> (train acc 0.7940, mean loss in/out 0.605/0.726); overfit MLP on 500 rows <strong>0.5678</strong> (train 0.9960 / test 0.8140); DP-SGD σ=1.0 <strong>0.4981</strong>.</p>
+<h3 id="block-3-interpretation-35-min">Block 3: Interpretation (35 min)</h3>
+<p><strong>Utility barely moved under DP-SGD here.</strong> Even at σ=4 (ε≈0.18 with the tight conversion) accuracy stayed within half a point of the non-private 0.8512. Adult logistic regression is a low-capacity model on a large N; the clipped, averaged gradient is already stable, so moderate noise is cheap. That is <em>not</em> a general claim — deep nets on small data pay more.</p>
+<p><strong>The accountant matched Opacus once we used the tight conversion.</strong> Classic ε = ρ + log(1/δ)/(α−1) over-states by ~20–30% here. Balle et al. 2020's conversion matched Opacus to two decimals at σ≥1. When you report ε, name the accountant and the conversion.</p>
+<p><strong>MIA is near chance on the well-regularised Adult LR, and only mildly above chance on the CNN.</strong> The overfit MLP (train 0.996) is where the attack works better (AUC 0.5678). Privacy risk tracks overfitting. DP-SGD at σ=1.0 brought MIA back to 0.4981, consistent with the promise, though AUC alone is a weak attack — stronger attacks exist.</p>
+<p><strong>Laplace intuition.</strong> At ε=1 the typical error on a count is about 1; at ε=0.1 it is about 10. Pick ε from the query's tolerance, not from a slogan.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why clip before noising in DP-SGD? <em>Clipping bounds each example's sensitivity; without it, one huge gradient dominates the noise scale.</em></li>
+<li>What does MIA AUC 0.5 mean? <em>The attacker cannot tell members from non-members better than chance on this loss-threshold attack.</em></li>
+<li>Why did our classic ε disagree with Opacus? <em>Different (ε,δ) conversion from the same RDP; the Balle et al. conversion matched.</em></li>
+<li>Does low MIA AUC prove DP? <em>No. It is one empirical attack. DP is a worst-case guarantee over all attacks.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Sweep C ∈ {0.5, 1, 2} at fixed σ=1 and plot test accuracy vs ε. Then try a shadow-model MIA (train 5 shadow LRs) and compare AUC to the loss-threshold attack.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>δ=1e-5 is ≈1/N here (N≈3.4e4). A common rule is δ ≪ 1/N.</li>
+<li>Opacus was used only as an accountant cross-check; training used our own loop so every number is inspectable.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read Abadi et al. 2016 §3–4 and Mironov 2017 (RDP) abstracts; recompute today's ε with moments accountant vs RDP.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"We need ε≤1 and no accuracy loss." On this Adult LR, σ≈1.0 gives ε≈1.44 at δ=1e-5 with almost no accuracy loss. Pushing below ε=1 needed σ≈2 (ε≈0.41) and still held accuracy. Ask for δ, the accountant, and a utility budget before promising ε.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting ε without δ, accountant, or composition over steps.</li>
+<li>Claiming "DP" after adding noise once at the end of non-private training.</li>
+<li>Using MIA AUC alone as a privacy proof.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 166 attacks the model from the outside: adversarial examples and distribution shift.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-164.html">← Day 164</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-166.html">Day 166 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

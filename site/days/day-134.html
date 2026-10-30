@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 134 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="134">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-133.html">← Day 133</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-135.html">Day 135 →</a></nav>
+<h1>Day 134: The agent loop and tool calling with JSON schemas</h1>
+<p class="meta">Week 20 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-20.md">source: weeks/week-20.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-20/day134_tool_calling.py"><code>code/week-20/day134_tool_calling.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 133 (+1), Day 131 (+3), Day 127 (+7), Day 113 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>What an "agent" is, in one loop.</strong> Strip the marketing away and an LLM agent is a while-loop around a model:</p>
+<ol>
+<li><strong>Observe:</strong> build a context from the task, the history so far and the tool descriptions.</li>
+<li><strong>Think/decide:</strong> ask the policy (the model) for the next action. That is either a <em>tool call</em> <code>{"tool": name, "args": {...}}</code> or a <em>final answer</em>.</li>
+<li><strong>Act:</strong> if it is a tool call, the <em>harness</em> (your code, not the model) validates it, runs it, and appends the result to the history as an observation.</li>
+<li>Repeat until a final answer arrives or a step limit is hit.</li>
+</ol>
+<p>The model never executes anything itself. It only emits text. Every capability and every danger sits in what your harness agrees to run. That one sentence explains most of this week, including the safety material on Days 137 and 139.</p>
+<p><strong>Why tools at all?</strong> Week 17 showed that a 135M model cannot be trusted with facts or arithmetic. A tool turns "remember the population of Corvo" into "call <code>lookup</code>", and "divide two large numbers" into "call <code>calculator</code>". The model's job shrinks to <em>choosing</em> the action and <em>filling in its arguments</em>. On Day 135 we measure whether even that shrunken job is within reach of SmolLM2.</p>
+<p><strong>Tool specification = name + description + JSON Schema.</strong> Each tool is described to the model by a name, a natural-language description and a schema for its arguments. The verified MCP docs use exactly this shape: a tool has a <code>name</code>, a <code>title</code>, a <code>description</code> and an <code>inputSchema</code> (JSON Schema). Our <code>tool_specs()</code> emits <code>{name, description, inputSchema}</code> so the format matches. The schema does two jobs. First, it goes into the prompt so the model knows what to produce. Second, the harness uses it as a contract to <strong>validate before executing</strong>. A schema like</p>
+<p><code>{"type":"object","properties":{"city":{"type":"string"},"field":{"type":"string","enum":["population","country","temp_c"]}},"required":["city","field"],"additionalProperties":false}</code></p>
+<p>rejects a missing field, a wrong type, an unknown enum value and any extra key. jsonschema is not installed in our venv, so <code>_agent.validate</code> implements the subset we need from scratch: type, enum, minimum/maximum, required, properties, additionalProperties and items. It is about 20 lines.</p>
+<p><strong>Errors are observations.</strong> When validation or execution fails, the harness does not crash. It returns <code>('error', message)</code> and appends the message to the history so the policy can correct itself. Good error messages are <em>for the model</em>: "$.field: 'area' not in ['population','country','temp_c']" tells it exactly what to change.</p>
+<p><strong>Three tools in <code>_agent.py</code>.</strong>
+- <code>calculator(expression)</code> parses the expression with Python's <code>ast</code> module and allows only numbers and arithmetic operators, with a cap on exponents. It never calls <code>eval</code>. <code>open('x').read()</code> is rejected as "disallowed syntax: Call".
+- <code>lookup(city, field)</code> reads a fictional six-city table (Avalon, Brindle, Corvo, Dunmere, Elsby, Farrow). The cities are invented so that the model cannot already "know" the answers.
+- <code>send_email(to, body)</code> is a <em>side-effect</em> tool. It only appends to an in-memory <code>OUTBOX</code> list and never sends anything. Tools carry a <code>side_effect</code> flag that Day 139 uses.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p>Run <code>python code/week-20/day134_tool_calling.py</code>. It has three parts.</p>
+<p><strong>(1) Validation before execution.</strong> Nine hand-written calls go through <code>call_tool</code>. Read the log line by line and predict each result before you look.</p>
+<p><strong>(2) A scripted policy in the loop.</strong> For "population of Corvo divided by population of Dunmere", a hard-coded policy calls lookup twice and then the calculator. The history is a list of <code>(action, status, result)</code> triples.</p>
+<p><strong>(3) SmolLM2-135M-Instruct as the tool caller.</strong> It gets 18 single-tool requests (populations, countries, temperatures). The system prompt lists the tool specs and asks for one JSON call. We count, in order: JSON parsed, schema-valid, right tool, correct result. We test this zero-shot and with 3 worked examples in the prompt.</p>
+<p><strong>Verified (out/day134_tool_calling.log):</strong>
+- The valid call returned <code>('ok', 310000)</code>. The eight bad calls were all rejected with precise messages: missing required 'field'; 'area' not in the enum; "expected string, got int"; unexpected property 'unsafe'; unknown tool 'weather'; "disallowed syntax: Call"; KeyError unknown city 'Atlantis'; "malformed call" for a non-dict.
+- The scripted loop gave <code>final 38.75 in 4 steps</code> (310000/8000).
+- SmolLM2 zero-shot: JSON parsed 0, schema-valid 0, right tool 0, correct 0 of 18, at 0.99 s/request. It answered in prose and made things up: "The population of Corvo is 1,000."; "the country Brindle is in is the United States."
+- SmolLM2 3-shot: parsed 17, schema-valid 7, right tool 12, correct result 6 of 18, at 0.59 s/request. Failures included <code>{"country": "Brindle"}</code> (the field value used as the key), <code>{"temperature": "Avalon"}</code>, and <code>{"population": 8000000…}</code> (a run of digits).</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add a <code>minLength: 1</code> keyword to the validator and use it on <code>city</code>. Which of the logged failures would it have caught? (None. Think about why.)</li>
+<li>Write a fourth tool <code>convert(value, unit)</code> with <code>unit</code> as an enum. Write five bad calls and check that each gets a message a model could act on.</li>
+<li>Change the 3-shot prompt so that the examples use <em>different</em> cities from the test set. Does "right tool" change? Record your own number; do not reuse ours.</li>
+<li>Build a JSON-parse function that also accepts single-quoted dicts. Does that change "parsed" for SmolLM2? Is accepting it a good idea?</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Who executes a tool call: the model or the harness? <em>The harness. The model only emits text.</em></li>
+<li>Why validate before executing rather than catching exceptions afterwards? <em>Some tools have side effects, which can't be undone after they run. Validation also gives the model a precise error to fix.</em></li>
+<li>What does <code>additionalProperties: false</code> protect against? <em>Hallucinated or smuggled arguments (e.g. <code>unsafe: true</code>) silently reaching the function.</em></li>
+<li>Why did 3-shot raise "parsed" from 0 to 17 but "correct" only to 6? <em>The examples taught the format, not the meaning. The model copied the JSON shape but filled in the wrong keys and values.</em></li>
+<li>Why "schema-valid 7" but "correct 6"? <em>A call can pass the schema and still fail or be wrong at runtime, e.g. an unknown city or the wrong field.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Write down which layer of the funnel (parse → schema → tool → result) you would attack first with a bigger budget, and why.</p>
+<p><strong>Extra notes.</strong> Real APIs hand the model a list of tool specs and get back a structured call object. Underneath, it is still text that the provider parses for you. Our parse-then-validate split mirrors that.</p>
+<p><strong>Going deeper.</strong> Read the "Tools" part of the MCP architecture page (link in the header). Note that tool discovery happens through a <code>tools/list</code> request and execution through <code>tools/call</code> with <code>name</code> and <code>arguments</code>. That is the same split as our <code>tool_specs</code> / <code>call_tool</code>.</p>
+<p><strong>Interview-style question (15 min).</strong> "Your agent calls a payments API with a malformed amount once in 200 calls. Where do you fix it?" A strong answer: validate in the harness with a schema (type, minimum, maximum), make the error an observation the model can act on, add a confirmation gate for the side effect, and log the failures to build an eval set. Do not rely on prompt wording alone.</p>
+<p><strong>Common mistakes.</strong> Trusting that JSON which parses also matches the schema. Executing first and validating later. Error messages that say only "invalid". Letting the tool description and the schema disagree.</p>
+<p><strong>What to do next.</strong> Day 135 puts the model inside a multi-step ReAct loop and measures whether it can chain calls.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-133.html">← Day 133</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-135.html">Day 135 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

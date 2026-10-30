@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 123 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="123">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-122.html">← Day 122</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-124.html">Day 124 →</a></nav>
+<h1>Day 123: Monte Carlo and TD learning; Q-learning vs SARSA</h1>
+<p class="meta">Week 18 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-18.md">source: weeks/week-18.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 122 (+1), Day 120 (+3), Day 116 (+7), Day 102 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>Without a model you learn from samples. <strong>Monte Carlo (MC)</strong> prediction waits until the episode ends and moves V(s) towards the actual return G: V(s) ← V(s) + α (G − V(s)). The target is unbiased but noisy, because G is a sum of many random rewards.</p>
+<p><strong>Temporal-difference learning, TD(0)</strong>, updates after every step, using its own estimate of the next state: V(s) ← V(s) + α (r + γV(s') − V(s)). The quantity in brackets is the <strong>TD error</strong> δ. TD is biased (it bootstraps from estimates that may be wrong) but has much lower variance. It also works on episodes that never end. In practice, TD often learns faster.</p>
+<p>For <strong>control</strong>, learn Q(s, a) instead, so that you can act greedily without a model. The agent must also explore, usually <strong>ε-greedy</strong>: a random action with probability ε, and otherwise the best one.</p>
+<ul>
+<li><strong>SARSA</strong> (on-policy) uses the action it will actually take next: target r + γQ(s', a'). It learns the value of the ε-greedy policy it is following, <em>including</em> its own random mistakes.</li>
+<li><strong>Q-learning</strong> (off-policy) uses the best next action: target r + γ max_a Q(s', a). It learns the value of the greedy policy, even though it behaves ε-greedily.</li>
+</ul>
+<p><strong>Cliff walking</strong> shows the difference. A 4x12 grid has a cliff along the bottom edge: stepping off costs −100 and sends you back to the start, and every other step costs −1. The shortest path runs along the cliff edge. Q-learning learns that path, but while exploring with ε = 0.1 it sometimes falls off. SARSA takes those exploration slips into account and learns a safer path further from the edge.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>day123_mc_td_qlearning.py</code> runs two experiments. The first is a 5-state random walk: start in the middle, reward +1 only for leaving on the right. Its true values are 1/6 … 5/6. The second is cliff walking, built from scratch in <code>_rl.cliff</code>.</p>
+<p><strong>Verified (out/day123_mc_td_qlearning.log):</strong> RMS error on the random walk, mean of 10 seeds:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>α</th>
+<th>After 10 episodes</th>
+<th>After 50</th>
+<th>After 100</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MC</td>
+<td>0.01</td>
+<td>0.209</td>
+<td>0.143</td>
+<td>0.098</td>
+</tr>
+<tr>
+<td>MC</td>
+<td>0.03</td>
+<td>0.178</td>
+<td>0.099</td>
+<td>0.099</td>
+</tr>
+<tr>
+<td>TD</td>
+<td>0.05</td>
+<td>0.175</td>
+<td>0.065</td>
+<td>0.036</td>
+</tr>
+<tr>
+<td>TD</td>
+<td>0.1</td>
+<td>0.128</td>
+<td>0.062</td>
+<td>0.058</td>
+</tr>
+<tr>
+<td>TD</td>
+<td>0.15</td>
+<td>0.094</td>
+<td>0.076</td>
+<td>0.072</td>
+</tr>
+</tbody>
+</table>
+<p>Every TD setting beats every MC setting by episode 50. A larger α learns faster at first and then levels off at a higher error. That is the noise floor of a constant step size, and MC α 0.03 shows it too, staying at 0.099.</p>
+<p>Cliff walking (ε 0.1, α 0.5, 500 episodes, 10 seeds):</p>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Online return, episodes 1-50</th>
+<th>Episodes 401-500</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-learning</td>
+<td>−118.3</td>
+<td>−53.0</td>
+<td>0.8 s</td>
+</tr>
+<tr>
+<td>SARSA</td>
+<td>−116.6</td>
+<td>−28.8</td>
+<td>0.9 s</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Greedy path returns per seed: Q-learning scored −13 in all 10 seeds (the optimal cliff-edge path).</li>
+<li>SARSA scored −17 in 8 seeds and −19 in 1, both safer and longer routes. The remaining seed scored −100: its greedy policy looped until the 100-step cap.</li>
+</ul>
+<p>So Q-learning has the better <em>final greedy</em> policy but the worse <em>online</em> return. SARSA is better while exploring, but its greedy policy is not always valid. Both facts come from the same run.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script. Plot RMS error against episode count for one MC and one TD setting.</li>
+<li>Implement <strong>Expected SARSA</strong>, whose target is r + γ Σ_a π(a|s')Q(s', a), and add it to the cliff experiment.</li>
+<li>Decay ε to 0 over the 500 episodes. Predict whether SARSA's greedy path moves towards the edge, then check.</li>
+<li>Find the looping SARSA seed and print its greedy arrows near the start. Explain the loop: Q-values that are tied or barely updated in states visited rarely.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why is the MC target unbiased and TD's biased? <strong>Answer:</strong> G is a sample of the true return, while r + γV(s') uses a current estimate V(s') that may be wrong.</li>
+<li>Why is SARSA's online return better on the cliff? <strong>Answer:</strong> it learns values that include ε-exploration, so it keeps away from the edge where a random step is fatal.</li>
+<li>If ε → 0, what does SARSA converge to? <strong>Answer:</strong> the optimal policy, the same as Q-learning (given enough exploration along the way).</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check: (a) write the MC, TD(0), SARSA and Q-learning updates; (b) say which ones are on-policy; (c) explain the constant-α plateau; (d) explain why online return and greedy-policy return can disagree.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>n-step TD and TD(λ) interpolate between TD (n = 1) and MC (n = ∞).</li>
+<li>Q-learning's max causes <strong>maximisation bias</strong> when estimates are noisy. Double Q-learning fixes this, and Day 125's target network is a related idea.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Prove to yourself that TD(0) with a fixed batch of episodes converges to the value of the maximum-likelihood Markov model, while batch MC converges to the average observed returns. This is why TD uses the Markov structure better.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"On-policy vs off-policy: which for a robot learning on real hardware?" Good answer: on-policy methods such as SARSA account for the robot's own exploration, which matters when mistakes are expensive. Off-policy methods can reuse old or logged data, which matters when data is expensive. Many real systems learn off-policy in simulation and then fine-tune carefully.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Updating Q(s', ·) instead of Q(s, a).</li>
+<li>Using Q(s', a') after a terminal step. The target there is just r.</li>
+<li>Judging an algorithm on one seed.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 124 replaces the table with a function, so that values generalise between states.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-122.html">← Day 122</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-124.html">Day 124 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

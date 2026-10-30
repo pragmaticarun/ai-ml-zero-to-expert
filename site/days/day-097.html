@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 97 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="97">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-096.html">← Day 96</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-098.html">Day 98 →</a></nav>
+<h1>Day 97: Pretraining objectives and scaling laws</h1>
+<p class="meta">Week 14 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-14.md">source: weeks/week-14.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-14/day97_scaling.py"><code>code/week-14/day97_scaling.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 96 (+1), Day 94 (+3), Day 90 (+7), Day 76 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Pretraining objectives.</strong>
+- <em>Causal (autoregressive) language modelling:</em> predict the next token (GPT family; this course). It suits generation directly.
+- <em>Masked language modelling:</em> hide ~15% of tokens and predict them from both sides (BERT; Devlin et al., 2019). It gives strong bidirectional representations for classification and retrieval, but it is not a natural generator.
+- <em>Span corruption / denoising:</em> replace spans with sentinels and generate them (T5; Raffel et al., 2020), used with encoder-decoder models.
+Today almost all general-purpose LLMs are decoder-only and causal, then adapted by fine-tuning (Week 15).</p>
+<p><strong>Compute.</strong> A useful approximation: training costs about <strong>6·N·D</strong> floating-point operations for N parameters and D tokens (2ND forward, 4ND backward). Kaplan et al. (2020) use this approximation.</p>
+<p><strong>Scaling laws.</strong> Kaplan et al. (2020), "Scaling Laws for Neural Language Models", found that test loss falls as a smooth power law in model size N, data size D and compute C, across several orders of magnitude, when the other factors are not the bottleneck. Hoffmann et al. (2022), "Training Compute-Optimal Large Language Models" (the Chinchilla paper), revisited the trade-off with learning-rate schedules matched to each run's length. Their conclusion: for a fixed compute budget, parameters and training tokens should grow in roughly equal proportion, which works out to roughly <strong>20 tokens per parameter</strong>. Their 70B-parameter Chinchilla, trained on 1.4 trillion tokens, outperformed the much larger Gopher at the same compute. The form they fit is L(N, D) = E + A/N^α + B/D^β, where E is the irreducible loss of the data.</p>
+<p><strong>How to read these claims.</strong>
+- They describe loss on the training distribution, not any specific capability.
+- "Compute-optimal" means best loss per <em>training</em> FLOP. If a model will serve billions of requests, it is often better to train a smaller model on far more than 20 tokens per parameter, since inference cost scales with N. Many recent open models do this.
+- Fitted exponents depend on the data, tokenizer and architecture; do not transfer them to your own setting.
+- Data quality and deduplication shift the whole curve (for example, the FineWeb dataset reports on filtering experiments). Data is now as much an engineering subject as models.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-14/day97_scaling.py</code> (<strong>35 s</strong>). Five character-level GPTs, each trained for 600 steps of 32 × 64 characters (1,228,800 tokens each). <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>d</th>
+<th>L</th>
+<th>non-embedding params</th>
+<th>val loss</th>
+<th>time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>1</td>
+<td>12,640</td>
+<td>2.418</td>
+<td>3 s</td>
+</tr>
+<tr>
+<td>48</td>
+<td>2</td>
+<td>56,256</td>
+<td>2.278</td>
+<td>4 s</td>
+</tr>
+<tr>
+<td>64</td>
+<td>2</td>
+<td>99,584</td>
+<td>2.139</td>
+<td>4 s</td>
+</tr>
+<tr>
+<td>96</td>
+<td>3</td>
+<td>334,560</td>
+<td>2.028</td>
+<td>9 s</td>
+</tr>
+<tr>
+<td>128</td>
+<td>4</td>
+<td>791,296</td>
+<td>1.954</td>
+<td>13 s</td>
+</tr>
+</tbody>
+</table>
+<p>Fitted: loss = 3.85 · N^(−0.060) + 0.234, from <strong>five points</strong>. Extrapolated to N = 1e6 and 1e7: 1.922 and 1.705. The largest model saw only <strong>1.55 tokens per parameter</strong>, far below Chinchilla's ~20, so it is data-limited: larger models here are being stopped long before convergence.</p>
+<p>Be critical of this fit: five points spanning less than two decades, one seed, a fixed short budget, and an irreducible term (0.234 nats) that is implausibly low for character-level English. It illustrates <em>the procedure</em> of scaling-law fitting, not a law. Compare Day 95: the d = 128 model reached 1.625 with 2.5× the steps and twice the context, which shows how much the "data" axis matters.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Fix the compute instead of the steps: give each model the same 6ND budget (larger models get fewer steps). Which size wins?</li>
+<li>(45 min) Repeat the sweep with two seeds and add error bars to a log-log plot.</li>
+<li>(30 min) Compute the FLOPs of Day 95's run by 6ND and divide by its wall time to estimate the CPU's achieved FLOP/s.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>6ND for N = 1e9 and D = 2e10? <em>Answer: 1.2e20 FLOPs.</em></li>
+<li>Chinchilla-optimal tokens for a 1B model? <em>Answer: about 20B.</em></li>
+<li>Why might a lab train a 1B model on 1T tokens? <em>Answer: cheaper inference; better loss per serving cost.</em></li>
+<li>Why should the learning-rate schedule be matched to run length when fitting scaling laws? <em>Answer: a schedule set for a longer run leaves short runs under-trained at their stopping point, biasing the fit; Hoffmann et al. cite this as a reason for their different conclusion.</em></li>
+<li>What is E in L = E + A/N^α + B/D^β? <em>Answer: the irreducible entropy of the text.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can state the 6ND rule and the ~20 tokens/parameter heuristic, with their sources.
+- [ ] I can explain why "compute-optimal" is not always "deployment-optimal".
+- [ ] I can list the weaknesses of my own five-point fit.</p>
+<h3 id="extra-notes-data">Extra notes: data</h3>
+<p>Pretraining corpora are mostly filtered web text (Common Crawl derivatives), code, books, papers and curated sets. Pipelines deduplicate (exact and near-duplicate), filter by language and quality classifiers, remove personal data and benchmark contamination, and balance domains. Small models such as SmolLM2 report using carefully curated mixtures. When you read a model card, look for the data section: it predicts the model's strengths better than its parameter count.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Hoffmann et al. (2022), Figures 1-3, and Kaplan et al. (2020), section 1.2, then write one paragraph on why their recommendations differ.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"You have a fixed GPU budget. How do you pick model size and number of tokens?" Use the Chinchilla trade-off as a starting point, adjust for inference cost and data availability, and run small-scale sweeps to fit your own curve before the big run.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Comparing models trained for different numbers of tokens as if only size differed.</li>
+<li>Counting embedding parameters in N for small models (Kaplan et al. use non-embedding parameters).</li>
+<li>Extrapolating a fit far beyond its data.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 98: combine Days 95-96 and train the GPT on BPE tokens.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-096.html">← Day 96</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-098.html">Day 98 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

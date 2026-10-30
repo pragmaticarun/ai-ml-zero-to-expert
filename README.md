@@ -15,6 +15,9 @@ Teaching style: intuition → tiny example → plain-language maths → code. Se
 5. Import Anki decks from `flashcards/month-01.csv` … `month-06.csv`. Due tags each calendar study day are in [review-schedule.csv](review-schedule.csv) (+1/+3/+7/+21).
 6. After Day 180 follow `code/capstone/out/WHAT_NEXT.md`.
 
+## Course website
+There is a static progress-tracking site in `site/`. It runs offline with no server. Open `site/index.html`, or rebuild it with `.venv/bin/python site/build.py`. See [site/README.md](site/README.md) for GitHub Pages setup and tests.
+
 ## Setup (tested: Linux, Python 3.13, CPU-only)
 ```bash
 cd ai-ml-course

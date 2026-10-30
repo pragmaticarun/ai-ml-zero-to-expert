@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 14 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="14">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-13.html">← Week 13</a><a href="../syllabus.html">Syllabus</a><a href="week-15.html">Week 15 →</a></nav>
+<h1>Week 14 (Days 92-98): The transformer from scratch</h1><p class="meta"><a href="../../weeks/week-14.md">source: weeks/week-14.md</a> · <a href="../../pdf/week-14.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-092.html">Day 92: Self-attention, multi-head attention, masking</a> <span class="st" data-st="92"></span></li><li><a href="../days/day-093.html">Day 93: Positional encodings (sinusoidal, RoPE)</a> <span class="st" data-st="93"></span></li><li><a href="../days/day-094.html">Day 94: The transformer block</a> <span class="st" data-st="94"></span></li><li><a href="../days/day-095.html">Day 95: Tiny GPT from scratch</a> <span class="st" data-st="95"></span></li><li><a href="../days/day-096.html">Day 96: BPE from scratch</a> <span class="st" data-st="96"></span></li><li><a href="../days/day-097.html">Day 97: Pretraining objectives and scaling laws</a> <span class="st" data-st="97"></span></li><li><a href="../days/day-098.html">Day 98: PROJECT W14: train a tiny GPT on BPE tokens; Quiz 14</a> <span class="st" data-st="98"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-14"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Give the shape of the attention score tensor for x of shape (B, T, D) with h heads.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>(B, h, T, T).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What does a padding mask block, and why?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Keys at padding positions, so real tokens' outputs do not depend on how much padding is in the batch.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>What happens to a softmax row that is fully masked?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It becomes NaN (0/0).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Why is attention without positions permutation-equivariant, and why is that a problem?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Weights depend only on content, so reordering the inputs only reorders the outputs; word order would be invisible.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>State the key property of RoPE.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Rotating q and k by position-dependent angles makes q·k depend only on the relative offset (verified: −0.36481 at offsets of 3 from several starts).</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Count the parameters of a pre-LN block of width d without attention biases.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>4d² + 8d² + 5d + 4d = 12d² + 9d (197,760 at d = 128).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What did the no-warmup stability test show about post-LN?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>At lr 1e-2 post-LN stalled at loss 3.326 while pre-LN reached 2.355; at 3e-3 both reached about 2.38.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Convert a loss of 1.625 nats/token on characters to bpc.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1.625 / ln 2 = 2.344 bpc.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Why does BPE encoding apply merges by rank?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>To reproduce the training merge order, so the same text gives the tokens the model was trained on.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why did the rayon encoder lose to serial Rust in one run?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Per-word work is tiny and the cores were busy, so thread scheduling cost more than parallelism saved (42.6 ms vs 7.3 ms).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>State the Chinchilla rule of thumb and one reason to train past it.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>About 20 training tokens per parameter for compute-optimal loss (Hoffmann et al., 2022); train longer to get a smaller model that is cheaper to serve.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Why must models with different tokenizers be compared in bits per character?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Per-token loss depends on how much text a token covers; bpc normalises by the text itself.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 4). Titles match <code>SYLLABUS.md</code>. Every number below was printed by a script in <code>code/week-14/</code> on this box (Python 3.13.5, torch 2.15.0+cpu, 8 CPU threads, no GPU). Wall-clock times were measured while other jobs shared the CPU. Treat them as rough and re-time on your own machine.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Implement multi-head self-attention with causal and padding masks and match PyTorch to float precision.</li>
+<li>Understand why attention needs positional information; implement sinusoidal encodings and RoPE and verify RoPE's relative-position property.</li>
+<li>Assemble a pre-LN transformer block, count its parameters exactly, and compare pre-LN with post-LN.</li>
+<li>Write and train a tiny GPT on CPU and beat a bigram baseline.</li>
+<li>Write byte-level BPE from scratch, compare it with a pretrained tokenizer, and speed up the encoder in Rust.</li>
+<li>Run a miniature scaling experiment and read the published scaling-law papers critically.</li>
+<li>Train the GPT on BPE tokens (weekly project).</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 92 MHA + masks] --&gt; B[Day 93 positions]
+  B --&gt; C[Day 94 block]
+  C --&gt; D[Day 95 tiny GPT]
+  D --&gt; E[Day 96 BPE + Rust]
+  E --&gt; F[Day 97 scaling]
+  F --&gt; G[Day 98 project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note (CPU vs GPU).</strong> Everything here trains on a CPU in minutes, with models under a million parameters. On a single modern GPU the same code (with <code>.cuda()</code>) would run roughly one to two orders of magnitude faster per step, which would let you train ~10-100× larger models in the same time. The <em>ideas</em> do not change with scale; the sample quality does.</p>
+<p><strong>Datasets:</strong> Tiny Shakespeare (1,115,394 characters, cached by <code>code/common.py</code>; 90/10 train/val split by position). Day 96 also downloads the SmolLM2-135M tokenizer from the Hugging Face Hub (<code>HuggingFaceTB/SmolLM2-135M</code>, Apache-2.0, download verified on this box) into <code>data/cache/hf</code>.</p>
+<p><strong>Shared code:</strong> <code>code/week-14/_gpt.py</code> (the GPT used through Day 119) and <code>code/week-14/_bpe.py</code> (the tokenizer). Rust: <code>code/week-14/rust_bpe</code> (<code>maturin develop --release</code>).</p>
+<hr />
+<h2 id="weekly-quiz-week-14">Weekly quiz: Week 14</h2>
+<ol>
+<li>Give the shape of the attention score tensor for x of shape (B, T, D) with h heads.</li>
+<li>What does a padding mask block, and why?</li>
+<li>What happens to a softmax row that is fully masked?</li>
+<li>Why is attention without positions permutation-equivariant, and why is that a problem?</li>
+<li>State the key property of RoPE.</li>
+<li>Count the parameters of a pre-LN block of width d without attention biases.</li>
+<li>What did the no-warmup stability test show about post-LN?</li>
+<li>Convert a loss of 1.625 nats/token on characters to bpc.</li>
+<li>Why does BPE encoding apply merges by rank?</li>
+<li>Why did the rayon encoder lose to serial Rust in one run?</li>
+<li>State the Chinchilla rule of thumb and one reason to train past it.</li>
+<li>Why must models with different tokenizers be compared in bits per character?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>(B, h, T, T).</li>
+<li>Keys at padding positions, so real tokens' outputs do not depend on how much padding is in the batch.</li>
+<li>It becomes NaN (0/0).</li>
+<li>Weights depend only on content, so reordering the inputs only reorders the outputs; word order would be invisible.</li>
+<li>Rotating q and k by position-dependent angles makes q·k depend only on the relative offset (verified: −0.36481 at offsets of 3 from several starts).</li>
+<li>4d² + 8d² + 5d + 4d = 12d² + 9d (197,760 at d = 128).</li>
+<li>At lr 1e-2 post-LN stalled at loss 3.326 while pre-LN reached 2.355; at 3e-3 both reached about 2.38.</li>
+<li>1.625 / ln 2 = 2.344 bpc.</li>
+<li>To reproduce the training merge order, so the same text gives the tokens the model was trained on.</li>
+<li>Per-word work is tiny and the cores were busy, so thread scheduling cost more than parallelism saved (42.6 ms vs 7.3 ms).</li>
+<li>About 20 training tokens per parameter for compute-optimal loss (Hoffmann et al., 2022); train longer to get a smaller model that is cheaper to serve.</li>
+<li>Per-token loss depends on how much text a token covers; bpc normalises by the text itself.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

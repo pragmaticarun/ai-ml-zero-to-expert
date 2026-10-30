@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 70 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="70">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-069.html">← Day 69</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-071.html">Day 71 →</a></nav>
+<h1>Day 70: PROJECT W10: MNIST MLP in PyTorch with experiment log; Quiz 10</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: the project brief (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: the reference project (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: your project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day70_week_project.py"><code>code/week-10/day70_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 69 (+1), Day 67 (+3), Day 63 (+7), Day 49 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-the-project-brief-1h15">Block 1: Concept lesson: the project brief (1h15)</h3>
+<p><strong>Brief.</strong> Train an MLP on full MNIST (55,000 train / 5,000 validation / 10,000 test). Compare at least three configurations, choose one <strong>on validation only</strong>, and evaluate it on test <strong>once</strong>. Keep a machine-readable experiment log. Deliver:
+1. <code>out/day70_runs.csv</code> with one row per run: config, parameter count, epochs, val accuracy, seconds.
+2. A test accuracy and an error count for the chosen model.
+3. The top confused digit pairs and a few sentences on what they say.
+4. A half-page write-up: what you tried, what you chose, why, and what you would try next.</p>
+<p><strong>Why a log?</strong> Week 9 taught reproducible runs with scikit-learn. The same applies here, with more knobs. A CSV you append to after each run is enough at this scale; Day 85 adds structure.</p>
+<p><strong>Rules.</strong> No test-set peeking. Fixed seed. Every number in your write-up must come from the log or the final evaluation.</p>
+<h3 id="block-2-worked-example-the-reference-project-45-min">Block 2: Worked example: the reference project (45 min)</h3>
+<p>Run <code>code/week-10/day70_week_project.py</code>. It trains three configurations for 8 epochs each. <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>config</th>
+<th>params</th>
+<th>val acc</th>
+<th>seconds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A: 784-256-10, SGD momentum lr 0.05</td>
+<td>203,530</td>
+<td>0.9764</td>
+<td>4.1</td>
+</tr>
+<tr>
+<td>B: 784-512-512-10, dropout 0.2, Adam 1e-3</td>
+<td>669,706</td>
+<td>0.9756</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>C: 512-512 + BN + dropout 0.2, SGD momentum lr 0.1, wd 5e-4, one-cycle</td>
+<td>671,754</td>
+<td><strong>0.9834</strong></td>
+<td>9.9</td>
+</tr>
+</tbody>
+</table>
+<p>C is selected on validation. <strong>Test accuracy 0.9859</strong>, <strong>141 errors</strong> out of 10,000. Top confusions (true → predicted): 9→4 (9), 7→2 (7), 5→3 (7), 4→9 (6). The 4/9 pair appears in both directions: those digits differ by whether the top loop is closed. Note B (3.3× the parameters of A, with Adam and dropout) did not beat A: capacity alone was not the bottleneck. C changed several things at once (BN, optimiser, schedule, weight decay), so this project cannot say <em>which</em> of them helped. Day 87 fixes that with one-change-at-a-time ablations.</p>
+<h3 id="block-3-coding-lab-your-project-2h">Block 3: Coding lab: your project (2h)</h3>
+<ol>
+<li>(20 min) Copy the script's structure but write your own loop. Create the CSV writer first.</li>
+<li>(60 min) Run at least three configs. Suggested axes: width, depth, dropout, BN, optimiser, schedule. Change one thing at a time where possible.</li>
+<li>(20 min) Choose on validation. Evaluate on test once.</li>
+<li>(20 min) Print the confusion matrix; save 16 misclassified test images in a grid. Write the half-page report.</li>
+</ol>
+<p><strong>Rubric (self-grade out of 20)</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Three or more configs, logged to CSV with params and time</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Selection on validation; test used once</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Correct, readable training loop (train/eval modes, zero_grad)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Error analysis: confusion pairs + images + interpretation</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Write-up honest about what did and did not help</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>B and C have almost the same size and both ran 8 epochs, yet B took 15.1 s and C 9.9 s. What would you check before explaining it? <em>Answer: B uses Adam (more per-parameter work per step) and C SGD; also rerun both, since wall-clock times on a shared CPU vary between runs. Do not explain a timing difference from one measurement.</em></li>
+<li>If two configs differ by 0.001 val accuracy on 5,000 images, is that meaningful? <em>Answer: 0.001 is 5 images; without seeds, no.</em></li>
+<li>What is the test error rate? <em>Answer: 141/10,000 = 1.41%.</em></li>
+<li>Why log parameter counts? <em>Answer: to compare capacity and spot accidental size changes.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Take the weekly quiz below, closed book, then mark it. Re-read the Day you scored worst on.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Add a CNN (preview of Week 11) and see how many errors remain. Keep the same log format.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Describe an ML experiment you ran, what you logged, and how you made sure the test number was honest."</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Selecting the best of several runs on test accuracy.</li>
+<li>Overwriting the CSV each run instead of appending.</li>
+<li>Forgetting to put the model into eval mode before the confusion matrix (BN!).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 11: convolutions, CNN architectures, CIFAR-10-small and transfer learning.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-069.html">← Day 69</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-071.html">Day 71 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 141 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="141">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-140.html">← Day 140</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-142.html">Day 142 →</a></nav>
+<h1>Day 141: The ML project lifecycle and scoping with numbers</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 140 (+1), Day 138 (+3), Day 134 (+7), Day 120 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The lifecycle, in my own words.</strong> A production ML project loops through four stages, and you will go round more than once:
+1. <strong>Scoping:</strong> decide what problem is worth solving, what "good enough" means, and what it is worth.
+2. <strong>Data:</strong> define labels and inputs, collect, clean, validate and version them.
+3. <strong>Modelling:</strong> train, do error analysis, iterate. Usually the data changes more than the code.
+4. <strong>Deployment and monitoring:</strong> serve it, watch inputs and outputs, and feed what you learn back into data and modelling.</p>
+<p>The common lesson from practitioners (Andrew Ng's "ML in Production" course is the best-known framing) is that the model code is a small part of the system. Most of the work is in data definition, deployment plumbing and feedback loops.</p>
+<p><strong>Scoping questions to answer with numbers before building anything:</strong>
+- <em>What is the baseline?</em> Do nothing (majority class), a one-line rule, a simple linear model, and human-level performance if you can measure it. If a rule gets 80% and your target is 82%, ML may not be worth its maintenance cost.
+- <em>What does an error cost?</em> Errors are rarely symmetric. In a screening task a missed positive can cost far more than a false alarm. Pick the metric and the decision threshold from those costs, not from accuracy.
+- <em>Will more data help?</em> A learning curve (accuracy vs training-set size) tells you whether to spend on labelling or on modelling. A flat curve means more of the same data won't help.
+- <em>Where does it fail?</em> Slice-level error analysis (accuracy by subgroup) points to which data to collect next, and is the start of the error-analysis loop we close on Day 145.</p>
+<p><strong>Today's running example.</strong> We use the Wisconsin breast-cancer table bundled with scikit-learn: 30 numeric features computed from cell images, label malignant (0) or benign (1). It is small, offline and well-known. It is a teaching dataset, not a clinical tool, and the model card on Day 147 says so.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day141_scoping.py</code> uses a stratified 75/25 split (seed 0). It evaluates the majority class, a one-feature rule (worst radius below the training median → benign), standardised logistic regression and our MLP (<code>_mlops.MLP</code>). The MLP keeps its normalisation constants <em>inside</em> the model as buffers, so serving cannot forget to normalise. The script then draws a learning curve over 3 seeds per training-set size, applies a 10:1 cost to missed malignant cases versus false alarms, and computes test accuracy by tertiles of "mean area".</p>
+<p><strong>Verified (out/day141_scoping.log):</strong>
+- Data: 426 train / 143 test rows, 30 features, benign rate 0.627.
+- Baselines: majority 0.629; one-feature rule 0.804; logistic regression 0.958; MLP 0.965 (trained in 0.9 s).
+- Learning curve (mean of 3 seeds): 10% (42 rows) 0.914; 25% (106 rows) 0.946; 50% (213 rows) 0.944; 100% (426 rows) 0.953. The curve is nearly flat after about 100 rows. The 100% value is below the single-seed 0.965 because of seed variance.
+- Cost (10 × missed + false alarms):</p>
+<table>
+<thead>
+<tr>
+<th>threshold</th>
+<th>missed malignant</th>
+<th>false alarms</th>
+<th>cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.5</td>
+<td>3</td>
+<td>2</td>
+<td>32</td>
+</tr>
+<tr>
+<td>0.8</td>
+<td>2</td>
+<td>4</td>
+<td><strong>24</strong></td>
+</tr>
+<tr>
+<td>0.95</td>
+<td>2</td>
+<td>5</td>
+<td>25</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Slices by mean area: small 1.000 (0 errors of 48), medium 0.915 (4 errors of 47), large 0.979 (1 error of 48).</li>
+</ul>
+<p>Readings:
+- Logistic regression is one test error behind the MLP. On 143 rows, one error is 0.007 of accuracy, so 0.958 vs 0.965 is a single example. Scoping says to ship the simpler model unless the MLP buys something measurable.
+- The flat learning curve says that buying more of the same data is a poor investment. Better labels or new features would be a better use of the money.
+- Errors concentrate in the medium-area slice, which is the borderline region. That is where to look and where to collect more data.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add a "human-level" proxy: train on half the features and call that a weaker expert. How do you decide when to stop improving?</li>
+<li>Change the cost ratio to 50:1 and re-pick the threshold. What's the cost at 0.5?</li>
+<li>Add confidence intervals to the learning curve using more seeds. Is 0.944 vs 0.946 a real difference?</li>
+<li>Write a one-page scoping document for this model: problem, users, baseline, metric, target, cost of errors, data plan, risks.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why compute a one-line rule baseline? <em>It sets the bar ML must clear to justify its cost: here 0.804.</em></li>
+<li>What does a flat learning curve tell you? <em>More of the same data won't help much. Change the data quality, features or model instead.</em></li>
+<li>Why did the best threshold move from 0.5 to 0.8? <em>Missed malignant cases cost 10×, so trading 2 extra false alarms for 1 fewer miss lowered the cost from 32 to 24.</em></li>
+<li>Why prefer logistic regression here despite 0.958 &lt; 0.965? <em>The gap is one test example, and the simpler model is cheaper to serve, explain and maintain.</em></li>
+<li>What's the next data action from the slice table? <em>Collect and review borderline medium-area cases, where 4 of the 5 errors sit.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Write the one number you would need to see before approving this project for deployment, and who should set it.</p>
+<p><strong>Extra notes.</strong> Scoping is also where you decide <em>not</em> to do ML. A rule at 0.804 with zero maintenance can beat a model at 0.96 when errors are cheap and the data keep changing.</p>
+<p><strong>Going deeper.</strong> Read the scoping module of the Coursera course in the header. Then write the same scoping document for a Week 17 RAG feature. Its "baseline" is keyword search.</p>
+<p><strong>Interview-style question (15 min).</strong> "Your PM wants 99% accuracy. How do you respond?" Ask what the errors cost and to whom, what the baseline and human-level numbers are, and whether accuracy is even the right metric. Show a learning curve to estimate what more data would buy. Propose a threshold that minimises cost, plus a human-review band for uncertain cases.</p>
+<p><strong>Common mistakes.</strong> No baseline. Optimising accuracy when errors are asymmetric. Reporting one seed. Collecting more data without a learning curve. Analysing only aggregate metrics, not slices.</p>
+<p><strong>What to do next.</strong> Day 142 makes data a first-class artefact: validate it on the way in, and version it so every model can name the exact data it saw.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-140.html">← Day 140</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-142.html">Day 142 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

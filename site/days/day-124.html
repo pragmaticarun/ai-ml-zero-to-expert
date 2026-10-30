@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 124 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="124">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-123.html">← Day 123</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-125.html">Day 125 →</a></nav>
+<h1>Day 124: Function approximation: from tables to features</h1>
+<p class="meta">Week 18 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-18.md">source: weeks/week-18.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 123 (+1), Day 121 (+3), Day 117 (+7), Day 103 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>A table has one entry per state and nothing carries over from one state to another. Real problems have continuous states (CartPole's four numbers) or far too many states to list. <strong>Function approximation</strong> represents V(s) ≈ v̂(s, w) or Q(s, a) ≈ q̂(s, a, w), with a weight vector w that is much smaller than the state space. Each update changes the value of many similar states at once. That is generalisation, the same idea as supervised learning in Months 2-3.</p>
+<p>The prediction objective is the mean squared value error, weighted by how often each state is visited. <strong>Gradient MC</strong> treats the return G as a supervised target: w ← w + α (G − v̂(s,w)) ∇v̂(s,w). That is ordinary SGD, and it converges to a local optimum of this error.</p>
+<p><strong>Semi-gradient TD</strong> uses the target r + γ v̂(s', w) but treats it as a constant when taking the gradient. That is why it is called "semi". It is not true gradient descent on any objective. With linear features it still converges, but to the <em>TD fixed point</em>, which can be worse than the best possible approximation. It does usually converge faster.</p>
+<p>With <strong>linear</strong> approximation, v̂ = wᵀφ(s), and the gradient is just the feature vector φ(s). Common features are:
+- <strong>State aggregation:</strong> group states and give each group one weight. Tabular learning is the special case with one group per state.
+- <strong>Tile coding / coarse coding:</strong> several overlapping grids.
+- <strong>Random Fourier features:</strong> φ(s) = cos(Ws + b), with W and b drawn at random. They are smooth and work like an RBF kernel. Their <em>bandwidth</em>, the scale of W relative to the state units, controls how far each update spreads.</p>
+<p>For control, the same idea gives <strong>semi-gradient Q-learning</strong>: w_a ← w_a + α δ φ(s). Combining <em>function approximation</em>, <em>bootstrapping</em> and <em>off-policy</em> learning is called the <strong>deadly triad</strong>. Together these three can make learning diverge, and Day 125's DQN is largely a set of tricks against it.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>day124_function_approx.py</code> runs two experiments.</p>
+<p><strong>(1)</strong> A 1000-state random walk. Each step jumps up to 100 states left or right. Leaving on the left gives −1 and leaving on the right gives +1. The true V comes from a linear solve. Both methods use 10 aggregated groups of 100 states and 5,000 episodes.</p>
+<p><strong>(2)</strong> Linear semi-gradient Q-learning on gymnasium CartPole-v1, with 256 random Fourier features, a step size normalised by ‖φ‖², 300 episodes, and ε decaying from 1 to 0.01 over 150 episodes. The greedy policy is evaluated on 20 episodes, with 500 as the cap.</p>
+<p><strong>Verified (out/day124_function_approx.log):</strong>
+- Gradient MC (α 5e-4): RMS error 0.061. Semi-gradient TD (α 2e-3): RMS error 0.131. The best possible with this aggregation is 0.053. MC gets close to the best approximation, and TD settles at its own biased fixed point. TD's weights (−0.71 … 0.70) are flatter than MC's (−0.85 … 0.81).
+- A first run used step sizes 100x smaller and left the weights far from converged, with RMS errors of 0.364 and 0.414. It is not kept as a result, but it is a useful warning: check convergence before you compare methods.
+- CartPole, feature scale [2.4, 3.0, 0.21, 3.0] (the state bounds), α 0.01: this <strong>failed</strong> in all 3 seeds. The last 50 training episodes averaged 9.4-9.5 steps and greedy evaluation averaged 9.3-9.4, which is what you get by always pushing the same way.
+- CartPole, feature scale [0.5, 0.5, 0.05, 0.5] (narrower, so the features are more local), α 0.1: greedy evaluation averaged <strong>500.0 (the cap) in all 3 seeds</strong>. The last 50 training episodes averaged 500.0, 433.0 and 500.0. Each seed took 1.5-2.0 s on CPU.</p>
+<p>The only difference between failure and success was the feature bandwidth and the step size. Those two hyperparameters decide whether a linear method works.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script and reproduce the log.</li>
+<li>Change the number of groups to 5, 20 and 50. Record the "best possible" error and the MC error. More groups gives a lower floor but slower learning.</li>
+<li>Replace aggregation with polynomial features of s/1000, and compare.</li>
+<li>On CartPole, sweep feature scale × {0.5, 1, 2} and α ∈ {0.03, 0.1, 0.3} over 3 seeds. Report the fraction of runs that solve the task, not the best run.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why is semi-gradient TD not true SGD? <strong>Answer:</strong> the target depends on w, but its gradient is ignored, so the update is not the gradient of any fixed loss.</li>
+<li>Why did wide features fail on CartPole? <strong>Answer:</strong> with smooth features covering the whole state space, the values of nearby situations where different actions are needed get blurred together, so the greedy action ends up the same everywhere.</li>
+<li>Why divide by φᵀφ? <strong>Answer:</strong> it makes α roughly "the fraction of the error corrected per step", whatever the feature scale (normalised LMS).</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check: (a) write the gradient MC and semi-gradient TD updates for linear v̂; (b) name the three parts of the deadly triad; (c) explain the gap between 0.131 and 0.053; (d) explain why a single CartPole run that succeeds proves little.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Linear methods with good features are a strong baseline: fast, stable, and easy to inspect.</li>
+<li>Normalising the state (as in Month 2) matters just as much in RL.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Look at least-squares TD (LSTD), which solves for the TD fixed point directly in one linear solve. It is the function-approximation counterpart of Day 121's exact solve.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your linear Q-learner diverges. What do you try?" Good answer: a smaller or normalised step size, feature scaling, on-policy targets, or experience replay with a target network. Also check for a bug in the terminal-state target.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Bootstrapping across episode truncation (time limit) as if it were termination, or the reverse. gymnasium returns them separately; use <code>terminated</code>, not <code>truncated</code>, to zero the target.</li>
+<li>Comparing methods before they have converged.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 125 replaces the linear features with a small neural network: DQN.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-123.html">← Day 123</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-125.html">Day 125 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

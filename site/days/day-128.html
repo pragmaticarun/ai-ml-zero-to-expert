@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 128 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="128">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-127.html">← Day 127</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-129.html">Day 129 →</a></nav>
+<h1>Day 128: Actor-critic (A2C)</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day128_actor_critic.py"><code>code/week-19/day128_actor_critic.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 127 (+1), Day 125 (+3), Day 121 (+7), Day 107 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>From baseline to critic.</strong> In REINFORCE with a baseline, V(s) only reduces variance; the target is still the full Monte Carlo return, so the agent must wait until the episode ends. Actor-critic methods use the value function <em>inside the target</em>. The one-step advantage estimate is the TD error</p>
+<p>δ_t = r_{t+1} + γ V(s_{t+1}) − V(s_t),</p>
+<p>and an n-step version sums n real rewards before bootstrapping: A_t ≈ r_{t+1} + γ r_{t+2} + … + γ^{n−1} r_{t+n} + γ^n V(s_{t+n}) − V(s_t). Small n means low variance but biased by the critic's errors; large n moves back towards Monte Carlo. This is the same bias-variance dial you met with TD(0) vs MC on Day 123, now applied to the policy gradient.</p>
+<p><strong>The two losses.</strong> The actor minimises −log π(a_t|s_t)·A_t (A detached). The critic minimises (target − V(s_t))². Most implementations add an <strong>entropy bonus</strong> −c·H(π(·|s)) to the actor loss to keep exploring; we use c = 0.01. A2C ("advantage actor-critic") is the synchronous form: collect n steps, compute advantages, take one gradient step, repeat. Because updates happen every n steps instead of every episode, learning starts immediately.</p>
+<p><strong>Truncation versus termination.</strong> CartPole-v1 stops at 500 steps by <em>truncation</em>, not because the pole fell. If you treat that as terminal (V = 0 afterwards), you teach the critic that standing upright at step 500 is worthless. Gymnasium returns <code>terminated</code> and <code>truncated</code> separately; we bootstrap through truncation and only zero the value on true termination. This is a small line of code with a large effect on stability.</p>
+<p><strong>Why A2C is fragile.</strong> The actor follows a critic that is itself learning, and the target moves with both. One bad step can push the policy into a region where episodes are short, the critic learns those, and the agent does not recover. You will see exactly that in the log.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day128_actor_critic.py</code>: A2C, 50k environment steps, entropy 0.01, Adam 1e-3, comparing n = 1 and n = 32, three seeds each, with greedy evaluation every 10k steps.</p>
+<p><strong>Verified (out/day128_actor_critic.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>Seed</th>
+<th>Episodes</th>
+<th>Mean length, last 20</th>
+<th>Greedy eval at 10k / 20k / 30k / 40k / 50k</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>289</td>
+<td>377.6</td>
+<td>245.8 / 500.0 / 225.2 / 210.9 / 443.5</td>
+<td>53 s</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>235</td>
+<td>495.4</td>
+<td>500 / 396.6 / 255.4 / 500 / 500</td>
+<td>53 s</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>2,117</td>
+<td>260.1</td>
+<td>404.9 / 9.3 / 9.3 / 500 / 500</td>
+<td>53 s</td>
+</tr>
+<tr>
+<td>32</td>
+<td>0</td>
+<td>242</td>
+<td>440.6</td>
+<td>126.5 / 281.7 / 380.2 / 500 / 500</td>
+<td>7 s</td>
+</tr>
+<tr>
+<td>32</td>
+<td>1</td>
+<td>293</td>
+<td>336.1</td>
+<td>401.1 / 500 / 143.1 / 188.8 / 500</td>
+<td>7 s</td>
+</tr>
+<tr>
+<td>32</td>
+<td>2</td>
+<td>314</td>
+<td>264.5</td>
+<td>500 / 167.7 / 242.9 / 223.9 / 462.9</td>
+<td>7 s</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reading it.</strong> All six runs reached 500 at some checkpoint, much faster than REINFORCE in steps. But the curves are not monotone: n = 1 seed 2 collapsed mid-run to 9.3 (the pole falls almost at once), which is why it logged 2,117 episodes, then recovered. n = 32 ran about 7 times faster in wall-clock time because it makes one gradient step per 32 transitions instead of one per transition. Its final numbers are not clearly better or worse at three seeds. The lesson: "solves CartPole" and "is stable" are different claims.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Change truncation handling to "treat as terminal" and rerun n = 32 for one seed. Compare evaluation curves.</li>
+<li>Set the entropy coefficient to 0 and to 0.05; record the final greedy eval per seed.</li>
+<li>Add a print of the mean policy entropy every 10k steps. Does the collapse in n = 1 seed 2 coincide with an entropy drop?</li>
+<li>Try n = 8. Where does it sit in time and stability?</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Write the n-step advantage.</li>
+<li>Which n is closer to Monte Carlo?</li>
+<li>Why bootstrap on truncation?</li>
+<li>Why is n = 32 faster in wall-clock time?</li>
+<li>What does the entropy bonus prevent?</li>
+</ol>
+<p><strong>Answers.</strong> 1) Σ_{k&lt;n} γ^k r_{t+k+1} + γ^n V(s_{t+n}) − V(s_t). 2) Larger n. 3) The state is not terminal; its true value is not 0. 4) Fewer gradient steps per transition. 5) Premature collapse to a near-deterministic policy.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days. Redraw the actor-critic loop from memory (environment → buffer of n steps → advantages → two losses → step). Flashcards: TD error as advantage; n-step trade-off; entropy bonus; terminated vs truncated.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Sharing one torso between actor and critic is common; we use two separate MLPs to keep the losses independent.</li>
+<li>A3C ran many asynchronous workers; A2C's synchronous version is simpler and, on CPUs, usually as good.</li>
+<li>GAE (Day 129) mixes all n-step estimates with a weight λ instead of picking one n.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Re-derive the one-step actor-critic update in Sutton &amp; Barto (the book cited on Day 127) and compare it to the code's <code>train</code> function.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your actor-critic reaches 500 and then collapses to 9. What do you check?" Look at policy entropy, critic loss and advantage scale at the collapse; check terminal/truncation handling; lower the learning rate or add gradient clipping; and consider a trust-region-style method (tomorrow).</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Forgetting to detach the advantage in the actor loss (the actor then trains the critic).</li>
+<li>Bootstrapping across a true termination.</li>
+<li>Reporting only the best checkpoint.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: PPO, which keeps actor-critic but limits how far each update can move the policy, and re-uses data for several epochs.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-127.html">← Day 127</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-129.html">Day 129 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

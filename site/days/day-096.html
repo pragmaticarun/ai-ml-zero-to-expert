@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 96 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="96">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-095.html">← Day 95</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-097.html">Day 97 →</a></nav>
+<h1>Day 96: BPE from scratch</h1>
+<p class="meta">Week 14 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-14.md">source: weeks/week-14.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-14/day96_bpe.py"><code>code/week-14/day96_bpe.py</code></a></li><li><a href="../../code/week-14/rust_bpe"><code>code/week-14/rust_bpe</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 95 (+1), Day 93 (+3), Day 89 (+7), Day 75 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why tokenise at all?</strong> Day 95's model reads characters, 65 symbols. That gives long sequences: a 128-character context is about 25 English words. Word-level vocabularies fix that but break on unseen words, names, typos and other languages. Subword tokenisation is the compromise used by every major LLM: frequent strings become single tokens, rare strings fall back to smaller pieces, and nothing is ever "unknown".</p>
+<p><strong>Byte-pair encoding</strong> (Sennrich et al., 2016, adapting a 1994 compression algorithm by Gage). Training:
+1. Start from a base vocabulary. Byte-level BPE (GPT-2, Radford et al., 2019) uses the 256 byte values, so any UTF-8 text is representable.
+2. Count every adjacent pair of symbols in the corpus.
+3. Merge the most frequent pair into a new symbol; record the merge with its rank.
+4. Repeat until the vocabulary reaches the target size.
+Encoding new text replays the merges: repeatedly find the adjacent pair with the <em>lowest rank</em> (earliest-learned) and merge it, until no learned pair remains. Decoding just concatenates the bytes of each token.</p>
+<p><strong>Pre-tokenisation.</strong> Merges are not allowed across arbitrary boundaries. GPT-2 first splits text with a regular expression into words (with their leading space), numbers and punctuation, and runs BPE inside each piece. Our <code>_bpe.py</code> uses the simpler pattern <code>" ?[A-Za-z]+| ?[0-9]+| ?[^A-Za-z0-9\s]+|\s+"</code>. This has two benefits: tokens like " the" (with a leading space) emerge naturally, and training can count <em>word types</em> with frequencies instead of scanning the whole corpus each iteration, which is much faster.</p>
+<p><strong>Design choices that matter later.</strong>
+- <em>Digits.</em> Our pattern lets digits merge in principle, but Shakespeare has almost no numbers, so they stay single bytes. Several modern tokenizers deliberately split numbers into single digits or groups of three, which affects arithmetic.
+- <em>Vocabulary size</em> trades sequence length against embedding-table size and per-token rarity.
+- <em>Training data.</em> A tokenizer trained on English is inefficient on other scripts: they are split into raw bytes, so the same sentence costs more tokens (and more money in API pricing, and more context).</p>
+<p><strong>Other algorithms.</strong> WordPiece (BERT) picks merges by a likelihood score rather than raw frequency. Unigram LM (SentencePiece; Kudo, 2018) starts large and prunes. In practice all three produce similar subwords.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-14/day96_bpe.py</code> (about half a minute plus a one-time tokenizer download). <strong>Verified:</strong>
+- Training 768 merges (vocabulary 256 + 768 = 1,024) on the 1,003,854-character training split took <strong>15.9 s</strong> in pure Python (20.9 s in an earlier run on a busy CPU).
+- First merges: ' t', 'he', ' a', 'ou', ' s', … Last merges: 'ier', 'os', ' nothing', 'ork', 'ichard' (from "Richard": the plays' character names make it into the vocabulary).
+- Compression: <strong>2.46 bytes/token</strong> on train and <strong>2.28 bytes/token</strong> on validation (111,540 bytes → 48,838 tokens). Validation is a little worse because the merges were fitted on train.
+- "To be, or not to be" → <strong>7</strong> tokens. "Hello, world! 12345" → <strong>12</strong> tokens, with the digits split one by one. "naïve café 東京" → <strong>17</strong> tokens: the non-ASCII characters fall back to bytes. All three decode back to the original string exactly.
+- Validation bytes/token with smaller vocabularies: 300 → <strong>1.39</strong>, 512 → <strong>1.90</strong>, 1,024 → 2.28. Returns diminish as the vocabulary grows.
+- The pretrained SmolLM2-135M tokenizer (vocabulary 49,152, trained on a large web corpus) gets <strong>3.10 bytes/token</strong> on the same validation text.
+- Encoder speed on the validation text (quiet machine): Python <strong>72 ms</strong>; Rust (PyO3) serial <strong>7.6 ms</strong>, identical output, about <strong>9×</strong> faster; Rust with rayon across words <strong>5.7 ms</strong>, identical, about <strong>13×</strong>.</p>
+<p>The parallel result depends heavily on the machine's state. In an earlier run, while other training jobs were using every core, the same rayon encoder took <strong>42.6 ms</strong>, slower than serial Rust (7.3 ms in that run). The work per word is tiny (a few merges), so when threads have to wait for a free core, the scheduling overhead cancels out the parallelism. Lesson: parallelism pays for big chunks of work on idle cores; measure on the machine you will deploy on.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(60 min) Write <code>train_bpe(text, vocab_size)</code> yourself from the four steps above, using word counts. Check that your first ten merges match the script's.</li>
+<li>(30 min) Write <code>encode</code> and <code>decode</code> and property-test them: for 1,000 random substrings of the validation set, <code>decode(encode(s)) == s</code>.</li>
+<li>(30 min) Build the Rust extension: <code>cd code/week-14/rust_bpe &amp;&amp; maturin develop --release</code>. Read <code>src/lib.rs</code> and find where the GIL is released. Try encoding in batches of 10,000 words with rayon instead of per word.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Corpus "aaabdaaabac". What is the first merge? <em>Answer: "aa" (it occurs 4 times counting overlaps in the naïve count; with non-overlapping replacement, "aa" is still the top pair).</em></li>
+<li>Why use bytes rather than Unicode characters as the base? <em>Answer: 256 symbols cover every string; no unknown tokens.</em></li>
+<li>Why encode with lowest rank first rather than longest match? <em>Answer: to reproduce the merge order used in training, so the same text always maps to the same tokens the model saw.</em></li>
+<li>A tokenizer averages 4 bytes/token on English and 1.5 on another language. How much longer is the same content in tokens? <em>Answer: about 2.7× (if byte lengths are equal; scripts using multi-byte UTF-8 make it worse).</em></li>
+<li>Why might per-digit splitting help arithmetic? <em>Answer: numbers are represented consistently, so place value is learnable.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can describe BPE training and encoding, and why encoding uses merge ranks.
+- [ ] I know what pre-tokenisation is for.
+- [ ] I can explain why my rayon version can be slower than serial Rust on a busy machine.</p>
+<h3 id="extra-notes-tokenisation-shows-up-everywhere">Extra notes: tokenisation shows up everywhere</h3>
+<p>Many puzzling LLM behaviours trace back to tokens: counting letters in a word (the model sees " strawberry" as one or a few tokens, not letters), trailing-space sensitivity in prompts, poor arithmetic with irregular number splits, and higher cost for non-English text. When a model fails oddly, print the tokens. On Day 99 we will look at the tokenizer of a real model and its special tokens (begin-of-text, end-of-text, chat-role markers), which are added outside the BPE merges.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the <code>tokenizers</code> library documentation on training a byte-level BPE, and compare its speed with ours on the same text.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"How does vocabulary size affect a language model?" Larger vocabulary: shorter sequences (more text per context, cheaper attention) but a larger embedding and output layer, and rarer tokens with fewer training examples each. Our runs show diminishing compression gains: 1.39 → 1.90 → 2.28 bytes/token from 300 to 1,024.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Merging across pre-token boundaries, which creates tokens like "e t".</li>
+<li>Encoding by repeatedly applying merges in training order over the whole text (correct, but very slow); use rank-based pair selection per word.</li>
+<li>Decoding tokens one at a time to strings: a single token can be half of a multi-byte UTF-8 character. Concatenate bytes first, then decode.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 97: how loss improves with model size and data, measured and from the literature.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-095.html">← Day 95</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-097.html">Day 97 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

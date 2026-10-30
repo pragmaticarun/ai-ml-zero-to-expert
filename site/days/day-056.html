@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 56 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="56">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-055.html">← Day 55</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-057.html">Day 57 →</a></nav>
+<h1>Day 56: PROJECT W8: Rust/PyO3 k-means kernel vs NumPy; Quiz 8</h1>
+<p class="meta">Week 8 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-08.md">source: weeks/week-08.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: when (and how) to drop to a compiled language (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: reference results (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: the project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 8 (1h), closed book, answers below)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-08/rust_kmeans"><code>code/week-08/rust_kmeans</code></a></li><li><a href="../../code/week-08/rust_kmeans/"><code>code/week-08/rust_kmeans/</code></a></li><li><a href="../../code/week-08/day56_week_project.py"><code>code/week-08/day56_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 55 (+1), Day 53 (+3), Day 49 (+7), Day 35 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-when-and-how-to-drop-to-a-compiled-language-1h15">Block 1: Concept lesson: when (and how) to drop to a compiled language (1h15)</h3>
+<p><strong>Intuition.</strong> Python is slow per operation, and NumPy is fast because it hands whole arrays to compiled loops. Ask three questions before writing Rust:
+1. Is this code actually the bottleneck? Profile it.
+2. Can a better NumPy formulation fix it? Often yes.
+3. Is the remaining cost in loops that NumPy can't express well (data-dependent branches, per-row reductions, parallelism)?</p>
+<p>k-means' <strong>assignment step</strong> (find the nearest of k centroids for each of m points) is a good candidate. It is O(m·k·n), embarrassingly parallel over rows, and the naive NumPy version allocates large temporaries.</p>
+<p><strong>The NumPy tricks.</strong>
+- <strong>Per-centroid loop:</strong> k passes over X.
+- <strong>Matmul trick:</strong> argminⱼ ‖x − cⱼ‖² = argminⱼ (‖cⱼ‖² − 2x·cⱼ), because ‖x‖² is the same for every j. One BLAS matrix multiply does the heavy lifting.</p>
+<p><strong>PyO3 + maturin</strong> (you used them on Day 29): annotate Rust functions with <code>#[pyfunction]</code>, accept NumPy arrays through the <code>numpy</code> crate as read-only views (no copy), and release the GIL. <strong>rayon</strong> turns <code>iter()</code> into <code>par_iter()</code> for multi-core parallelism. <code>maturin develop --release</code> builds and installs the module into your venv. Always use <code>--release</code>, since debug builds are many times slower.</p>
+<p><strong>Benchmark hygiene.</strong>
+- Use the same input and the same initial centroids.
+- Report best-of-N wall times.
+- Check that the outputs are <em>identical</em>.
+- Report the machine (here: 8 CPU threads).
+- Compare with the strongest baseline, not only the weakest.</p>
+<h3 id="block-2-worked-example-reference-results-45-min">Block 2: Worked example: reference results (45 min)</h3>
+<p>Build first: <code>source .venv/bin/activate &amp;&amp; cd code/week-08/rust_kmeans &amp;&amp; maturin develop --release</code>. The crate is <code>code/week-08/rust_kmeans/</code> (<code>src/lib.rs</code>, about 60 lines: <code>assign</code>, <code>assign_par</code> and <code>lloyd</code>). Then run <code>code/week-08/day56_week_project.py</code>. If the module isn't built, the script still runs the NumPy parts and says so.</p>
+<p>Data: 200,000 × 16 blobs, k = 32. Verified on this box:</p>
+<table>
+<thead>
+<tr>
+<th>assignment step (best of 3)</th>
+<th>time</th>
+<th>labels identical to loop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NumPy per-centroid loop</td>
+<td>307.7 ms</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td>NumPy matmul trick</td>
+<td>26.6 ms</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td>Rust serial</td>
+<td>34.9 ms</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td><strong>Rust + rayon (8 threads)</strong></td>
+<td><strong>8.3 ms</strong></td>
+<td>1.000000</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Full Lloyd, 100 iterations, same init:</strong> NumPy 5.25 s vs Rust 0.70 s. Labels are identical and the maximum centroid difference is 0.0. <strong>scikit-learn <code>KMeans(algorithm="lloyd")</code> with the same init: 0.22 s</strong>, with labels agreeing with ours on 99.996% of rows.</p>
+<p><strong>Honest reading.</strong>
+1. The <em>algorithmic</em> NumPy fix (the matmul trick) gave 11.6×, more than serial Rust (which is slower than the matmul because BLAS is highly optimised).
+2. Rust's win comes from <strong>parallelism</strong> (about 3.2× over the matmul trick).
+3. In the full loop, NumPy's centroid update (a Python loop over k with boolean masks) dominates, which is why Rust wins 7.5× there.
+4. <strong>scikit-learn beats our Rust</strong> by about 3×, because its Cython implementation does chunked, cache-friendly, multithreaded passes that fuse assignment and update. Measuring the strong baseline is the whole point.</p>
+<h3 id="block-3-coding-lab-the-project-2h">Block 3: Coding lab: the project (2h)</h3>
+<p>Deliverable: <code>notes/week08_rust_kmeans.md</code> with a timing table and a discussion.
+1. <strong>Read <code>src/lib.rs</code> (15 min):</strong> find where the GIL is released, where <code>into_par_iter</code> is used, and how the inputs are borrowed without copying.
+2. <strong>Build and verify (15 min):</strong> run the script and confirm that your numbers have the same <em>shape</em> as ours. Absolute times will differ by machine.
+3. <strong>Improve NumPy (20 min):</strong> vectorise the centroid update with <code>np.add.at</code> or <code>np.bincount</code> per dimension, and re-time the full Lloyd loop.
+4. <strong>Improve Rust (40 min):</strong> fuse assignment and update in one parallel pass. Each thread accumulates partial sums and counts, and these are reduced at the end. Re-time it and verify that the labels are still identical.
+5. <strong>Scaling study (20 min):</strong> time <code>assign_par</code> with <code>RAYON_NUM_THREADS</code> = 1, 2, 4 and 8, and plot the speed-up. Explain why it is sub-linear.
+6. <strong>Write-up (10 min):</strong> a table, a plot, and a recommendation: would you ship Rust here, or just use scikit-learn?</p>
+<p><strong>Rubric (self-grade out of 20):</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Outputs verified identical (labels and centroids) for every implementation</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Fair benchmark: same init, best-of-N, machine stated</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Strong baseline (scikit-learn) included and discussed</td>
+<td>3</td>
+</tr>
+<tr>
+<td>One measured improvement (NumPy or Rust) with before/after numbers</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Thread-scaling plot with an explanation</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Clear recommendation tied to the numbers</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stretch:</strong> implement k-means++ initialisation in Rust (sequential sampling with parallel distance updates).</p>
+<h3 id="block-4-practice-quiz-8-1h-closed-book-answers-below">Block 4: Practice: Quiz 8 (1h), closed book, answers below</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Why can ‖x‖² be dropped in the assignment?
+  2. Why does <code>--release</code> matter?
+  3. Where did Rust's speed-up come from?
+  4. Why did scikit-learn still win?
+  5. Name three benchmark-hygiene rules.</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Memory bandwidth bounds this kernel. Each pass reads 200,000 × 16 × 8 bytes = 25.6 MB of points. At about 8 ms that is around 3 GB/s of useful reads, which is far below typical memory bandwidth. That suggests compute (k = 32 distance evaluations per point), not bandwidth, is the main cost here. Check it with the f32 experiment. Try <code>f32</code> instead of <code>f64</code> and see whether SIMD and the halved memory help. Month 4's quantisation is the same idea at a much larger scale.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Benchmarking a debug build.</li>
+<li>Timing the first call (it includes import and warm-up).</li>
+<li>Different initial centroids between implementations.</li>
+<li>Non-contiguous arrays passed to Rust: use <code>np.ascontiguousarray</code>.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 9: make experiments reproducible, then build and deliver the Month-2 capstone, and start neural networks.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-055.html">← Day 55</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-057.html">Day 57 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

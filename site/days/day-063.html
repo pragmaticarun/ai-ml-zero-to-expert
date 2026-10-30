@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 63 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="63">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-062.html">← Day 62</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-064.html">Day 64 →</a></nav>
+<h1>Day 63: PROJECT W9: NumPy MLP with hand-derived backprop on digits; Quiz 9</h1>
+<p class="meta">Week 9 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: backpropagation (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: reference results (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: the project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 9 (1h), closed book, answers below)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/day63_week_project.py"><code>code/week-09/day63_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 62 (+1), Day 60 (+3), Day 56 (+7), Day 42 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-backpropagation-1h15">Block 1: Concept lesson: backpropagation (1h15)</h3>
+<p><strong>Intuition.</strong> Training needs ∂L/∂(every weight). Backprop is the chain rule applied layer by layer from the loss backwards, reusing intermediate results so that the cost is about two forward passes.</p>
+<p><strong>Our network:</strong> Z1 = XW1 + b1, A1 = ReLU(Z1), Z2 = A1W2 + b2, P = softmax(Z2), L = mean cross-entropy (+ λ/2·‖W‖²). The gradients, for a batch of m rows with one-hot Y:
+- dZ2 = (P − Y)/m. This is the famous clean softmax plus cross-entropy gradient, the same as logistic regression's.
+- dW2 = A1ᵀdZ2 + λW2, and db2 = Σ_rows dZ2.
+- dA1 = dZ2 W2ᵀ, and dZ1 = dA1 ⊙ [Z1 &gt; 0] (ReLU passes gradient only where active).
+- dW1 = XᵀdZ1 + λW1, and db1 = Σ_rows dZ1.</p>
+<p>Every gradient has the <strong>same shape as its parameter</strong>, which makes a quick check.</p>
+<p><strong>Gradient checking.</strong> Compare the analytic gradients with central differences, (L(θ+ε) − L(θ−ε))/2ε with ε = 1e−5, using relative error ‖num − ana‖/(‖num‖ + ‖ana‖). Below about 1e−7 is correct, and around 1e−2 is a bug. Check on a small network and a small batch, because it is slow.</p>
+<p><strong>Mini-batch SGD:</strong> shuffle every epoch, then take steps on batches of 32: θ −= η·g.</p>
+<h3 id="block-2-worked-example-reference-results-45-min">Block 2: Worked example: reference results (45 min)</h3>
+<p><code>code/week-09/day63_week_project.py</code> (digits scaled to [0, 1], 75/25 stratified split). Verified:
+- <strong>Gradient check</strong> (64→16→10, 20 rows, λ = 1e−3): relative errors W1 3.86e−10, b1 1.87e−10, W2 3.14e−10, b2 1.58e−10. <strong>PASSED.</strong>
+- <strong>Training</strong> (64→64→10, He init, η = 0.2, batch 32, λ = 1e−4):</p>
+<table>
+<thead>
+<tr>
+<th>epoch</th>
+<th>train loss</th>
+<th>train acc</th>
+<th>test acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1.0840</td>
+<td>0.5798</td>
+<td>0.5756</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.1808</td>
+<td>0.9644</td>
+<td>0.9556</td>
+</tr>
+<tr>
+<td>20</td>
+<td>0.0715</td>
+<td>0.9933</td>
+<td>0.9644</td>
+</tr>
+<tr>
+<td>60</td>
+<td>0.0324</td>
+<td>0.9993</td>
+<td><strong>0.9822</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Baselines:</strong> logistic regression 0.9689 and scikit-learn <code>MLPClassifier(64)</code> 0.9733. Our network's 0.9822 is higher on this one split. With 450 test images, 0.9822 vs 0.9733 is a difference of 4 images, so don't over-read it. The learning curve is in <code>out/day63_mlp_curve.png</code>.</li>
+</ul>
+<h3 id="block-3-coding-lab-the-project-2h">Block 3: Coding lab: the project (2h)</h3>
+<p>Deliverable: <code>notes/week09_mlp.md</code> plus your own <code>mlp.py</code>.
+1. <strong>Derive (25 min)</strong> every gradient above on paper, with shapes. Explain why dZ2 = (P − Y)/m.
+2. <strong>Implement (30 min)</strong> <code>forward</code> and <code>loss_grad</code>. Write them yourself first, then compare with the reference.
+3. <strong>Gradient-check (15 min)</strong> every parameter. Deliberately introduce a bug (drop the ReLU mask) and confirm that the check catches it. Record the relative error it gives.
+4. <strong>Train (20 min)</strong> and reproduce the table's shape. Your numbers may differ slightly if you change seeds.
+5. <strong>Experiments (20 min):</strong> pick two, and record the test accuracy and curves.
+   - η ∈ {0.02, 0.2, 2}
+   - hidden ∈ {16, 64, 256}
+   - λ ∈ {0, 1e−3, 1e−2}
+   - batch ∈ {8, 32, full}
+6. <strong>Write-up (10 min):</strong> derivation photos or LaTeX, the check results, the curves, experiment tables, and an honest comparison with the baselines.</p>
+<p><strong>Rubric (self-grade out of 20):</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Correct derivation with shapes</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Gradient check passes (&lt; 1e−7), and the injected bug is detected</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Training reaches ≥ 0.95 test accuracy</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Two experiments with interpretation</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Honest baseline comparison (noise on 450 test images acknowledged)</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="block-4-practice-quiz-9-1h-closed-book-answers-below">Block 4: Practice: Quiz 9 (1h), closed book, answers below</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Write dZ2 for softmax plus cross-entropy.
+  2. Where does the ReLU mask enter?
+  3. How do you compute the relative error for a gradient check?
+  4. What test accuracy did the reference reach after 60 epochs?
+  5. Why compute the gradient check on a small network?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Backprop is reverse-mode automatic differentiation. Next week you will meet frameworks (PyTorch) that do this for you. Keep your NumPy version: re-deriving one layer by hand remains the fastest way to debug a strange gradient later.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting the 1/m in dZ2. The gradients are then m times too big, and training diverges.</li>
+<li>Checking gradients with ReLU inputs exactly at 0 (a kink), which gives spurious errors.</li>
+<li>ε too small (1e−10), so round-off dominates.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 10: training deep networks well (optimisers, normalisation, regularisation), and moving to a framework.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-062.html">← Day 62</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-064.html">Day 64 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

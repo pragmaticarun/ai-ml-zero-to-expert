@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 7 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="7">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-006.html">← Day 6</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-008.html">Day 8 →</a></nav>
+<h1>Day 7: Week 1 project: EDA report and baselines, plus Quiz 1</h1>
+<p class="meta">Week 1 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-01.md">source: weeks/week-01.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: baselines (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: project (2h): `code/week-01/day07_week_project.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 1 (1h), closed book, answers at the end of this file)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-01/day07_week_project.py"><code>code/week-01/day07_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 6 (+1), Day 4 (+3).</p>
+<h3 id="block-1-concept-lesson-baselines-1h15">Block 1: Concept lesson: baselines (1h15)</h3>
+<p><strong>Intuition.</strong> Before building a clever model, ask: <em>what score does a dumb model get?</em> A baseline tells you whether your model is useful at all. It also catches bugs: if a fancy model loses to "predict the mean", something is broken. In production work, a baseline (sometimes human-level performance) is also how you decide whether the project is worth doing.</p>
+<p>Three baselines for regression:
+1. Predict the train mean for everyone.
+2. Predict the per-group mean (per city).
+3. A one-feature line on the strongest feature.</p>
+<p><strong>Metric: mean absolute error (MAE)</strong> = (1/m) Σ|yᵢ − ŷᵢ|. It is in the target's units (lakh), so it is easy to explain to a non-ML colleague: "on average we're off by X lakh".</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Verified results on the 100-flat test split (400 train) of the synthetic table:</p>
+<table>
+<thead>
+<tr>
+<th>Baseline</th>
+<th>Test MAE (lakh)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Predict the mean</td>
+<td>16.96</td>
+</tr>
+<tr>
+<td>Mean per city</td>
+<td>15.88</td>
+</tr>
+<tr>
+<td>Line on area only</td>
+<td><strong>8.77</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Interpretation: city alone helps a little (−1.1 lakh), while area alone halves the error. This matches the correlations the script prints: area <strong>0.851</strong>, age <strong>−0.283</strong>, bedrooms <strong>0.193</strong>. Note that price_per_sqft shows 0.271, but it is a target-derived column, so its correlation is meaningless for modelling. The noise std in the generator is 6, so the best possible MAE is about 6·√(2/π) ≈ 4.8 lakh. The line on area is at 8.77, so there is room to improve with more features (Week 4 gets close to that floor).</p>
+<h3 id="block-3-coding-lab-project-2h-codeweek-01day07_week_projectpy">Block 3: Coding lab: project (2h): <code>code/week-01/day07_week_project.py</code></h3>
+<p>Deliverable: <code>notes/week01_report.md</code> (about 1 page) containing:
+1. A data description (rows, columns, missing values, how you imputed them).
+2. Three plots: the price histogram, price vs area, and the boxplot by city (<code>out/day07_price_by_city.png</code>).
+3. The baseline table above, reproduced by <em>your</em> run.
+4. Two hypotheses for what will improve the model, and why.
+Stretch: add a fourth baseline, "line on area + city one-hot", using <code>np.linalg.lstsq</code>. Check that it beats 8.77.</p>
+<p><strong>Suggested timeline (2h).</strong>
+- 0:00-0:20: re-run the script and confirm your baseline table matches the worked example exactly. The data generator is seeded, so any difference is a bug in your copy.
+- 0:20-0:50: make the three plots. Give every plot a title, labelled axes with units (lakh, sq ft), and a one-sentence takeaway written under it in the report.
+- 0:50-1:20: write the data description. Cover where the data came from (synthetic, and say so), the row and column counts, the missing values and your imputation choice, and the columns you dropped and why (price_per_sqft is derived from the target).
+- 1:20-1:45: baselines and the stretch baseline.
+- 1:45-2:00: hypotheses and a proofread. Delete any sentence that is not backed by a number or a plot.</p>
+<p><strong>Rubric (self-grade out of 20).</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline table reproduced from your own run, test split stated</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Three plots, each with axes, units and a written takeaway</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Data description covers missing values, imputation and dropped columns with reasons</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Two hypotheses, each tied to evidence (a correlation or a plot)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Noise-floor reasoning: compare 8.77 with the ≈4.8 floor and say what it implies</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Report fits on one page and makes no unsupported claims</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>16+ means you are ready for Week 2. Below 12, redo the weakest section before moving on.</p>
+<p><strong>What separates a strong report from a weak one.</strong> A weak report says "area is important". A strong one says "area alone cuts test MAE from 16.96 to 8.77 lakh, and its correlation with price is 0.851, so the next model should keep area and add city and age". The second is checkable, and it tells the reader what to do next.</p>
+<h3 id="block-4-practice-quiz-1-1h-closed-book-answers-at-the-end-of-this-file">Block 4: Practice: Quiz 1 (1h), closed book, answers at the end of this file</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 6 (+1):</strong> re-explain the leakage demo numbers (0.506 vs −0.10).</li>
+<li><strong>Day 4 (+3):</strong> why was <code>price_per_sqft</code> dropped?</li>
+<li><strong>Self-check:</strong>
+  1. Why build baselines?
+  2. Define MAE.
+  3. What is the noise floor of MAE for Gaussian noise with std σ? (σ√(2/π))
+  4. Which feature correlated most with price?
+  5. What would a model <em>losing</em> to the mean baseline suggest?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>Writing a good EDA report.</strong> Structure it as: question → data description (rows, columns, provenance) → data quality issues and how you fixed them → three key plots with one-sentence takeaways → baselines table → next steps. Keep each claim tied to a number or a plot that you produced. That habit makes later model reports trustworthy.</p>
+<p><strong>Why the median baseline can beat the mean on MAE.</strong> The median minimises the mean <em>absolute</em> error, while the mean minimises the mean <em>squared</em> error. So report both baselines, and judge each model with the metric that matches its baseline. This pairing returns on Day 21 (MLE under Gaussian vs Laplace noise).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reporting only your model's score without a baseline.</li>
+<li>Comparing MAE from one split with MSE from another. Fix the metric and the split once.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Next week is linear algebra: the language in which "fit many features at once" becomes a single line of code.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-006.html">← Day 6</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-008.html">Day 8 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

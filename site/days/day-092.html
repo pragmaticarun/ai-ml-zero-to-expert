@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 92 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="92">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-091.html">← Day 91</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-093.html">Day 93 →</a></nav>
+<h1>Day 92: Self-attention, multi-head attention, masking</h1>
+<p class="meta">Week 14 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-14.md">source: weeks/week-14.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-14/day92_mha_masking.py"><code>code/week-14/day92_mha_masking.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 91 (+1), Day 89 (+3), Day 85 (+7), Day 71 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>From NumPy to PyTorch.</strong> Day 91 wrote attention in NumPy. Today we write the batched PyTorch version used in real models. Its shapes are worth memorising: the input x is (B, T, D); one linear layer produces Q, K and V together, (B, T, 3D); we reshape to (B, T, 3, h, D/h) and permute to three tensors of shape (B, h, T, D/h). Scores are (B, h, T, T). The output is transposed back to (B, T, h, D/h), reshaped to (B, T, D) and projected by W_O.</p>
+<p><strong>Self-attention vs cross-attention.</strong> In self-attention Q, K and V all come from the same sequence. In cross-attention (Day 81's decoder looking at the encoder) Q comes from one sequence and K, V from another. A decoder-only GPT uses only causal self-attention.</p>
+<p><strong>Masks.</strong> A mask says which (query, key) pairs are allowed. Two kinds:
+- <strong>Causal mask</strong> (lower-triangular, T × T): a token may only attend to itself and earlier tokens. This is what makes next-token training possible on a whole sequence in parallel: position t predicts token t+1 without seeing it.
+- <strong>Padding mask</strong> (B × T): in a batch of sequences of different lengths, shorter ones are padded. Keys at padding positions must get zero weight, or the padding changes the real tokens' outputs.
+Combine them with a logical AND and broadcast to (B, 1, T, T) so the same mask applies to every head. Masked scores are set to −∞ before the softmax.</p>
+<p><strong>The NaN trap.</strong> If a query row is masked entirely (a padding query with no allowed keys), its softmax is 0/0 = NaN, which then poisons the loss. Real code either never lets a row be fully masked (the causal diagonal is always allowed) or replaces those rows with zeros and excludes padding positions from the loss.</p>
+<p><strong>Cost.</strong> The score matrix is T × T per head. Time and memory grow quadratically with sequence length. That single fact drives Day 111 (KV cache) and Day 115 (efficient attention).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-14/day92_mha_masking.py</code> (a few seconds). <strong>Verified:</strong>
+- Causal multi-head attention (B 2, T 6, D 16, 4 heads) vs <code>nn.MultiheadAttention</code> with the same weights: max diff <strong>6.0e-08</strong>. Weights above the diagonal: all zero (<strong>True</strong>).
+- Padding: the second sequence has length 4. The maximum weight on its padded keys is <strong>0.0</strong>, and its real positions match running the length-4 sequence alone with max diff <strong>0.0e+00</strong>. That is the definition of a correct padding mask.
+- A fully masked row gives NaN: <strong>True</strong>.
+- <code>F.scaled_dot_product_attention(..., is_causal=True)</code> vs mine: max diff <strong>6.0e-08</strong>.
+- Parameters: 4·D² = <strong>1,024</strong> = <code>nn.MultiheadAttention(bias=False)</code>.
+- Naive attention time (4 heads, d_head 64), with the size of the fp32 score matrix:</p>
+<table>
+<thead>
+<tr>
+<th>T</th>
+<th>time (ms)</th>
+<th>score matrix (MiB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>256</td>
+<td>0.7</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>512</td>
+<td>3.0</td>
+<td>4.0</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>9.6</td>
+<td>16.0</td>
+</tr>
+<tr>
+<td>2048</td>
+<td>40.4</td>
+<td>64.0</td>
+</tr>
+</tbody>
+</table>
+<p>Doubling T quadruples the memory exactly. Time grows by roughly 3-4× per doubling at the larger sizes; at small T, fixed overheads dominate. An earlier run of the same script while the CPU was shared gave different times (13.5 ms and 71.0 ms for T = 1024 and 2048), so trust the ratios more than the absolute values.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Write <code>mha(x, Wqkv, Wo, h, mask)</code> without looking at the script. Match <code>nn.MultiheadAttention</code> to 1e-6. Note that PyTorch's <code>attn_mask</code> uses <code>True</code> = <em>blocked</em>, the opposite of our convention.</li>
+<li>(45 min) Build a padded batch of three sequences (lengths 6, 3, 5) and prove each real output equals the unpadded computation.</li>
+<li>(30 min) Write a <code>safe_softmax</code> that returns zeros for fully masked rows, and test it on a batch where one sequence is all padding.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>x is (8, 100, 512), 8 heads. Shape of the scores? <em>Answer: (8, 8, 100, 100).</em></li>
+<li>Memory of those scores in fp32? <em>Answer: 8·8·100·100·4 bytes = 2.56 MB.</em></li>
+<li>Why does the causal mask allow training on all positions at once? <em>Answer: each position's output depends only on earlier tokens, so all T next-token losses are valid simultaneously.</em></li>
+<li>Why must padding keys be masked but padding queries need not be (if excluded from the loss)? <em>Answer: keys affect other tokens' outputs; a padding query only affects its own output, which is ignored.</em></li>
+<li>Parameters of multi-head attention with D = 768, with biases on all four projections? <em>Answer: 4·768² + 4·768 = 2,362,368.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can write every shape in a batched MHA forward pass.
+- [ ] I can combine causal and padding masks and know which way round PyTorch's mask convention goes.
+- [ ] I can explain the NaN trap and two fixes.</p>
+<h3 id="extra-notes-what-different-heads-do">Extra notes: what different heads do</h3>
+<p>Splitting D into h heads does not add parameters: 4D² either way. What changes is that each head computes its own softmax, so each can produce a different weighting of the past. With one head of size D, a token must blend everything it wants into one distribution. With 4 heads of D/4, one head can attend to the previous token while another attends to the most recent occurrence of the same token, which is the "induction head" pattern found in trained language models. The cost is that each head's dot products live in only D/h dimensions, so each head is less expressive on its own. In practice h is chosen so that D/h is 64 or 128. Multi-query and grouped-query attention (Day 111) go one step further and share K and V across heads, which saves cache memory at inference time with little quality loss.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the PyTorch documentation for <code>torch.nn.functional.scaled_dot_product_attention</code> and note which backends it can dispatch to.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"How does a padding mask differ from a causal mask, and what goes wrong if you forget the padding mask?" Causal blocks future positions; padding blocks fake positions. Without the padding mask, a sequence's outputs change depending on how much padding it was batched with, so results depend on batch composition.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reshaping (B, T, 3D) straight to (B, h, T, …) without the permute: the heads silently mix positions.</li>
+<li>Using PyTorch's boolean mask with the wrong polarity.</li>
+<li>Masking with a finite −1e4 in fp16, which may not be "minus infinity" enough after the scale.</li>
+<li>Forgetting the 1/√d_head scale (Day 91).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 93 gives attention a sense of order.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-091.html">← Day 91</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-093.html">Day 93 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

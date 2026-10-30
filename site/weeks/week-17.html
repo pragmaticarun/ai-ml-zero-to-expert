@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 17 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="17">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-16.html">← Week 16</a><a href="../syllabus.html">Syllabus</a><a href="week-18.html">Week 18 →</a></nav>
+<h1>Week 17 (Days 113-119): RAG, quantisation and inference serving</h1><p class="meta"><a href="../../weeks/week-17.md">source: weeks/week-17.md</a> · <a href="../../pdf/week-17.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-113.html">Day 113: Embeddings, chunking and vector search</a> <span class="st" data-st="113"></span></li><li><a href="../days/day-114.html">Day 114: Hybrid retrieval, reranking and retrieval evaluation</a> <span class="st" data-st="114"></span></li><li><a href="../days/day-115.html">Day 115: RAG generation and grounding evaluation</a> <span class="st" data-st="115"></span></li><li><a href="../days/day-116.html">Day 116: Quantisation from scratch (RTN int8/int4)</a> <span class="st" data-st="116"></span></li><li><a href="../days/day-117.html">Day 117: GPTQ/AWQ concepts, plus a Rust/PyO3 int8 kernel</a> <span class="st" data-st="117"></span></li><li><a href="../days/day-118.html">Day 118: Inference serving: KV cache, batching, speculative decoding, vLLM/llama.cpp overview</a> <span class="st" data-st="118"></span></li><li><a href="../days/day-119.html">Day 119: PROJECT W17: RAG over the notes with a quantised generator; Quiz 17</a> <span class="st" data-st="119"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-17"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>What does mean pooling do in a sentence-embedding model, and why normalise the result?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It averages token vectors (masked) into one vector; normalising makes dot product equal cosine similarity.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>In Day 113, which chunking gave the best recall@5, and what was it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Section chunking: recall@5 0.71 (vs 0.62-0.64 for word windows).</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>What is reciprocal rank fusion and why is it convenient?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Score = Σ 1/(k + rank) over retrievers; it uses only ranks, so no score calibration is needed.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Why is a cross-encoder more accurate than a bi-encoder, and why is it used only for reranking?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It attends across query and document jointly; it needs one forward per pair, so it is too slow for whole-corpus search (about 200 ms for 20 pairs here).</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>In Day 114, what did reranking the dense top 20 do to recall@1?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Raised it from 0.40 to 0.50 (recall@5 0.64 → 0.81).</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>In Day 115, context recall@3 was 0.92 but accuracy 0.25. What does that tell you?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Retrieval mostly worked; the 135M generator failed to use the context: the main error is generation.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Write the symmetric quantisation formula for b bits.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>s = max|w| / (2^(b−1) − 1), q = clamp(round(w/s), −2^(b−1), 2^(b−1) − 1), ŵ = s·q.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Why did int4 per-tensor destroy SmolLM2-135M while int4 group-64 did not?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Outliers (e.g. max 2.875 vs mean 0.1441 in one layer) set a huge single scale so most weights rounded to zero (ppl 1,561,367.93); group-64 scales adapt locally (ppl 36.89).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>What is the core idea of GPTQ? Of AWQ?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>GPTQ: quantise columns one at a time and update the rest to compensate, using the Hessian XᵀX. AWQ: scale up weight channels that meet large activations before quantising, folding the inverse scale into the input.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why was the Rust int8 kernel slower than torch fp32 at batch 1, and what did it gain?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Torch uses optimised SIMD/blocked BLAS (15.9 µs vs our 145.2 µs with 8 threads); our kernel stored the weights in 4× less memory (884,736 B + 2,304 B scales vs 3,538,944 B).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>What did the KV cache change in Day 118, and what does it cost?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Decode went from 27.3 to 67.8 tok/s with identical tokens; it costs memory growing linearly with length (94.4 MB at 2,048 tokens per sequence).</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Why was self-speculative decoding slower than plain decoding here?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The early-exit draft was a poor predictor (acceptance 0.03-0.06), so draft steps were wasted and almost every token still needed a target forward.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 4). This week covers RAG, quantisation, Rust int8, KV cache, batching and speculative decoding (SYLLABUS titles match). llama.cpp remains UNTESTED (no g++/cmake). Every number below was printed by a script in <code>code/week-17/</code> on this box (torch 2.15.0+cpu, transformers 5.21.1, Rust via cargo + maturin 1.15.0, 8 CPU threads, no GPU), with logs in <code>code/week-17/out/*.log</code>. Scripts were run one at a time.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Embed, chunk and search a real document collection (these course notes), and measure retrieval quality honestly.</li>
+<li>Combine lexical and dense retrieval, add a cross-encoder reranker, and see what each buys.</li>
+<li>Build retrieval-augmented generation with a 135M model and separate retrieval errors from generation errors.</li>
+<li>Implement int8/int4 quantisation from scratch and measure its effect on SmolLM2-135M perplexity.</li>
+<li>Implement simplified GPTQ and AWQ, and write an int8 matmul kernel in Rust with PyO3.</li>
+<li>Write a Llama forward pass with your own KV cache; measure cache speed-up, batching throughput and speculative decoding.</li>
+<li>Weekly project: a RAG system over the notes with fp32, int8 and int4 generators.</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 113 embeddings + vector search] --&gt; B[Day 114 hybrid + rerank]
+  B --&gt; C[Day 115 RAG generation]
+  C --&gt; D[Day 116 int8/int4 RTN]
+  D --&gt; E[Day 117 GPTQ, AWQ, Rust kernel]
+  E --&gt; F[Day 118 KV cache, batching, speculative]
+  F --&gt; G[Day 119 project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note (CPU vs GPU).</strong> Everything here fits on a CPU because the models are tiny: the MiniLM embedding model, a MiniLM cross-encoder and SmolLM2-135M. Quantisation is <em>simulated</em>: weights are rounded to int8/int4 and then stored dequantised in fp32, so it measures quality loss but not speed. Real speed-ups need kernels that compute on low-bit weights (on GPUs: GPTQ/AWQ/Marlin-style kernels; on CPUs: llama.cpp's). On a GPU you would also see the KV cache and batching effects much more strongly, and serving engines such as vLLM only make sense there.</p>
+<p><strong>llama.cpp on this box: not built.</strong> This box has <code>gcc</code> and <code>cc</code> but <strong>no <code>g++</code>, no <code>cmake</code> and no <code>make</code></strong>, and llama.cpp is C/C++ built with CMake, so it was not built or run here. Its description below comes only from its README (copy saved as <code>code/week-17/out/docs_llama_cpp_README.md</code>). vLLM is described from its README (<code>out/docs_vllm_README.md</code>); it was not installed (it targets GPUs).</p>
+<p><strong>Models and data.</strong> From the local Hugging Face cache: <code>sentence-transformers/all-MiniLM-L6-v2</code> (verified in earlier weeks), <code>HuggingFaceTB/SmolLM2-135M</code> and <code>-Instruct</code> (Week 15), and <code>cross-encoder/ms-marco-MiniLM-L6-v2</code>, downloaded this week from its official Hub repository (6 files, including <code>model.safetensors</code>). The corpus is <code>weeks/week-01.md</code> to <code>week-16.md</code>: 112 days with content. The retrieval eval set is the 58 interview-style questions found in those notes; each question's own section is <strong>removed</strong> from the index, and the "gold" answer is any chunk from the same day. The RAG QA set (<code>code/week-17/_qa.py</code>) has 12 hand-written questions whose exact answer strings appear in weeks 15-16 (the script checks this: none missing).</p>
+<hr />
+<h2 id="weekly-quiz-week-17">Weekly quiz: Week 17</h2>
+<ol>
+<li>What does mean pooling do in a sentence-embedding model, and why normalise the result?</li>
+<li>In Day 113, which chunking gave the best recall@5, and what was it?</li>
+<li>What is reciprocal rank fusion and why is it convenient?</li>
+<li>Why is a cross-encoder more accurate than a bi-encoder, and why is it used only for reranking?</li>
+<li>In Day 114, what did reranking the dense top 20 do to recall@1?</li>
+<li>In Day 115, context recall@3 was 0.92 but accuracy 0.25. What does that tell you?</li>
+<li>Write the symmetric quantisation formula for b bits.</li>
+<li>Why did int4 per-tensor destroy SmolLM2-135M while int4 group-64 did not?</li>
+<li>What is the core idea of GPTQ? Of AWQ?</li>
+<li>Why was the Rust int8 kernel slower than torch fp32 at batch 1, and what did it gain?</li>
+<li>What did the KV cache change in Day 118, and what does it cost?</li>
+<li>Why was self-speculative decoding slower than plain decoding here?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>It averages token vectors (masked) into one vector; normalising makes dot product equal cosine similarity.</li>
+<li>Section chunking: recall@5 0.71 (vs 0.62-0.64 for word windows).</li>
+<li>Score = Σ 1/(k + rank) over retrievers; it uses only ranks, so no score calibration is needed.</li>
+<li>It attends across query and document jointly; it needs one forward per pair, so it is too slow for whole-corpus search (about 200 ms for 20 pairs here).</li>
+<li>Raised it from 0.40 to 0.50 (recall@5 0.64 → 0.81).</li>
+<li>Retrieval mostly worked; the 135M generator failed to use the context: the main error is generation.</li>
+<li>s = max|w| / (2^(b−1) − 1), q = clamp(round(w/s), −2^(b−1), 2^(b−1) − 1), ŵ = s·q.</li>
+<li>Outliers (e.g. max 2.875 vs mean 0.1441 in one layer) set a huge single scale so most weights rounded to zero (ppl 1,561,367.93); group-64 scales adapt locally (ppl 36.89).</li>
+<li>GPTQ: quantise columns one at a time and update the rest to compensate, using the Hessian XᵀX. AWQ: scale up weight channels that meet large activations before quantising, folding the inverse scale into the input.</li>
+<li>Torch uses optimised SIMD/blocked BLAS (15.9 µs vs our 145.2 µs with 8 threads); our kernel stored the weights in 4× less memory (884,736 B + 2,304 B scales vs 3,538,944 B).</li>
+<li>Decode went from 27.3 to 67.8 tok/s with identical tokens; it costs memory growing linearly with length (94.4 MB at 2,048 tokens per sequence).</li>
+<li>The early-exit draft was a poor predictor (acceptance 0.03-0.06), so draft steps were wasted and almost every token still needed a target forward.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

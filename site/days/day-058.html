@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 58 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="58">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-057.html">← Day 57</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-059.html">Day 59 →</a></nav>
+<h1>Day 58: MONTH-2 CAPSTONE (part 1): build and compare, CV only</h1>
+<p class="meta">Week 9 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: the capstone brief (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: the reference build (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: your build (2h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/capstone.py"><code>code/week-09/capstone.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 57 (+1), Day 55 (+3), Day 51 (+7), Day 37 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-the-capstone-brief-45-min">Block 1: Concept lesson: the capstone brief (45 min)</h3>
+<p><strong>Brief.</strong> Build a classifier that predicts whether a person's income exceeds $50K from 1994 US census features (adult). Treat it as a mock "outreach targeting" task. The stakeholder needs <strong>precision ≥ 0.70</strong> (most people contacted should qualify) while catching as many qualifying people as possible. Deliver:
+1. A frozen model artefact.
+2. A one-page report with test metrics, calibration and slices.
+3. A model card.
+4. Reproducible code.</p>
+<p><strong>The rules (from Days 39-45).</strong>
+1. Split off the test set (25%, stratified, seed 0) on day one, and <strong>don't touch it until Day 59</strong>.
+2. All choices (model, hyperparameters, threshold) come from CV on the training split.
+3. Preprocessing lives inside pipelines.
+4. Compare against simple baselines.
+5. Report the spread, not just means.</p>
+<p><strong>Ethics note.</strong> Adult contains sex and race. We use them in <em>evaluation slices</em> to look for unequal error rates. Whether to use them as <em>features</em> in a real decision system is a legal and ethical question, not just a technical one. For many real decisions it is restricted. In the lab you will train a variant without them and compare.</p>
+<h3 id="block-2-worked-example-the-reference-build-1h15">Block 2: Worked example: the reference build (1h15)</h3>
+<p><code>code/week-09/capstone.py</code> (a reusable library) plus <code>day58_capstone_build.py</code>. Verified on the 36,631-row training split:
+- <strong>Data checks:</strong> 34 duplicate rows, 4,816 missing cells (in workclass, occupation and native-country), positive rate 0.2393. No blocking problems.
+- <strong>CV comparison</strong> (5-fold, stratified):</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>ROC-AUC (± std)</th>
+<th>PR-AUC</th>
+<th>log loss</th>
+<th>accuracy</th>
+<th>fit s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>hist_gb_tuned</strong> (lr 0.05, ≤500 iters, early stopping, L2 1.0)</td>
+<td><strong>0.9280 ± 0.0030</strong></td>
+<td>0.8278</td>
+<td>0.2778</td>
+<td>0.8723</td>
+<td>0.52</td>
+</tr>
+<tr>
+<td>hist_gb (defaults)</td>
+<td>0.9277 ± 0.0030</td>
+<td>0.8272</td>
+<td>0.2782</td>
+<td>0.8720</td>
+<td>0.26</td>
+</tr>
+<tr>
+<td>random_forest</td>
+<td>0.9166 ± 0.0022</td>
+<td>0.8044</td>
+<td>0.3003</td>
+<td>0.8637</td>
+<td>0.74</td>
+</tr>
+<tr>
+<td>logreg (one-hot + scaling)</td>
+<td>0.9068 ± 0.0032</td>
+<td>0.7661</td>
+<td>0.3180</td>
+<td>0.8512</td>
+<td>0.21</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reading it honestly.</strong> The tuned and default HistGB differ by 0.0003 AUC, far inside the fold std (0.003) and the seed std (Day 57, 0.0008). We pick <code>hist_gb_tuned</code> by the pre-registered rule "highest mean CV AUC", but <strong>the tuning did not meaningfully help</strong>. Say so in the report. Both boosted models clearly beat the forest and logistic regression.</p>
+<p><strong>Threshold.</strong> On out-of-fold CV predictions, the lowest threshold reaching precision ≥ 0.70 is <strong>0.3778</strong> (CV precision 0.7000, recall 0.7601). This is chosen <em>before</em> seeing the test data. The model, threshold and CV table are saved to <code>out/</code>.</p>
+<h3 id="block-3-coding-lab-your-build-2h30">Block 3: Coding lab: your build (2h30)</h3>
+<p>Work in your own <code>capstone_mine/</code> folder. You may reuse <code>capstone.py</code>, but you must be able to explain every line of it.
+1. Data checks. Print the dtypes, missingness per column, duplicates and class balance. Decide what to do about the duplicates and write down why.
+2. At least four candidate pipelines, including one of your own design (e.g. Day 44's target encoding plus logreg, or a feature-engineered HistGB: capital-gain &gt; 0, hours bins).
+3. Build a CV table with mean ± std and fit time.
+4. Train a <strong>variant without sex and race</strong> and compare its CV AUC with the full model.
+5. Choose the threshold for precision ≥ 0.70 on CV predictions.
+6. Save <code>capstone_model.joblib</code>, <code>cv_table.csv</code>, and <code>choice.json</code> (model name, threshold, config, data hash).</p>
+<h3 id="block-4-practice-problems-30-min">Block 4: Practice problems (30 min)</h3>
+<ol>
+<li>Why choose the threshold on CV predictions rather than on the training-fit predictions? <em>(Training predictions are overconfident.)</em></li>
+<li>Two models differ by 0.0003 AUC with fold std 0.003. Which do you pick, and how do you report it? <em>(Either; pre-register a rule; report "no meaningful difference".)</em></li>
+<li>Why is fit time in the table? <em>(It is a satisficing constraint and affects retraining cost.)</em></li>
+<li>Where should imputation happen? <em>(Inside the CV pipeline.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. List the five capstone rules.
+  2. What was the CV winner, and was the win meaningful?
+  3. What threshold met precision 0.70?
+  4. Why keep sex and race in the slices?
+  5. What files make up the frozen artefact?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look up "pre-registration" in science. Writing down the selection rule, the metric and the threshold criterion <em>before</em> the comparison is the strongest defence against fooling yourself with many comparisons. Write a three-line <code>PLAN.md</code> before you run step 3.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Peeking at test "just to check".</li>
+<li>Choosing among 20 models by CV and then reporting the winner's CV score as unbiased. It is optimistically biased, which is why the test set exists.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: evaluate once on test, then dig into calibration and fairness slices.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-057.html">← Day 57</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-059.html">Day 59 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 154 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="154">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-153.html">← Day 153</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-155.html">Day 155 →</a></nav>
+<h1>Day 154: PROJECT W22: a Rust kernel for the capstone&#x27;s retrieval, plus GPU kernels (UNTESTED)</h1>
+<p class="meta">Week 22 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: The plan (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The run (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Analysis (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: GPU kernels, UNTESTED (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 153 (+1), Day 151 (+3), Day 147 (+7), Day 133 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-the-plan-30-min">Block 1: The plan (30 min)</h3>
+<p>SYLLABUS Day 154 asks for a C++ pybind11 custom op. With no g++ on the box, the project does the same job in Rust: take the bottleneck found on Day 151 (BM25 scoring in Python), move it into a compiled kernel with a minimal Python interface, keep the results identical, and measure the speed-up end to end, including the parts you did not optimise.</p>
+<p>The kernel <code>bm25_topk</code> takes scipy's CSC (term-major) arrays of the BM25 weight matrix, a list of token-id lists for the queries, and k. For each query it adds the weight column of each query term into a score buffer (touching only documents that contain the term, the inverted-index idea from Day 151), then takes the top k with <code>select_nth_unstable</code> (linear time) and sorts those k by score, breaking ties by document id. With <code>parallel=True</code>, rayon scores different queries on different threads.</p>
+<h3 id="block-2-the-run-60-min">Block 2: The run (60 min)</h3>
+<p><code>day154_project.py</code> checks agreement with the Week 17 Python baseline, times each stage, then tiles the corpus 64× to see scaling.</p>
+<p><strong>Verified (out/day154_project.log):</strong>
+- Corpus 1,099 chunks × 7,006 terms, 77,359 non-zeros; 58 queries; top-5.
+- Agreement with the Python baseline (identical ranked top-5 lists): Rust 58/58, scipy 58/58.
+- Per query (ms): tokenise 0.0026; Python score + sort 1.513; scipy 0.0743; Rust 0.0044; Rust rayon 0.0019.
+- End to end with Rust (tokenise + kernel) 0.0070 ms, 216× faster than Python; tokenising is now 37% of the time; Amdahl's cap with an infinitely fast kernel is 591×.
+- 64× tiled corpus: 70,336 chunks, 4,950,976 non-zeros (39.6 MB); top-5 score sets match scipy 58/58.
+- Per query (ms): scipy 3.089; Rust 0.245; Rust rayon over queries (8 threads) 0.036, 6.8× over serial Rust.</p>
+<h3 id="block-3-analysis-45-min">Block 3: Analysis (45 min)</h3>
+<p><strong>Correct first.</strong> All 58 ranked top-5 lists match the Python baseline exactly, including order. On the tiled corpus every document appears 64 times, so ties are everywhere; there the check compares the <em>score sets</em> of the top 5, which all match.</p>
+<p><strong>Why the Rust kernel beats scipy by 17× on the real corpus.</strong> Day 151's sparse product multiplied the full matrix by a dense 7,006-long count vector, which touches all 77,359 non-zeros for every query, plus Python overhead for building that vector and for <code>argpartition</code>. The Rust kernel walks only the posting lists of the query's own terms. Same maths, less memory traffic: the roofline lesson applied to sparse data. On the 64× corpus the gap is 12.6× (3.089 vs 0.245 ms).</p>
+<p><strong>Amdahl after the fix.</strong> Once scoring costs 0.0044 ms, the Python tokeniser (0.0026 ms, a single regex) is 37% of the end-to-end time. Speeding the kernel up further can never give more than 591× over the baseline. The next fix would be tokenising in Rust as well, or batching so per-call overheads are paid once.</p>
+<p><strong>When threads help.</strong> On the small corpus rayon cut 0.0044 to 0.0019 ms per query, but these are microsecond tasks and the gain is only 2.3×. With 64× more data, each query is real work and 8 threads gave 6.8×, close to linear. Parallelising across independent queries (not inside one query) is the simple, contention-free choice.</p>
+<p><strong>Does it matter for the capstone?</strong> Honestly, not yet: the capstone's notes path was 1.8 ms at the median, and the tool path 643 ms is the model call. The Rust kernel matters when the corpus is millions of chunks or when retrieval is called many times per request (re-ranking loops, agents calling search repeatedly). Performance work should follow the trace, and the Day 150 trace says the LLM call dominates.</p>
+<h3 id="block-4-gpu-kernels-untested-20-min">Block 4: GPU kernels, UNTESTED (20 min)</h3>
+<p>There is no GPU, nvcc or Triton here, so these two files were <strong>never compiled or run</strong>. Read them; do not cite any numbers for them.
+- <code>gpu_untested/softmax_triton_UNTESTED.py</code>: one Triton program per row loads the whole row once with a mask, subtracts the max, exponentiates, divides by the sum and stores once: a fused, single-read, single-write softmax. Its <code>__main__</code> block shows the check you would run on a GPU (<code>torch.testing.assert_close</code> against <code>torch.softmax</code>).
+- <code>gpu_untested/vector_add_UNTESTED.cu</code>: the CUDA "hello world": one thread per element, <code>blockIdx.x * blockDim.x + threadIdx.x</code> indexing, neighbouring threads reading neighbouring addresses (coalesced loads), a bounds check, and error checking after <code>cudaDeviceSynchronize</code>.</p>
+<p>On a GPU you would measure both against the bandwidth roof exactly as Day 152 did on the CPU: vector add moves 12 bytes per FLOP and will be bandwidth-bound there too.</p>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Move tokenisation into Rust (lowercase plus split on non-alphanumerics, matching <code>[a-z0-9]+</code>), verify identical token ids on all 58 queries, and recompute the end-to-end time and the new Amdahl split.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>A compiled kernel is a maintenance cost: a second language, a build step (maturin) and platform-specific wheels. Use one when the profile shows a hot loop that numpy or scipy cannot express efficiently, as here, not by default.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Work through the Triton fused-softmax tutorial and the CUDA C++ Programming Guide's chapter on the programming model (both linked in <code>docs/resources.md</code>), then compare their thread-per-row design with this week's rayon-per-row CPU version.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"How would you decide whether to write a custom kernel for part of a model or a service?" <em>Expected: profile shows it dominates; no library op covers it; estimate the roofline bound and Amdahl gain first; keep a reference implementation and a correctness test; benchmark end to end; account for build and maintenance cost.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Comparing kernels on different outputs (top-k ties).</li>
+<li>Reporting kernel speed-up instead of end-to-end speed-up.</li>
+<li>Parallelising microsecond work.</li>
+<li>Citing numbers for code that never ran on a GPU.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 23 continues Month 6 per SYLLABUS: the GPU programming model and CUDA, Triton kernels and FlashAttention ideas (reading-only and UNTESTED on this box unless a GPU becomes available), distributed-training basics, ONNX Runtime and on-device ML.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-153.html">← Day 153</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-155.html">Day 155 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

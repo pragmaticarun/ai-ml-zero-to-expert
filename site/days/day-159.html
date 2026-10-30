@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 159 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="159">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-158.html">← Day 158</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-160.html">Day 160 →</a></nav>
+<h1>Day 159: Shipping to Android: ONNX Runtime Mobile, ExecuTorch, LiteRT and llama.cpp</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: The shape of every on-device pipeline (25 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run what can be run here (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation, and the UNTESTED app side (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-23/android_untested/"><code>code/week-23/android_untested/</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 158 (+1), Day 156 (+3), Day 152 (+7), Day 138 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-the-shape-of-every-on-device-pipeline-25-min">Block 1: The shape of every on-device pipeline (25 min)</h3>
+<p>You are an Android developer, so you know the app half: Gradle dependencies, assets or downloaded files, a background thread, JNI when native code is involved. The ML half has the same shape whichever runtime you pick. <strong>(1) Export</strong> offline from the training framework to the runtime's file format. <strong>(2) Optimise and quantize</strong> offline (Days 155-157). <strong>(3) Package</strong> the model in the APK/AAB as an asset, or download it after install (big models usually are). <strong>(4) Load</strong> it once, with a runtime library from Maven, into a session/module object. <strong>(5) Run</strong> it per input from a worker thread, with the input converted from your app's types into the runtime's tensor type. <strong>(6) Measure</strong> latency, memory and battery on real target devices.</p>
+<p>The four options covered today, each described only from its official page (read 2026-10-29):</p>
+<ul>
+<li><strong>ONNX Runtime Mobile.</strong> The ORT install page's Android section gives the Gradle dependency <code>com.microsoft.onnxruntime:onnxruntime-android</code> from Maven Central. For C/C++ use, it says to unzip the same AAR and take the headers and <code>libonnxruntime.so</code> from it. Models can be plain <code>.onnx</code> or the ORT format (<code>.ort</code>), which ORT's docs recommend for mobile and minimal builds. The ORT docs also describe a <em>custom build</em> that includes only the operators your models use, to shrink the library. The Java API (from the ORT Java getting-started page): <code>OrtEnvironment.getEnvironment()</code>, <code>env.createSession(path, OrtSession.SessionOptions())</code>, <code>OnnxTensor.createTensor(env, buffer, dims)</code>, <code>session.run(mapOf(name to tensor))</code>.</li>
+<li><strong>ExecuTorch</strong> (PyTorch's on-device runtime). The "Using ExecuTorch on Android" page gives the Maven dependency <code>org.pytorch:executorch-android:${executorch_version}</code>. Its AAR contains the Java library plus the JNI <code>.so</code>, in arm64-v8a and x86_64 variants, and bundles the XNNPACK CPU backend. The page lists XNNPACK (CPU), Vulkan (GPU), Qualcomm and MediaTek (NPU) backends and says to start with XNNPACK. Its Java sample uses <code>Module.load(path)</code>, <code>Tensor.fromBlob(...)</code>, <code>EValue.from(...)</code>, <code>module.forward(...)[0].toTensor().getDataAsFloatArray()</code>. The model file is a <code>.pte</code>.</li>
+<li><strong>LiteRT</strong> (the new name of TensorFlow Lite). Google's LiteRT Android page shows <code>com.google.ai.edge.litert:litert:2.3.0</code> (and optional <code>litert-gpu</code>), and a Kotlin <code>CompiledModel.create(path, CompiledModel.Options(Accelerator.CPU))</code>, <code>createInputBuffers()</code>, <code>writeFloat</code>, <code>run</code>, <code>readFloat</code> flow. The model file is a <code>.tflite</code>.</li>
+<li><strong>llama.cpp.</strong> Its <code>docs/android.md</code> describes an Android Studio project (<code>examples/llama.android</code>) whose Kotlin binding wraps the native library. It loads GGUF models from app-private storage. The doc also covers Termux builds and NDK cross-compilation with CMake (<code>-DANDROID_ABI=arm64-v8a</code>, <code>-DGGML_NATIVE=OFF</code>, and so on). It is the natural choice for LLMs in GGUF format; the other three suit general models.</li>
+</ul>
+<h3 id="block-2-run-what-can-be-run-here-35-min">Block 2: Run what can be run here (35 min)</h3>
+<p><code>python day159_android_export.py</code> produces each runtime's model file and runs it through the runtime's Python API <strong>on this x86 Linux box</strong>.</p>
+<p><strong>Verified (out/day159_android_export.log):</strong>
+- <strong>ORT format:</strong> <code>python -m onnxruntime.tools.convert_onnx_models_to_ort</code> exited 0. It wrote <code>w23_mlp.ort</code> (1,208 kB), <code>w23_dyn.ort</code> (311 kB), <code>.with_runtime_opt.ort</code> variants (1,208 and 315 kB) and two <code>required_operators*.config</code> files.
+  - Loading the <code>.ort</code> files back: fp32 accuracy 0.9741 with max diff vs torch 0.000e+00; int8 accuracy 0.9741 with max diff 1.323e-01, the same as Day 156's dynamic model.
+  - Latency at batch 1 (1 thread): 20.1 µs for <code>w23_mlp.ort</code>, 17.2 µs for its runtime-opt variant, 10.8 µs for <code>w23_dyn.ort</code> and 15.1 µs for its runtime-opt variant.
+  - The operator config lists exactly <code>ai.onnx;13;Gemm</code>, <code>ai.onnx;14;Relu</code> and <code>com.microsoft;1;DynamicQuantizeMatMul,FusedGemm</code>. That is the input for a reduced-operator custom build.
+- <strong>ExecuTorch 1.5.1:</strong> <code>torch.export</code> → <code>to_edge_transform_and_lower</code> → <code>to_executorch</code> produced two <code>.pte</code> files of 1,207 kB each, one without a delegate (portable kernels) and one with the XNNPACK partitioner.
+  - Both ran in the ExecuTorch Python runtime with 0.9741 accuracy, and max differences vs torch of 2.098e-05 (portable) and 2.480e-05 (XNNPACK).
+  - Batch-1 latency: portable 1,120.4 µs; XNNPACK 10.7 µs. Eager torch at 1 thread took 29.4 µs.
+- <strong>LiteRT:</strong> the <code>ai_edge_litert</code> 2.3.0 <code>Interpreter</code> imports. Conversion from PyTorch is <strong>UNTESTED</strong> (converter not installed).</p>
+<h3 id="block-3-interpretation-and-the-untested-app-side-35-min">Block 3: Interpretation, and the UNTESTED app side (35 min)</h3>
+<p><strong>The files are real; the phone numbers are not.</strong> Today proves that our exported model converts cleanly to <code>.ort</code> and <code>.pte</code>, that the converted files load in the same runtime libraries that ship in the Android AARs, and that they give the right answers. It does <strong>not</strong> say how fast they are on a phone. The µs figures are from a server Xeon. Run them again on your devices.</p>
+<p><strong>The backend matters more than the format.</strong> The same ExecuTorch graph took 1,120.4 µs on portable kernels and 10.7 µs with XNNPACK, about 100x. Portable kernels are reference C++ meant for correctness and portability. XNNPACK is the optimised CPU library. In an app, a forgotten delegate looks exactly like "ExecuTorch is slow". The same goes for ORT's <code>.with_runtime_opt</code> variants: they did not help this tiny model (17.2 vs 20.1 µs fp32, but 15.1 vs 10.8 µs int8), so test both.</p>
+<p><strong>Size and operator coverage.</strong> The <code>required_operators.config</code> lists exactly four kernels (Gemm, Relu, DynamicQuantizeMatMul, FusedGemm). A custom ORT build with only those is the documented way to cut library size, which matters when the runtime library is many times bigger than a 307 kB model. Its size on a device is <strong>UNTESTED</strong> here.</p>
+<p><strong>The UNTESTED Kotlin side</strong> lives in <code>code/week-23/android_untested/</code>:
+- <code>build.gradle.kts.snippet</code>: the three Maven coordinates from the pages above, with versions left as <code>&lt;version&gt;</code>.
+- <code>OrtDigits.kt</code>, <code>EtDigits.kt</code> and <code>LiteRtDigits.kt</code>: one small class per runtime, each wrapping a <code>predict(FloatArray): Int</code> around the documented calls. Input shape is [1, 64], with pixels/16 as in <code>_dep.py</code>.
+- <code>llama_cpp_NOTES.md</code>: notes on llama.cpp.</p>
+<p>None of it has been compiled. Each class should run off the UI thread: the inference call blocks, and a 1,000-row loop on the main thread would freeze the app. One gap is flagged in the ORT file: the method for setting intra-op threads in Java is not shown on the pages I checked, so it is left as a TODO rather than guessed.</p>
+<p><strong>How to choose.</strong>
+- Already in ONNX, or the model comes from scikit-learn, TensorFlow or other tools? ORT Mobile.
+- A PyTorch-native team that wants the NPU/GPU backends listed above? ExecuTorch.
+- TensorFlow/Keras models, or Google's accelerator path? LiteRT.
+- An LLM in GGUF format? llama.cpp.
+- Every runtime: test on the lowest-end target device first.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why does a <code>.pte</code> without a delegate run 100x slower here? <em>Portable kernels are simple reference implementations. The XNNPACK delegate replaces the graph's ops with optimised CPU kernels (SIMD, blocking).</em></li>
+<li>What does <code>required_operators.config</code> let you do? <em>Build a custom ORT runtime with only the listed operators, which shrinks the native library you ship in the APK.</em></li>
+<li>Name two things a phone run would change that this box cannot tell you. <em>Absolute latency (clocks, cache, thermal throttling), memory limits and battery cost, and whether the NPU/GPU delegates work for your ops.</em></li>
+<li>Where should the model file live for a 300 MB LLM? <em>Not in the APK. Download it after install into app-private storage, and check its hash.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>If you have Android Studio: create an empty app, add the ORT dependency, copy <code>w23_dyn.ort</code> into assets, adapt <code>OrtDigits.kt</code>, and log <code>predict</code> on one test row. The expected class is printed by the Day 159 Python code for row 0 (<code>Xte[0]</code>). Then record the latency of 1,000 calls on your phone next to Day 161's table. Mark every phone number with the device model.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>The ExecuTorch <code>.pte</code> here was exported with a static batch of 1, which is typical for on-device use. Dynamic shapes are possible, but need extra export settings.</li>
+<li>The <code>x86_64</code> ABI in ExecuTorch's AAR is what an emulator on a PC uses, so emulator timings are not phone timings either.</li>
+<li>NNAPI was the old Android-wide accelerator API (the original SYLLABUS row mentioned it). Today's pages point to per-vendor NPU backends and delegates instead. Check each runtime's current docs before relying on any accelerator.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read ORT's "ORT format models" page and the ExecuTorch getting-started page, and write down what each says about operator coverage and model compatibility across versions. Those are the things that break app updates.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Our on-device model is fast in the benchmark app but janky in the real app." Possible causes: inference running on the UI thread; a model reloaded per call instead of once; allocations per call (reuse input buffers); CPU contention with rendering (too many intra-op threads); thermal throttling after minutes of use; or the delegate failing to initialise and silently falling back to CPU. How would you check each with the profiler and logs?</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Exporting without the XNNPACK partitioner and blaming the runtime.</li>
+<li>Shipping a hardware-specific optimised graph (Day 155's warning).</li>
+<li>Copying a Maven version from a blog instead of the official page.</li>
+<li>Calling inference on the main thread.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 160 opens up the engine itself: a small MLP inference engine written in Rust, checked against PyTorch and ORT.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-158.html">← Day 158</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-160.html">Day 160 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

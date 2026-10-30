@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 49 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="49">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-048.html">← Day 48</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-050.html">Day 50 →</a></nav>
+<h1>Day 49: PROJECT W7: customer segmentation; Quiz 7</h1>
+<p class="meta">Week 7 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-07.md">source: weeks/week-07.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: clustering for a business question (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: reference results (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: the project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 7 (1h), closed book, answers below)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-07/day49_week_project.py"><code>code/week-07/day49_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 48 (+1), Day 46 (+3), Day 42 (+7), Day 28 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-clustering-for-a-business-question-1h15">Block 1: Concept lesson: clustering for a business question (1h15)</h3>
+<p><strong>Framing first.</strong> "Segment our customers" is not a question. "Find 2–5 groups whose buying patterns differ enough to justify different sales approaches" is. Good segments are:
+- <strong>Distinct:</strong> separated in feature space.
+- <strong>Stable:</strong> they reappear with other seeds or subsamples.
+- <strong>Interpretable:</strong> describable in a sentence.
+- <strong>Actionable.</strong></p>
+<p><strong>The dataset: wholesale customers</strong> (UCI). 440 clients of a Portuguese wholesale distributor with annual spend on Fresh, Milk, Grocery, Frozen, Detergents_Paper and Delicassen, plus <code>Channel</code> (Horeca = hotel/restaurant/café, or Retail) and <code>Region</code>. We hold out <code>Channel</code> as an <strong>external check</strong>. It is never used in fitting.</p>
+<p><strong>Workflow.</strong>
+1. Inspect distributions (spend is heavily right-skewed).
+2. Transform (log), then scale.
+3. Run k-means for a range of k and compare silhouette.
+4. Profile each segment with medians.
+5. Run stability checks.
+6. Compare with the external label.
+7. Cross-check with a GMM and BIC.
+8. Visualise with PCA (Day 50 covers PCA properly; here it is just a 2-D view).</p>
+<h3 id="block-2-worked-example-reference-results-45-min">Block 2: Worked example: reference results (45 min)</h3>
+<p><code>code/week-07/day49_week_project.py</code>. Verified:
+- <strong>Skew:</strong> Delicassen 11.15, Frozen 5.91, Milk 4.05. The means are far above the medians (Fresh: mean 12,000 vs median 8,504; max 112,151).
+- <strong>Silhouette:</strong></p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>log-scaled</th>
+<th>raw-scaled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td><strong>0.2903</strong></td>
+<td>0.5673</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.2592</td>
+<td>0.3339</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0.1885</td>
+<td>0.3465</td>
+</tr>
+</tbody>
+</table>
+<p>The <em>raw</em> silhouette looks much better (0.57), but it is driven by a few huge customers that sit far from everyone else, and those separate "nicely". After the log transform the structure is weaker but reflects typical customers. A higher silhouette is not automatically a better segmentation.
+- <strong>Profiles (k=2, log-scaled), median annual spend:</strong>
+  - Segment 0 (n=252): Fresh 10,348, Grocery 2,406, Detergents 328. Fresh-food-heavy buyers.
+  - Segment 1 (n=188): Grocery 11,527, Milk 7,690, Detergents 4,495. Shelf-goods buyers.
+- <strong>External check against Channel:</strong> segment 0 is 244 Horeca and 8 Retail. Segment 1 is 54 Horeca and 134 Retail. ARI is <strong>0.5135</strong>. The unsupervised segments rediscovered most of the restaurant/retail split without ever seeing it.
+- <strong>Stability:</strong> across 10 single-init runs with different seeds, the minimum pairwise ARI was <strong>0.9909</strong>.
+- <strong>GMM BIC:</strong> 1: 6596.3, 2: 6434.4, <strong>3: 6269.0</strong>, 4: 6312.4, 5: 6410.6. BIC prefers 3 components while silhouette prefers 2 k-means clusters. The methods disagree because they measure different things (likelihood under flexible ellipses vs separation of round groups). Report both, and choose by usefulness.
+- <strong>PCA 2-D view</strong> explains 0.4408 + 0.2719 = 71% of the log-scaled variance.</p>
+<h3 id="block-3-coding-lab-the-project-2h">Block 3: Coding lab: the project (2h)</h3>
+<p>Deliverable: <code>notes/week07_segments.md</code> with figures.
+1. <strong>Explore (20 min):</strong> histograms raw vs log, and a correlation matrix. Which spend categories move together? (Grocery and Detergents_Paper is a known strong pair. Verify it.)
+2. <strong>Cluster (30 min):</strong> k-means for k = 2…7 on log-scaled data. Report silhouette and inertia, and choose k with a written argument.
+3. <strong>Profile (20 min):</strong> a median table per segment and one-line personas.
+4. <strong>Validate (25 min):</strong> a stability ARI over 10 seeds and over 80% subsamples. Then crosstab and ARI against Channel.
+5. <strong>Alternative (15 min):</strong> a GMM with BIC for 1–6 components. Does the 3-component solution split one of your k-means segments? Which one?
+6. <strong>Recommend (10 min):</strong> one paragraph for the sales team.</p>
+<p><strong>Rubric (self-grade out of 20):</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transform justified by the skew numbers</td>
+<td>3</td>
+</tr>
+<tr>
+<td>k chosen with ≥ 2 criteria plus a business argument</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Segment profiles in plain language</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Stability measured (seeds <em>and</em> subsamples)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>External label used only for validation</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Limitations stated (440 rows, one country, annual spend only)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Figures labelled and readable</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stretch:</strong> remove the 5 largest-spend customers and re-run. How much do the segments change? (This tests the outlier argument above.)</p>
+<h3 id="block-4-practice-quiz-7-1h-closed-book-answers-below">Block 4: Practice: Quiz 7 (1h), closed book, answers below</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Why log-transform spend?
+  2. Why was raw silhouette misleading?
+  3. What ARI did the segments reach against Channel?
+  4. What did BIC prefer?
+  5. Give one actionable recommendation.</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look up RFM (recency, frequency, monetary) segmentation, a standard retail framing. Our data only has the "monetary" part. Write down which additional data you'd request to build RFM, and why that data would change the segments.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Interpreting segments on scaled values. Report medians in original units.</li>
+<li>Choosing k by the prettiest plot.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 8: PCA and visualisation, anomaly detection, recommenders, time series, calibration, and the strategy for "what to try next", ending with a Rust k-means kernel.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-048.html">← Day 48</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-050.html">Day 50 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

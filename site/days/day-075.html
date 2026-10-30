@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 75 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="75">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-074.html">← Day 74</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-076.html">Day 76 →</a></nav>
+<h1>Day 75: Debugging deep nets: overfit one batch, loss curves, sanity checks</h1>
+<p class="meta">Week 11 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-11.md">source: weeks/week-11.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-11/day75_debugging.py"><code>code/week-11/day75_debugging.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 74 (+1), Day 72 (+3), Day 68 (+7), Day 54 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Neural-network bugs rarely crash. They train, a bit worse. So you need checks that give a clear yes/no.</p>
+<p><strong>The checklist, in order.</strong>
+1. <strong>Initial loss.</strong> For C balanced classes and a sensible init, cross-entropy at step 0 ≈ ln C (2.303 for 10). Far above that means bad init or scale; far below means a leak.
+2. <strong>Overfit one small batch.</strong> Train on 32 examples only; the loss should go almost to zero. If it doesn't, the model, loss or optimiser is broken. Nothing else is worth trying until this passes.
+3. <strong>Shuffled-label sanity check.</strong> Train on randomly permuted labels: test accuracy must drop to chance. If it doesn't, test data is leaking.
+4. <strong>Look at the data after the pipeline.</strong> Plot a batch exactly as the model sees it (after augmentation and normalisation) with labels.
+5. <strong>Loss curves.</strong> Train and val on the same plot. Diverging → overfit; flat → LR or bug; spiky → LR too high or bad batches.
+6. <strong>Gradient norms per layer.</strong> Zero → dead path or detached tensor; huge → explosion.</p>
+<p><strong>Classic bugs</strong> (each measured below): softmax before <code>cross_entropy</code> (double softmax), missing <code>zero_grad</code>, wrong reshape (<code>view</code> vs <code>permute</code>), labels misaligned with inputs, forgetting <code>eval()</code>.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-11/day75_debugging.py</code> (about 8 s). <strong>Verified:</strong>
+1. Initial loss <strong>2.2930</strong> vs ln 10 = <strong>2.3026</strong>.
+2. Overfitting one batch of 32: loss <strong>2.2777 → 0.0127 → 0.0021 → 0.0007</strong> at steps 1, 50, 100, 200.
+3. Same model and budget with planted bugs:</p>
+<table>
+<thead>
+<tr>
+<th>run</th>
+<th>train acc</th>
+<th>test acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>correct</td>
+<td>0.8794</td>
+<td>0.8381</td>
+</tr>
+<tr>
+<td>labels shuffled (sanity check)</td>
+<td>0.1200</td>
+<td>0.0889</td>
+</tr>
+<tr>
+<td>softmax before cross_entropy</td>
+<td>0.6586</td>
+<td>0.6497</td>
+</tr>
+<tr>
+<td>forgot zero_grad</td>
+<td>0.1036</td>
+<td>0.1000</td>
+</tr>
+</tbody>
+</table>
+<p>The double-softmax bug still "works", just much worse: exactly the silent kind of bug. Forgetting <code>zero_grad</code> destroyed training completely here.
+4. Converting NHWC to NCHW: <code>permute(0, 3, 1, 2)</code> and <code>view(N, C, H, W)</code> give different tensors. The first channel's first values were [0, 3, 6, 9] with permute (correct: every third value is the same channel) vs [0, 1, 2, 3] with view (mixes channels).
+5. Gradient norms per weight: <strong>0.0802, 0.3391, 0.8398</strong> from first to last layer: healthy, decreasing towards the input but not vanishing.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(30 min) Write <code>debug_checks(model, loader)</code> that prints initial loss vs ln C and runs the one-batch overfit test.</li>
+<li>(45 min) Plant each of these bugs in your Day-73 CNN and record the symptom: labels shifted by one example, <code>model.eval()</code> never called back to <code>train()</code>, normalisation applied twice, augmentation on the test set.</li>
+<li>(45 min) Write a one-page "symptom → likely cause" table from your results.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Initial loss is 9.8 on a 10-class problem. First suspect? <em>Answer: initial logits too large (init scale), or labels/loss mismatch.</em></li>
+<li>One-batch overfit stalls at loss 1.5. What next? <em>Answer: check that the optimiser has the model's parameters, LR, that gradients are non-zero, that inputs vary, and that no layer detaches the graph.</em></li>
+<li>Shuffled-label test accuracy is 0.45. What does it mean? <em>Answer: leakage between train and test, or a bug in the shuffle.</em></li>
+<li>Why is <code>view</code> wrong for NHWC→NCHW? <em>Answer: it reinterprets memory without moving data; channels are interleaved.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Memorise the six-step checklist. Self-check:
+- [ ] I can predict the initial loss for any C.
+- [ ] I have run the one-batch overfit test on my own model.</p>
+<h3 id="extra-notes-reading-the-bug-table">Extra notes: reading the bug table</h3>
+<p>Why did "forgot zero_grad" destroy training completely while double softmax only hurt? Without <code>zero_grad</code>, PyTorch adds each new gradient to the old ones, so after n steps the update is the sum of n gradients: an effective learning rate that grows every step until the weights blow up and predictions become constant (0.1000 test accuracy is exactly one class out of ten). Double softmax is milder: applying softmax to the outputs and then <code>cross_entropy</code> (which applies log-softmax again) squeezes the inputs into [0, 1], so the gradients become very small and training is slow, but it still moves in the right direction (0.6497). Recognising the <em>shape</em> of a failure—blow-up, plateau at chance, slow but steady—narrows the list of suspects quickly.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Andrej Karpathy's blog post "A Recipe for Training Neural Networks" (linked in <code>docs/resources.md</code>); compare its steps with ours.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your model trains but is 5 points worse than a colleague's identical-looking code. How do you find the difference?" Diff configs and data pipelines, compare initial loss, compare a batch tensor by tensor, fix seeds and compare the first few steps' losses.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Skipping the one-batch test because "the model is standard".</li>
+<li>Debugging on the full dataset (slow feedback). Use a small subset.</li>
+<li>Changing several things at once while debugging.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 76 applies the same tools to audio: turn sound into a picture and use a CNN.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-074.html">← Day 74</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-076.html">Day 76 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

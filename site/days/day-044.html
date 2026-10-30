@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 44 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="44">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-043.html">← Day 43</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-045.html">Day 45 →</a></nav>
+<h1>Day 44: Feature engineering: encodings, dates, text counts</h1>
+<p class="meta">Week 7 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-07.md">source: weeks/week-07.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-07/day44_feature_eng.py"><code>code/week-07/day44_feature_eng.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 43 (+1), Day 41 (+3), Day 37 (+7), Day 23 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A model sees only numbers. How you present a concept decides what is easy to learn. "Hour = 17" as a number tells a linear model that demand rises steadily from midnight to 23:00, which is false. As 24 one-hot columns, each hour gets its own level. As (sin, cos) of 2π·hour/24, hour 23 sits next to hour 0.</p>
+<p><strong>A toolkit.</strong>
+- <strong>Categoricals:</strong>
+  - one-hot (linear models; watch cardinality),
+  - ordinal (trees),
+  - target encoding (category → mean target, which <em>must</em> be cross-fitted to avoid leakage),
+  - native categorical support (HistGB).
+- <strong>Dates and times:</strong> hour, weekday, month, holiday flags, time since an event, cyclic encodings.
+- <strong>Interactions:</strong> hour × workingday (rush hour exists only on working days). Linear models need these explicitly. Trees find them.
+- <strong>Numeric:</strong> log for heavy tails, ratios (bedrooms/rooms), binning for thresholds.
+- <strong>Text:</strong> bag-of-words counts, <strong>TF-IDF</strong> (down-weight words that appear everywhere: idf = ln((1 + N)/(1 + df)) + 1 in scikit-learn's smoothed form), and n-grams.</p>
+<p><strong>Process.</strong> Hypothesise, encode, then <em>measure with the same CV</em> before keeping a feature.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-07/day44_feature_eng.py</code> on bike sharing (17,379 hourly rows, target = rentals per hour). Rows are in time order, so we use <code>TimeSeriesSplit(5)</code>.</p>
+<p>Hourly mean demand shows two peaks, at <strong>08:00 (359)</strong> and <strong>17:00 (461)</strong>, with a trough of 6 at 04:00. It is a commute pattern no straight line in "hour" can follow.</p>
+<table>
+<thead>
+<tr>
+<th>model (RidgeCV unless noted)</th>
+<th>CV MAE (rentals/hour)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>predict the training mean</td>
+<td>148.3</td>
+</tr>
+<tr>
+<td>no hour feature</td>
+<td>123.8</td>
+</tr>
+<tr>
+<td>hour as a number</td>
+<td>114.8</td>
+</tr>
+<tr>
+<td>hour cyclic (sin, cos)</td>
+<td>101.4</td>
+</tr>
+<tr>
+<td>hour one-hot</td>
+<td>87.2</td>
+</tr>
+<tr>
+<td>hour one-hot × workingday</td>
+<td><strong>72.6</strong></td>
+</tr>
+<tr>
+<td>HistGB on raw features (native categoricals)</td>
+<td><strong>51.3</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Lessons: the encoding alone moved the linear model from 114.8 to 72.6, a 37% cut. Cyclic encoding helps, but only a little, because two smooth waves can't produce two sharp peaks. The interaction term captured "rush hours exist only on working days". The tree ensemble found all of this by itself and still won by a wide margin, which tells you the remaining signal is non-linear (weather × hour, and so on).</p>
+<p><strong>Text counts</strong> on 4 toy reviews: the vocabulary has 11 words. "battery" appears in 3 of 4 documents, so its idf is <strong>1.223</strong>. "cracked" appears in 1, so its idf is <strong>1.916</strong>. Rare words carry more weight.</p>
+<p>A fix we needed: OpenML stores this dataset's <code>holiday</code> and <code>workingday</code> as categorical "True"/"False" strings, so the script converts them with <code>astype(str) == "True"</code>. Always check dtypes after loading.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Reproduce the table. Then add <code>weekday</code> one-hot and <code>hour × weekday</code> (168 columns). Does it beat 72.6?</li>
+<li>Add a "temperature band" (binned temp) × hour interaction. Measure it.</li>
+<li>Implement <strong>cross-fitted target encoding</strong> for <code>hour</code> yourself (out-of-fold means), and compare with naive in-sample target encoding. Report the CV MAE of both. The naive one should look suspiciously good in-sample.</li>
+<li>Text: on the 4 reviews, compute TF-IDF by hand for one document using the formula above, and compare with <code>TfidfVectorizer</code>. (Note that it also L2-normalises each row.)</li>
+<li>Stretch: <code>sklearn.preprocessing.SplineTransformer</code> on hour (with <code>extrapolation="periodic"</code>). Can a smooth periodic spline beat one-hot?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>sin and cos encoding of hour 6 and hour 18? <em>(sin 1, cos 0; sin −1, cos 0.)</em></li>
+<li>Why does one-hot of a 100k-level ID column hurt? <em>(Huge sparse width, overfitting, unseen IDs.)</em></li>
+<li>Why must target encoding be cross-fitted? <em>(Otherwise each row's own label leaks into its feature.)</em></li>
+<li>A word appears in every document. What is its sklearn smoothed idf? <em>(ln(1) + 1 = 1, its minimum.)</em></li>
+<li>Which hour encoding did best for ridge, and why? <em>(One-hot × workingday: arbitrary level per hour, separately for working days.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. List four categorical encodings and when to use each.
+  2. Why is "hour as a number" bad for linear models?
+  3. Write the TF-IDF idea in one sentence.
+  4. Why use TimeSeriesSplit here?
+  5. How much did encoding improve ridge MAE?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>Feature hashing</strong> (<code>HashingVectorizer</code>, <code>FeatureHasher</code>) maps unbounded vocabularies into a fixed number of columns via a hash function. Collisions are rare enough to be tolerable, and you need no vocabulary in memory. This is how large-scale linear models handle billions of categorical values, and it previews the embedding tables of Month 3.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Computing a feature with the full dataset (global mean demand per hour) outside CV, which leaks.</li>
+<li>Shuffled CV on time-ordered data.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: when positives are rare, accuracy lies. You will learn the metrics and the threshold dial.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-043.html">← Day 43</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-045.html">Day 45 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

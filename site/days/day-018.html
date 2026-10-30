@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 18 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="18">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-017.html">← Day 17</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-019.html">Day 19 →</a></nav>
+<h1>Day 18: Gradient descent and learning rates</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-03/day18_gradient_descent.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/out/day18_gd_paths.png"><code>code/week-03/out/day18_gd_paths.png</code></a></li><li><a href="../../code/week-03/day18_gradient_descent.py"><code>code/week-03/day18_gradient_descent.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 17 (+1), Day 15 (+3), Day 11 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Roll a ball downhill in small steps: w ← w − α ∇J(w). The <strong>learning rate α</strong> is the step size. If it is too small, you crawl. If it is right, you arrive quickly. If it is too large, you overshoot the valley floor, land higher on the other side, and bounce out to infinity.</p>
+<p><strong>Concrete example (verified).</strong> f(x, y) = x² + 10y², an elongated bowl that is 10× steeper in y. Start at (−5, 2) and take 40 steps:
+- α = 0.01: f = <strong>4.97</strong>, still crawling along the flat x-direction.
+- α = 0.09: f = <strong>3.9e-6</strong>, converged. (It zig-zags in y, but the zig-zag is shrinking.)
+- α = 0.105: f = <strong>8.2e4</strong>, diverged.
+Plot: <code>code/week-03/out/day18_gd_paths.png</code>.</p>
+<p><strong>Plain-language maths of the threshold.</strong> In the y-direction, one step multiplies y by (1 − α·20), because ∂f/∂y = 20y. The process is stable only if |1 − 20α| &lt; 1, which means α &lt; 2/20 = <strong>0.1</strong>. In general the largest stable α is 2/λ_max, where λ_max is the largest curvature (the top eigenvalue of the Hessian, Day 11's eigenvalues again). Meanwhile progress in the flattest direction goes like (1 − α λ_min)ᵏ. So the <strong>condition number</strong> κ = λ_max/λ_min sets how many steps you need. An elongated bowl (big κ) is slow. Feature scaling (Day 25) makes the bowl round.</p>
+<p><strong>Convex vs non-convex.</strong> Linear and logistic regression costs are convex bowls: one minimum, and GD finds it. Neural nets aren't convex, yet GD still works remarkably well in practice. Month 3 covers why, and the tricks involved (momentum, Adam).</p>
+<p><strong>How to choose α in practice:</strong> try 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1 (factors of about 3) and plot J vs iteration for each. Pick the largest that decreases J smoothly. Ng-style advice: <em>always plot the learning curve</em>. J must go down every iteration for full-batch GD. If it ever goes up, α is too big or there's a bug.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>1-D: f(w) = w², f′ = 2w, start at w₀ = 1.
+- α = 0.1: w ← 0.8w, giving 0.8, 0.64, 0.512, … (smooth).
+- α = 0.9: w ← −0.8w, giving −0.8, 0.64, −0.512, … (oscillating, but converging).
+- α = 1.1: w ← −1.2w, giving −1.2, 1.44, −1.728, … (diverging).
+The threshold is 2/λ with λ = f″ = 2, so α &lt; 1. With α = 0.5, w ← 0 in <strong>one step</strong>: α = 1/λ is the "Newton step" for a quadratic.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-03day18_gradient_descentpy">Block 3: Coding lab (2h): <code>code/week-03/day18_gradient_descent.py</code></h3>
+<p>Tasks:
+1. Add a run with α = 0.099 and one with α = 0.1. Predict the behaviour before you run them.
+2. Plot f vs iteration (log y) for the three rates.
+3. Implement <strong>momentum</strong>: v ← βv + ∇f and w ← w − αv with β = 0.9. Compare the steps needed to reach f &lt; 1e-6 on this bowl. (Month 3 revisits this.)
+4. Rotate the bowl (f = (x + y)² + 10(x − y)²) and check that the threshold depends on the eigenvalues of the Hessian, not on the axes.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>f = 3w². What is the largest stable α? <em>Answer:</em> f″ = 6, so α &lt; 1/3.</li>
+<li>The loss oscillates and grows. What do you do? <em>Answer:</em> lower α by about 3×.</li>
+<li>The loss decreases very slowly and smoothly. What then? <em>Answer:</em> raise α, or scale the features.</li>
+<li>Why does a high condition number slow GD? <em>Answer:</em> α is limited by the steepest direction, so the flattest direction moves slowly.</li>
+<li>Does GD find the global minimum of a convex function? <em>Answer:</em> yes, with a suitable α.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 17 (+1):</strong> backprop through J = (2w − 3)² at w = 0. <em>Answer:</em> dJ/dw = 2(−3)(2) = −12.</li>
+<li><strong>Day 15 (+3):</strong> how does the central-difference error scale with h?</li>
+<li><strong>Day 11 (+7):</strong> what are the eigenvalues of diag(2, 20), and how do they relate to today's bowl? (Hessian of today's f.)</li>
+<li><strong>Self-check:</strong>
+  1. Write the GD update rule.
+  2. Stability condition?
+  3. What does the condition number do to speed?
+  4. How do you choose α?
+  5. A loss that goes up for full-batch GD means what?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Not plotting J per iteration and debugging blind.</li>
+<li><code>nan</code> after a few steps means divergence. Lower α, and check feature scales.</li>
+<li>Stopping on a fixed iteration count without checking convergence. Use a tolerance on the change in J.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Next we switch from calculus to probability. It explains <em>why</em> MSE is a sensible cost, and gives us log-loss for classification.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-017.html">← Day 17</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-019.html">Day 19 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

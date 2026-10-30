@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 21 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="21">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-020.html">← Day 20</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-022.html">Day 22 →</a></nav>
+<h1>Day 21: Week 3 project: maximum likelihood estimation, plus Quiz 3</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 3 (1h), answers below)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/day21_mle_project.py"><code>code/week-03/day21_mle_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 20 (+1), Day 18 (+3), Day 14 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Given data and a family of distributions with a knob θ, which θ makes the observed data <strong>most probable</strong>? That is maximum likelihood. If you flip a coin 200 times and see 141 heads, the bias that best "explains" this is p = 141/200 = 0.705. Any other p would make seeing exactly this data less likely.</p>
+<p><strong>Plain-language maths.</strong>
+- Likelihood L(θ) = Πᵢ p(xᵢ | θ), the product of the probabilities of each independent observation.
+- Products of many small numbers underflow, so take logs: <strong>log-likelihood</strong> ℓ(θ) = Σᵢ log p(xᵢ | θ). The log is monotonic, so the maximiser is unchanged.
+- <strong>Coin:</strong> ℓ(p) = k log p + (n − k) log(1 − p). Setting dℓ/dp = k/p − (n − k)/(1 − p) = 0 gives <strong>p̂ = k/n</strong>.
+- <strong>Gaussian:</strong> ℓ(μ, σ²) = −(n/2)log(2πσ²) − Σ(xᵢ − μ)²/(2σ²). The maximiser has μ̂ = the sample mean and σ̂² = (1/n)Σ(xᵢ − μ̂)², the biased "divide by n" version.
+- <strong>Regression:</strong> assume y = wx + b + ε with ε ~ N(0, σ²). Then ℓ(w, b) = const − (1/(2σ²)) Σ(yᵢ − wxᵢ − b)². Maximising the likelihood is the same as <strong>minimising the sum of squared errors</strong>. MSE is not arbitrary: it is the right cost when the noise is Gaussian. If the noise were Laplace-distributed, MLE would give mean <em>absolute</em> error instead.
+- <strong>Classification preview:</strong> for y ∈ {0, 1} with P(y = 1) = p(x), the negative log-likelihood is −[y log p + (1 − y) log(1 − p)]. That is exactly the <strong>log-loss</strong> (cross-entropy) used for logistic regression on Day 26.</p>
+<p><strong>Verified results (<code>code/week-03/day21_mle_project.py</code>):</strong>
+- coin: 141/200 heads, grid MLE <strong>0.705</strong> = closed form 0.705 ✓
+- Gaussian: μ̂ = 5.079 and σ̂² = 3.846 (MLE), with the unbiased estimate 3.853 (true values 5 and 4)
+- regression by gradient <em>ascent</em> on the log-likelihood: w = <strong>2.4975</strong>, b = <strong>1.2503</strong>, identical to <code>np.polyfit</code> ✓ (true values 2.5 and 1)</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Derive the coin MLE fully. ℓ(p) = k ln p + (n − k) ln(1 − p). ℓ′(p) = k/p − (n − k)/(1 − p) = 0, so k(1 − p) = (n − k)p, so k = np, so p̂ = k/n. The second derivative −k/p² − (n − k)/(1 − p)² &lt; 0, so it is a maximum ✓.
+With n = 10 and k = 7: ℓ(0.7) = 7 ln 0.7 + 3 ln 0.3 = 7(−0.3567) + 3(−1.2040) = −2.497 − 3.612 = <strong>−6.109</strong>, and ℓ(0.5) = 10 ln 0.5 = <strong>−6.931</strong>. So 0.7 explains the data better, as expected.</p>
+<h3 id="block-3-coding-lab-project-2h">Block 3: Coding lab: project (2h)</h3>
+<p>Deliverables (<code>notes/week03_report.md</code>):
+1. Run the script and reproduce the three results.
+2. Plot ℓ(p) for the coin with n = 20 and n = 200 (same proportion). How does the peak's sharpness change? (More data gives more certainty, with width ~1/√n, linking to Day 20.)
+3. Poisson MLE: simulate counts (<code>rng.poisson(3.2, 500)</code>), derive λ̂ = the mean by hand, and confirm it with a grid search.
+4. Robust regression: add 5 big outliers to the regression data. Fit by MSE (Gaussian MLE) and by MAE (Laplace MLE, using subgradient descent: the gradient of |e| is sign(e)). Compare the slopes and explain the difference.</p>
+<p><strong>Suggested timeline (2h).</strong>
+- 0:00-0:20: run the script and reproduce its three MLE results.
+- 0:20-0:45: likelihood curves for n = 20 and n = 200. Plot both normalised to the same peak height so that the widths are comparable, and measure each width at half the maximum. Is the ratio close to √10 ≈ 3.16?
+- 0:45-1:15: the Poisson derivation on paper. Write ℓ(λ) = Σ(xᵢ log λ − λ − log xᵢ!), set the derivative to zero, and get λ̂ = x̄. Then confirm it with a grid search and report both numbers.
+- 1:15-1:50: robust regression with outliers. Fit both losses from the same start, plot the two lines over the data, and record both slopes and the true slope.
+- 1:50-2:00: write-up.</p>
+<p><strong>Rubric (self-grade out of 20).</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Three script results reproduced</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Likelihood-width comparison with a measured ratio, linked to 1/√n</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Poisson MLE derived by hand and confirmed numerically</td>
+<td>5</td>
+</tr>
+<tr>
+<td>MSE vs MAE fits on contaminated data: slopes reported against the truth</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Explanation of <em>why</em> MAE is robust (Laplace tails, bounded gradient of the absolute value)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Clear, short report</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What separates a strong report from a weak one.</strong> A weak report says "MAE is more robust". A strong one shows by how much each slope moved, connects the loss to a noise model (Gaussian gives squared error, Laplace gives absolute error), and notes the cost: absolute loss is not differentiable at 0, which is why subgradients are needed.</p>
+<h3 id="block-4-practice-quiz-3-1h-answers-below">Block 4: Practice: Quiz 3 (1h), answers below</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 20 (+1):</strong> the CLT, and the std of the mean of 50 exponentials (0.141).</li>
+<li><strong>Day 18 (+3):</strong> the α threshold for f = x² + 10y² (0.1).</li>
+<li><strong>Day 14 (+7):</strong> the SVD storage formula.</li>
+<li><strong>Self-check:</strong>
+  1. Define the likelihood.
+  2. Why use the log?
+  3. Coin MLE?
+  4. Why is MSE the Gaussian MLE?
+  5. What does the Bernoulli MLE give as a loss?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Maximising the likelihood directly underflows to 0. Always use log-likelihoods.</li>
+<li>Sign confusion: maximise ℓ, or equivalently <em>minimise</em> −ℓ (what optimisers do).</li>
+<li>log(0) = −inf. Clip probabilities to [1e-12, 1 − 1e-12].</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>You now have every ingredient: models (vectors and matrices), gradients (calculus), and principled costs (MLE). Week 4 assembles them into linear and logistic regression.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-020.html">← Day 20</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-022.html">Day 22 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

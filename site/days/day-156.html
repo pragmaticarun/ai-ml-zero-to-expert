@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 156 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="156">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-155.html">← Day 155</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-157.html">Day 157 →</a></nav>
+<h1>Day 156: Quantization for deployment: int8 dynamic and static, measured honestly</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: What int8 quantization is (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: What the table really says (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 155 (+1), Day 153 (+3), Day 149 (+7), Day 135 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-what-int8-quantization-is-30-min">Block 1: What int8 quantization is (30 min)</h3>
+<p>Quantization stores a tensor as small integers plus a scale (and optionally a zero point): real ≈ scale × (q − zero_point). With int8 weights, the model file is about 4x smaller than fp32, memory traffic drops by the same factor, and the CPU can use integer dot-product instructions. On x86 those are VNNI (and AMX); on Arm phones, the dot-product extensions. All are present on this CPU: the log lists <code>avx512bw, avx_vnni, avx512_vnni, amx_int8</code>. Integer GEMMs accumulate in int32 and convert back to float at the end of each layer.</p>
+<p>The flavours differ in <em>when</em> activation scales are decided:
+- <strong>Dynamic quantization:</strong> weights are quantized offline. Each activation tensor's range is measured at run time, on every call, and quantized on the fly. There is no calibration data and little risk. The per-call range computation costs a little.
+- <strong>Static quantization:</strong> activation ranges are fixed ahead of time by running a <em>calibration</em> set through the model. It is faster at run time (no range scan), but it is only as good as the calibration data. A camera app calibrated on daylight photos may clip at night.
+- <strong>Format:</strong> ORT's static path can write QDQ (QuantizeLinear/DequantizeLinear pairs around float ops, which the runtime then fuses) or QOperator (dedicated integer ops). QDQ is the format most converters and mobile backends expect.
+- <strong>Granularity:</strong> per-tensor uses one scale for a whole weight matrix; per-channel uses one scale per output channel. Per-channel is usually more accurate when rows have very different magnitudes.</p>
+<p>Quantization-aware training (QAT) simulates rounding during training, so the model learns to tolerate it. It is SYLLABUS Day 162's subject; today is post-training quantization only.</p>
+<h3 id="block-2-run-it-35-min">Block 2: Run it (35 min)</h3>
+<p><code>python day156_quantize.py</code> makes five ONNX variants plus a PyTorch one. The calibration set is 200 rows of <em>training</em> data, never test data.</p>
+<p><strong>Verified (out/day156_quantize.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>variant</th>
+<th>size kB</th>
+<th>acc</th>
+<th>agree</th>
+<th>max abs Δlogit</th>
+<th>b1 µs (1 thread)</th>
+<th>b256 µs (1 thread)</th>
+<th>b256 µs (4 threads)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fp32</td>
+<td>1205</td>
+<td>0.9741</td>
+<td>1.000</td>
+<td>0.000</td>
+<td>15.7</td>
+<td>680.3</td>
+<td>325.8</td>
+</tr>
+<tr>
+<td>ORT dynamic int8</td>
+<td>307</td>
+<td>0.9741</td>
+<td>1.000</td>
+<td>0.132</td>
+<td>11.0</td>
+<td>211.8</td>
+<td>185.0</td>
+</tr>
+<tr>
+<td>ORT static QDQ per-tensor MinMax</td>
+<td>308</td>
+<td>0.9741</td>
+<td>1.000</td>
+<td>0.935</td>
+<td>10.6</td>
+<td>155.6</td>
+<td>169.9</td>
+</tr>
+<tr>
+<td>ORT static QDQ per-channel MinMax</td>
+<td>321</td>
+<td>0.9741</td>
+<td>1.000</td>
+<td>0.935</td>
+<td>16.7</td>
+<td>183.4</td>
+<td>179.6</td>
+</tr>
+<tr>
+<td>ORT static QDQ per-channel Percentile</td>
+<td>321</td>
+<td>0.9741</td>
+<td>1.000</td>
+<td>0.941</td>
+<td>16.6</td>
+<td>184.0</td>
+<td>173.1</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>PyTorch eager fp32 (4 threads): 22.4 µs at batch 1, 305.1 µs at batch 256, with a 1,207 kB state_dict.</li>
+<li>PyTorch dynamic qint8 (4 threads, <code>x86</code> engine): accuracy 0.9741, agreement 1.000, max abs Δlogit 0.183, 52.2 µs at batch 1, 267.5 µs at batch 256, with a 309 kB state_dict.</li>
+<li>ORT printed a warning recommending its pre-processing step (shape inference and optimisation before quantizing). We skipped it. On this five-node graph it has little to do; on real models, run it.</li>
+</ul>
+<h3 id="block-3-what-the-table-really-says-30-min">Block 3: What the table really says (30 min)</h3>
+<p><strong>Size: a clean 4x.</strong> 1,205 kB went down to 307-321 kB. Per-channel files are slightly bigger because they store more scales.</p>
+<p><strong>Accuracy did not move, and that is a limitation of the test, not proof that int8 is free.</strong> Every variant scored 0.9741, with 100% argmax agreement with fp32. The <em>logits</em> did move: static quantization changed them by up to 0.94, dynamic by 0.13. Digits' decision margins are wide, so these perturbations never flip a class. On a harder task (a 1,000-class model, or an LLM's next-token distribution where the top two tokens are close), a 0.94 logit error <em>will</em> flip decisions. Report the logit error as well as accuracy, because it tells you how much margin you are spending. Static is cruder than dynamic here because its activation ranges were fixed from 200 calibration rows, while dynamic re-measures every input.</p>
+<p><strong>Latency: int8 helps most at batch 256 on one thread.</strong> Static per-tensor took 155.6 µs and dynamic 211.8 µs, against 680.3 µs for fp32: 4.4x and 3.2x faster. At 4 threads the advantage shrinks (169.9 vs 325.8 µs), because at that point the work is too small to split well. At batch 1 the gain is small (10.6-11.0 vs 15.7 µs), because fixed per-call overhead dominates. Per-channel static was <em>slower</em> than per-tensor at batch 1 (16.7 vs 10.6 µs). Granularity has a run-time cost in this kernel path, so do not assume the "more accurate" option is free.</p>
+<p><strong>PyTorch dynamic quantization was slow at batch 1</strong> (52.2 µs, against 22.4 µs for fp32 eager). Its per-call overhead (quantizing activations, packed-weight dispatch) outweighs the saved arithmetic at this size. It caught up at batch 256 (267.5 vs 305.1 µs). The lesson: quantization speed-ups depend on the runtime, the batch size and the kernel, so measure on the stack you will ship.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why does the calibration set come from training data? <em>Test data must stay unseen. Calibrating on it leaks test information into the model's fixed ranges.</em></li>
+<li>Every variant had 0.9741 accuracy. Can you conclude int8 is lossless for your model? <em>No. Digits has wide margins. Look at max abs Δlogit (up to 0.94 here) and test on a task with tight margins.</em></li>
+<li>When would you pick dynamic over static? <em>When there is no representative calibration data, when input ranges vary a lot, or when you want the low-risk option first. It was also within 0.4 µs of static at batch 1 here.</em></li>
+<li>Why did 4 threads shrink int8's advantage? <em>The int8 GEMM at batch 256 is already small (about 150-210 µs). Splitting it across threads adds synchronisation cost that eats much of the gain.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Calibrate the static model on only 10 training rows, then on 200 rows that are all one digit class. Compare max abs Δlogit and accuracy against today's run. That is how a bad calibration set shows up.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Symmetric int8 (zero point 0) suits weights, which are roughly centred. Asymmetric uint8 suits ReLU outputs, which are all ≥ 0, so a symmetric scheme wastes half the range. Our static run used QUInt8 activations and QInt8 weights.</li>
+<li>Percentile calibration clips rare outliers to get a finer scale for the bulk of values. Here it made no measurable difference (0.941 vs 0.935 Δlogit).</li>
+<li>For LLMs, weight-only 4-bit quantization (Day 158's 4.5-bit row) is the common choice, because decoding is memory-bound.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read ORT's quantization page on QDQ versus QOperator and on which execution providers prefer which. Then quantize the Week 21 Day 144 model and compare its accuracy with today's.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"We quantized our model and accuracy dropped 3 points." Possible causes: bad calibration data, per-tensor scales on layers with outlier channels (try per-channel), a sensitive first or last layer (keep it in fp32, i.e. mixed precision), or activation outliers (try percentile calibration or QAT). How would you find which layer is responsible? Quantize one layer at a time and measure.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting only accuracy on an easy test set.</li>
+<li>Calibrating on test data.</li>
+<li>Assuming per-channel is always better, or always free.</li>
+<li>Comparing int8 at batch 256 to fp32 at batch 1.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 157 makes the model smaller another way: fewer weights (pruning) or a smaller student (distillation).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-155.html">← Day 155</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-157.html">Day 157 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 120: Month 4 checkpoint exam (15 questions; 90 minutes; closed notes, then mark yourself) · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="exam" data-root="../" >
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><h1>Day 120: Month 4 checkpoint exam (15 questions; 90 minutes; closed notes, then mark yourself)</h1><p class="meta">Day 120 · 15 questions parsed from <a href="../../weeks/week-18.md"><code>weeks/week-18.md</code></a> · <a href="../days/day-120.html">Day 120 page</a></p>
+<section class="quiz card" data-quiz="exam-w18-d120"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Write scaled dot-product attention and explain the √d_k factor.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>softmax(QKᵀ/√d_k)V. Without the scaling, the dot products of unit-variance vectors have standard deviation √d_k, which saturates the softmax.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What does RoPE do to queries and keys, and why does it give relative-position behaviour?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It rotates each pair of query and key dimensions by an angle proportional to the token's position. The dot product of rotated q and k then depends only on the position difference.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Draw a pre-norm transformer block (attention and MLP sub-layers with residuals).</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>x → x + Attn(Norm(x)) → x + MLP(Norm(x)); a final norm comes before the output head.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>How does BPE build its vocabulary?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Start from characters or bytes, then repeatedly merge the most frequent adjacent pair into a new token until the vocabulary reaches its target size.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>What is perplexity, and how does it relate to cross-entropy?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Perplexity = exp(mean cross-entropy per token in nats). It is the "effective number of choices" per token.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What does LoRA train, and how many parameters does a rank-r adapter on a d×k matrix add?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It trains low-rank matrices B (d×r) and A (r×k) with W' = W + (α/r)·BA, while W stays frozen. That adds r(d + k) parameters.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Why are only assistant tokens included in the SFT loss with a chat template?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The model should learn to produce answers, not to predict the user's prompt. Masking the user and system tokens focuses the gradient on the responses.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Write the Bradley-Terry preference probability, and say what a reward model learns from it.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>P(a ≻ b) = σ(r(a) − r(b)). The reward model learns a scalar score whose differences predict human (or labelled) preferences.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Write the DPO loss. What role does β play?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>−log σ(β[(log π(y_w) − log π_ref(y_w)) − (log π(y_l) − log π_ref(y_l))]). β sets how strongly the policy may move away from the reference (it acts like a KL strength).</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Name three pitfalls in LLM evaluation from Week 16.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Any three of:
+    - test-set contamination;
+    - tiny eval sets with wide confidence intervals;
+    - LLM-judge biases (position, length, self-preference);
+    - prompt-format sensitivity;
+    - string-match brittleness.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Why does hybrid retrieval (BM25 + dense) often beat either one alone?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>They make different errors: BM25 matches rare exact terms, while dense retrieval matches paraphrases. Rank fusion combines both without calibrating scores (Week 17: recall@5 0.67 for BM25 and 0.64 for dense alone, 0.76 fused).</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Why does int4 per-tensor quantisation fail while group-wise int4 works?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Outlier weights set a single huge scale, so most weights round to zero (Day 116: perplexity 1,561,367.93). Group-wise scales follow the local range (group-64: 36.89, against 26.29 for fp32).</p></div></div><div class="q" data-q="13"><div class="qtext"><strong>Q13.</strong> <p>What problem do GPTQ and AWQ solve that plain RTN does not, and how does each approach it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>RTN ignores the inputs, but output error depends on the activations. GPTQ compensates the rounding error in the remaining weights using the Hessian XᵀX. AWQ scales up the weight channels that meet large activations. On Day 117, int4 per-channel perplexity fell from 64.84 (RTN) to about 44 with both methods.</p></div></div><div class="q" data-q="14"><div class="qtext"><strong>Q14.</strong> <p>Why does a KV cache speed up decoding, and what is its memory cost per token?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Past keys and values do not change, so each decode step processes only the new token (Day 118: 27.3 → 67.8 tok/s). Memory per token is 2 × layers × KV heads × head dim × bytes; for SmolLM2 that is 23.6 MB per sequence at 512 tokens in fp32.</p></div></div><div class="q" data-q="15"><div class="qtext"><strong>Q15.</strong> <p>In the capstone, retrieval delivered the answer in 11 of 12 prompts, but accuracy was 3 of 12. What do you conclude, and what are the main limits of that conclusion?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The generator, not retrieval, limits quality (8 of 9 errors were generation errors). Limits:
+    - only 12 questions, written by the notes' author;
+    - string-match scoring;
+    - one tiny model;
+    - simulated quantisation;
+    - CPU only.</p>
+<hr /></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

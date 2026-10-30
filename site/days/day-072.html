@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 72 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="72">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-071.html">← Day 71</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-073.html">Day 73 →</a></nav>
+<h1>Day 72: CNN architectures: LeNet to ResNet ideas</h1>
+<p class="meta">Week 11 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-11.md">source: weeks/week-11.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-11/day72_architectures.py"><code>code/week-11/day72_architectures.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 71 (+1), Day 69 (+3), Day 65 (+7), Day 51 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>A short history in ideas (not dates to memorise).</strong>
+- <strong>LeNet-style:</strong> conv → pool → conv → pool → dense. Small, for digits.
+- <strong>AlexNet-style:</strong> the same pattern, much bigger, with ReLU, dropout and GPUs. Showed deep CNNs win on ImageNet.
+- <strong>VGG-style:</strong> only 3×3 convolutions, stacked in blocks, doubling channels when halving resolution. Two 3×3 layers see 5×5 with fewer parameters than one 5×5 and an extra non-linearity.
+- <strong>Inception-style:</strong> parallel branches with different kernel sizes; 1×1 convolutions to reduce channels cheaply.
+- <strong>ResNet:</strong> add the input of a block to its output, y = F(x) + x. If the best thing a block can do is nothing, it only has to learn F = 0. Gradients flow through the identity path unchanged, so very deep networks train. When the shape changes, the skip path uses a 1×1 conv with stride.
+- <strong>Global average pooling:</strong> average each final feature map to one number instead of flattening. Far fewer parameters in the head, and the network accepts any input size.</p>
+<p><strong>The degradation problem.</strong> Before ResNet, adding layers to an already deep plain network made <em>training</em> error worse, not just test error. That is an optimisation problem, not overfitting.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-11/day72_architectures.py</code>. <strong>Verified:</strong>
+- It prints the layer-by-layer shapes of a LeNet-style net (<strong>61,706</strong> parameters), a small VGG-style net (<strong>307,498</strong>) and one residual block (<strong>4,672</strong>).
+- Plain vs residual on Fashion-MNIST (5,000 training images, lr 0.02, 5 epochs), test accuracy:</p>
+<table>
+<thead>
+<tr>
+<th>depth</th>
+<th>plain</th>
+<th>residual</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 blocks</td>
+<td>0.5750</td>
+<td>0.5480</td>
+</tr>
+<tr>
+<td>10 blocks</td>
+<td>0.6120</td>
+<td><strong>0.7145</strong></td>
+</tr>
+</tbody>
+</table>
+<p>At depth 2 the skip connection made no positive difference (slightly worse, within what one seed can tell). At depth 10, residual wins by 0.10. Gradient norms at the first layer at initialisation: plain <strong>0.172</strong>, residual <strong>0.428</strong>: more signal reaches the bottom of the residual net. Accuracies are low because training is very short; the comparison is what matters.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Write a <code>ResidualBlock(cin, cout, stride)</code> with the 1×1 projection skip. Test shapes for (16→16, stride 1) and (16→32, stride 2).</li>
+<li>(40 min) Repeat the plain-vs-residual experiment at depth 20. Record first-layer gradient norms too.</li>
+<li>(20 min) Replace Flatten + Linear with global average pooling in the VGG-style net. Count parameters before and after.</li>
+<li>(20 min) Draw your network as a diagram with shapes on each arrow.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Two 3×3 convs (C→C) vs one 5×5 conv (C→C), ignoring biases. Parameters? <em>Answer: 18C² vs 25C².</em></li>
+<li>Why does a 1×1 conv with stride 2 appear in ResNet's skip path? <em>Answer: to match channels and resolution so x can be added to F(x).</em></li>
+<li>Is "deeper plain net has higher <em>training</em> error" overfitting? <em>Answer: no; it is an optimisation failure.</em></li>
+<li>Global average pooling on a 128×4×4 feature map produces? <em>Answer: a 128-vector.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Write one sentence per architecture idea. Self-check:
+- [ ] I can write a residual block from memory.
+- [ ] I can explain the depth-10 result and why depth 2 showed nothing.</p>
+<h3 id="extra-notes-reading-an-architecture-study-before-the-interview-question">Extra notes: reading an architecture (study before the interview question)</h3>
+<p>When you meet a new architecture, read it in this order. First, the <strong>stem</strong>: how the image enters (a 7×7 stride-2 conv plus pooling in ImageNet ResNets, a single 3×3 conv for 32×32 inputs). The stem decides how fast resolution falls, and for small images an ImageNet stem throws away most of the pixels in the first two layers. Second, the <strong>stages</strong>: groups of blocks at one resolution. Count how many times resolution halves and channels double; most CNNs keep the compute per stage roughly constant this way, because halving H and W divides the cost by 4 and doubling channels multiplies it by 4 (C_in × C_out doubles twice). Third, the <strong>block</strong>: plain conv-BN-ReLU, residual basic block, bottleneck (1×1 reduce, 3×3, 1×1 expand) or inverted bottleneck (MobileNetV2). Fourth, the <strong>head</strong>: global average pooling and a linear layer, or flatten and dense layers. Finally, count parameters and multiply-adds per stage; that tells you where memory and time go.</p>
+<p>Apply this to the three Day-72 nets. LeNet-style: two conv-pool stages on 28×28, then three dense layers; most of its 61,706 parameters sit in the dense layers, not the convolutions. VGG-style: 3×3 convolutions only, channels 32→64→128, and its 307,498 parameters are dominated by the last convolutions and the head. The residual block: two bias-free 3×3 convs of 16 channels (2 × 16·16·9 = 4,608; the bias is dropped because BN's shift does the same job) plus two BN layers with a scale and shift per channel (2 × 2 × 16 = 64), total 4,672; verify by printing <code>named_parameters()</code>. Doing this count yourself is a reliable way to understand a design and to catch bugs where a layer is not what you think.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the ResNet paper (He et al., 2015) section on the degradation problem; also look at depthwise-separable convolutions (MobileNet) for efficient models on devices.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Why do residual connections help train deep networks?" Identity path for gradients, easy to learn identity, smoother optimisation; mention BN's role too.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Adding the skip <em>after</em> the final ReLU of the block in a way that changes the design without noticing.</li>
+<li>Shape mismatch on the addition: print shapes of F(x) and skip(x).</li>
+<li>Concluding from depth-2 experiments that residuals don't matter.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 73 trains a CNN on CIFAR-10-small and compares it with an MLP at fair settings.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-071.html">← Day 71</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-073.html">Day 73 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

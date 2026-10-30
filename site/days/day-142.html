@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 142 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="142">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-141.html">← Day 141</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-143.html">Day 143 →</a></nav>
+<h1>Day 142: Data validation and dataset versioning</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 141 (+1), Day 139 (+3), Day 135 (+7), Day 121 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>In production, most failures are data failures, not model failures. Typical examples: an upstream team renames a column, changes units, sends NaNs, or adds a new label value. The model still returns numbers, just wrong ones. Two defences:</p>
+<p><strong>1. Validation: does each batch match a schema?</strong> A schema records the expected column count and names, the types, which values may be missing, allowed ranges or categories per feature, and the allowed label set. Check every batch at ingestion and at serving time. Fail loudly rather than predict on garbage. You can infer a schema from the training data (observed min/max with some slack) and then review it by hand. Libraries such as Great Expectations, TensorFlow Data Validation and pandera do this at scale; the idea fits in 20 lines.</p>
+<p>What validation <em>cannot</em> catch: values that are each plausible but whose distribution has moved. A 10% shift in a measurement stays inside every range. That needs distribution tests: drift detection, Day 145.</p>
+<p><strong>2. Versioning: which exact data trained this model?</strong> Code has git; data needs the same. DVC's core idea (see its docs) is <strong>content addressing</strong>:
+- Hash the bytes of the data.
+- Store the file under its hash in a cache or remote.
+- Commit only the small hash pointer to git.</p>
+<p>Identical data gets an identical hash, so it is stored once (deduplication), and any change produces a new version. A log of (hash, parent, message) entries gives you <strong>lineage</strong>: model → data version → parent version.</p>
+<p>Design choices that matter:
+- <strong>Canonicalisation.</strong> Hash a canonical serialisation (fixed dtype, fixed column order). Otherwise the same data saved two ways gets two hashes.
+- <strong>Order.</strong> Should a row-shuffled copy count as the same dataset? For a training set, usually yes, so you can sort rows before hashing to get an order-invariant hash. For a time series, no.
+- <strong>Sensitivity.</strong> A cryptographic hash changes if a single bit changes. That is correct for provenance, but it means "new version" does not imply "meaningfully different". Pair versions with summary statistics so a human can see what changed.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day142_validate_version.py</code> infers a schema from the training split: 30 columns, finite values, per-feature range widened by 50% of the span, labels {0,1}. It runs six test batches through <code>validate()</code>. Then it implements <code>commit()</code>:
+- Canonicalise <code>X</code> as float64 C-order bytes plus <code>y</code> as int64 bytes, optionally sorting rows first.
+- Hash with SHA-256, keep the first 12 hex characters, write the data to <code>store/&lt;hash&gt;.npz</code> only if it is new, and append a JSON line with hash, rows, message and parent.</p>
+<p><strong>Verified (out/day142_validate_version.log):</strong>
+- Clean test batch: PASS. NaNs in 5 rows: FAIL ("5 rows with NaN"). Area ×100 (unit change): FAIL, with 143 values outside the allowed range. Dropped column: FAIL ("expected 30 columns, got 29"). Label 2: FAIL. <strong>Radius +10% (silent shift): PASS.</strong> Validation misses it.
+- v1 = <code>9f2384ac7409</code>. Re-committing the same data gives the same hash and stores nothing new (dedup).
+- Row-shuffled copy: the raw hash differs, but the order-invariant hash is equal.
+- One label flipped → v2 <code>8d7d3315955f</code>, with lineage <code>8d7d3315955f &lt;- 9f2384ac7409</code>.
+- One value changed by +1e-4 → the hash differs.
+- Store: 3 log entries, 211.6 kB on disk.</p>
+<p>Day 147's service reports <code>data_version 9f2384ac7409</code> on <code>/health</code>, so any prediction can be traced back to its training data.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add per-column dtype checks and a max-missing-fraction rule; write a batch that violates each.</li>
+<li>Tighten the range slack from 50% to 0% and run the clean test batch. How many false failures do you get? What does that say about inferring schemas from small samples?</li>
+<li>Store diffs: for v2, print which rows and labels changed relative to its parent.</li>
+<li>Make <code>commit()</code> chunk the data (for example 100 rows per chunk), so that a one-row change stores one new chunk instead of a full copy. Measure the disk saving.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Name a fault that schema validation cannot catch. <em>A plausible-looking distribution shift, such as radius +10%. It passed.</em></li>
+<li>Why does dedup fall out of content addressing for free? <em>Identical bytes give an identical hash, so the file already exists under that name.</em></li>
+<li>When is an order-invariant hash wrong? <em>When order carries meaning, as in time series or ranked lists.</em></li>
+<li>A +1e-4 change made a new version. Is that a bug? <em>No. It is correct provenance, but you need summary diffs to judge whether it matters.</em></li>
+<li>What should a model artefact record about its data? <em>The data-version hash, and ideally the schema version.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Recall a time a pipeline you used broke because of data. Which check would have caught it: schema, range, drift, or none?</p>
+<p><strong>Extra notes.</strong> Validate at <em>both</em> training and serving. Use the same schema object at both ends, so a silent change at one end does not create training/serving skew.</p>
+<p><strong>Going deeper.</strong> Read DVC's "get started" docs to see how pointer files and remotes implement today's idea with git. Compare it with the 30-line <code>commit()</code> here.</p>
+<p><strong>Interview-style question (15 min).</strong> "Predictions went bad overnight but the model didn't change. How do you debug?" Check the data version and the validation logs of recent batches. Diff feature statistics against training (drift). Check upstream schema changes and unit changes. Make sure the serving-time feature code matches training. Roll back to the last good data if needed.</p>
+<p><strong>Common mistakes.</strong> Hashing pickles, which are not canonical. Versioning code but not data. Schemas inferred and never reviewed. Validating only at training time. Treating "PASS" as "no problem".</p>
+<p><strong>What to do next.</strong> Day 143 does the same for experiments: track every run's parameters, metrics and environment, and make training reproducible down to the weight hash.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-141.html">← Day 141</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-143.html">Day 143 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

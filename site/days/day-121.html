@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 121 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="121">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-120.html">← Day 120</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-122.html">Day 122 →</a></nav>
+<h1>Day 121: MDPs, returns and Bellman equations</h1>
+<p class="meta">Week 18 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-18.md">source: weeks/week-18.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-18/_rl.py"><code>code/week-18/_rl.py</code></a></li><li><a href="../../code/week-18"><code>code/week-18</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 120 (+1), Day 118 (+3), Day 114 (+7), Day 100 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>Month 5 opens with reinforcement learning (RL). Until now every model learned from a fixed dataset of inputs and targets. In RL there is no dataset: an <strong>agent</strong> acts in an <strong>environment</strong>, gets a <strong>reward</strong> after each action, and must find behaviour that collects as much reward as possible over time. The data the agent sees depends on what it does, so exploring and learning are tied together.</p>
+<p>The standard formal model is the <strong>Markov decision process (MDP)</strong>. It has a set of states S, a set of actions A, a transition function p(s', r | s, a) that gives the probability of landing in state s' with reward r after taking action a in state s, and a discount factor γ between 0 and 1. "Markov" means that the next state depends only on the current state and action, not on the earlier history. If the history matters, you must put the parts that matter into the state.</p>
+<p>An <strong>episode</strong> runs from a start state until a terminal state is reached. The <strong>return</strong> from time t is the discounted sum of future rewards: G_t = r_{t+1} + γ r_{t+2} + γ² r_{t+3} + … With γ &lt; 1, rewards far in the future count less, and the sum stays finite even if an episode never ends. When every reward is −1, the return can never be below −1/(1−γ). With γ = 1 you need episodes that are guaranteed to end.</p>
+<p>A <strong>policy</strong> π(a | s) gives the probability of each action in each state. The <strong>state-value function</strong> V^π(s) is the expected return when you start in s and follow π. The <strong>action-value function</strong> Q^π(s, a) is the expected return when you take a in s first and follow π after that. These are the two objects that nearly every RL method estimates.</p>
+<p>The <strong>Bellman expectation equation</strong> is a consistency condition. The value of a state equals the expected immediate reward plus the discounted value of the next state:
+V^π(s) = Σ_a π(a|s) Σ_{s',r} p(s',r|s,a) [r + γ V^π(s')].
+For a finite MDP this is a linear system: V = r_π + γ P_π V, so V = (I − γ P_π)^{-1} r_π. You can solve it exactly with a linear solve, or iteratively by sweeping the update until the values stop changing. That iterative version is <strong>policy evaluation</strong>, the first dynamic-programming method (Day 122).</p>
+<p>The <strong>Bellman optimality equation</strong> replaces the average over actions with a maximum: V<em>(s) = max_a Σ p(s',r|s,a)[r + γ V</em>(s')]. This equation is not linear, and solving it is the subject of Day 122.</p>
+<p>Three design choices matter in practice. First, the <strong>reward</strong> says <em>what</em> you want, not <em>how</em> to do it. A −1 per step reward means "finish fast". Second, <strong>γ</strong> is part of the problem definition: it changes which policy is best, not only how fast learning goes. Third, <strong>stochastic transitions</strong> (slipping) make good plans worth less, and they hurt some plans more than others.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Everything runs on small tabular environments written from scratch in <code>code/week-18/_rl.py</code>. Transitions are stored as <code>P[s][a] = [(prob, s', reward, done)]</code>, the same layout gymnasium uses for its toy-text environments. The action order is left, down, right, up, which matches gymnasium's FrozenLake. The gridworld is 4x4, with terminal corners at states 0 and 15 and a reward of −1 per step. <code>day121_mdp_bellman.py</code> evaluates the uniform random policy three ways.</p>
+<p><strong>Verified (out/day121_mdp_bellman.log):</strong>
+- Exact linear solve (γ = 1): 11.19 ms. Iterative policy evaluation: 342 sweeps, 2.2 ms. Maximum difference between the two: 1.7e-07.
+- V_random by row: [0 −14 −20 −22], [−14 −18 −20 −20], [−20 −20 −18 −14], [−22 −20 −14 0]. A random walker next to a goal still needs 14 steps on average.
+- Monte Carlo check from state 1 (2,000 sampled episodes): −13.97 ± 0.73, against −14.00 exact. Episode lengths ranged from 1 to 145 steps.
+- Discounting, with the bound −1/(1−γ):</p>
+<table>
+<thead>
+<tr>
+<th>γ</th>
+<th>V(1)</th>
+<th>V(7)</th>
+<th>Bound</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.5</td>
+<td>−1.69</td>
+<td>−1.95</td>
+<td>−2</td>
+</tr>
+<tr>
+<td>0.9</td>
+<td>−5.28</td>
+<td>−7.13</td>
+<td>−10</td>
+</tr>
+<tr>
+<td>0.99</td>
+<td>−11.95</td>
+<td>−16.96</td>
+<td>−100</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A fixed "go down, then right" policy under slip:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>slip</th>
+<th>V(1)</th>
+<th>V(4)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>−5.00</td>
+<td>−5.00</td>
+</tr>
+<tr>
+<td>0.2</td>
+<td>−5.73</td>
+<td>−6.40</td>
+</tr>
+<tr>
+<td>0.5</td>
+<td>−7.87</td>
+<td>−10.81</td>
+</tr>
+</tbody>
+</table>
+<p>Slip costs state 4 more than state 1, because the same plan is a worse fit from there.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Read <code>_rl.py</code> and draw the 4x4 grid with its state numbers. Check by hand that <code>P[5][2]</code> (right, from state 5) leads to state 6 with reward −1.</li>
+<li>Run <code>python day121_mdp_bellman.py</code> from <code>code/week-18</code> with the venv active. Compare your output with the log.</li>
+<li>Write a function that builds P_π and r_π for any policy array and solves V = (I − γP_π)^{-1} r_π. Check it against the iterative version.</li>
+<li>Change the step reward to −2 and predict what happens to V before you run it. Every value should double.</li>
+<li>Add a "wall" state: moving into it leaves you where you are. Check that V changes only near the wall.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>γ = 0.9 and every reward is +1 forever. What is V? <strong>Answer:</strong> 1/(1−0.9) = 10.</li>
+<li>Why does iterative evaluation need 342 sweeps here when the exact solve needs none? <strong>Answer:</strong> with γ = 1 the error shrinks only as fast as the random walk reaches a terminal state, which is slow. The linear solve does all of that work at once.</li>
+<li>Is V_random symmetric? <strong>Answer:</strong> yes. The grid and the terminal corners are symmetric, so V(1) = V(4) = −14 and so on.</li>
+<li>Why does the γ = 0.99 value of state 7 (−16.96) sit far above its bound of −100? <strong>Answer:</strong> episodes end, usually long before discounting makes a difference.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check: (a) define return, V, and Q in one line each; (b) write the Bellman expectation equation from memory; (c) explain why the Monte Carlo estimate has a ± term and the linear solve does not; (d) give one example where the Markov property fails and say how to fix the state.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Infinite horizon with γ &lt; 1 and episodic with γ = 1 are both standard settings. Mixing them up gives values that never converge.</li>
+<li>Rewards can be scaled without changing the best policy, but a constant added to every reward does change behaviour in episodic tasks: it changes how much ending early is worth.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Write out Q^π in terms of V^π, and V^π in terms of Q^π. Note that the second only needs π and not the model. That is why model-free control (Day 123) learns Q and not V.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your agent learns to loop forever instead of finishing the task. What do you check?" Good answer: the reward (are there positive rewards that can be collected again and again?), γ (with γ close to 1, small repeated rewards add up), the terminal conditions, and whether the state includes what the agent needs to know.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Bootstrapping from a terminal state's value. A terminal state's value must be zero.</li>
+<li>Action orders that do not match between your code and a library. This course hit exactly that bug on Day 122.</li>
+<li>Reporting V(start) as a "success rate". It is a discounted expected return.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 122 turns the Bellman equations into algorithms that find the best policy when the model is known.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-120.html">← Day 120</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-122.html">Day 122 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

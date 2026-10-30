@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 94 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="94">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-093.html">← Day 93</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-095.html">Day 95 →</a></nav>
+<h1>Day 94: The transformer block</h1>
+<p class="meta">Week 14 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-14.md">source: weeks/week-14.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-14/day94_transformer_block.py"><code>code/week-14/day94_transformer_block.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 93 (+1), Day 91 (+3), Day 87 (+7), Day 73 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>A transformer block has two sub-layers, each wrapped in a residual connection and a normalisation:
+1. <strong>Multi-head self-attention</strong> (Day 92): tokens exchange information.
+2. <strong>MLP</strong> (also called the feed-forward network): two linear layers with a nonlinearity, expanding to 4·d and back, applied to each position independently. Tokens "think" separately here.</p>
+<p><strong>Residual stream.</strong> Write the block as x ← x + Attn(LN(x)); x ← x + MLP(LN(x)). The vector x passing through all blocks is the <em>residual stream</em>. Each sub-layer reads from it and adds a correction. Gradients flow straight through the additions, which is why dozens of blocks can be trained (the same reason ResNets work, Day 72).</p>
+<p><strong>Pre-LN vs post-LN.</strong> The original transformer (Vaswani et al., 2017) normalised <em>after</em> the residual addition: x ← LN(x + Attn(x)). This post-LN form needs a learning-rate warmup to train stably at depth. GPT-2 moved LayerNorm <em>before</em> each sub-layer (pre-LN) and added a final LayerNorm before the output head. Xiong et al. (2020), "On Layer Normalization in the Transformer Architecture", analyse why pre-LN is better behaved early in training. Almost every current decoder LLM is pre-LN, and many replace LayerNorm with RMSNorm (no mean subtraction, no bias).</p>
+<p><strong>The MLP.</strong> GPT-2 uses GELU. Many current models use a gated variant (SwiGLU: (xW₁ ⊙ SiLU(xW₂))W₃) with a hidden size around (8/3)·d so that the parameter count stays near 8d².</p>
+<p><strong>Parameter counting</strong> for one block with width d, biases included:
+- Attention: qkv is d × 3d (+3d bias), output is d × d (+d). Our <code>_gpt.py</code> uses no attention biases: 4d².
+- MLP: d × 4d + 4d, then 4d × d + d = 8d² + 5d.
+- Two LayerNorms: 2 × 2d = 4d.
+At d = 128 that is about 12d², the classic rule of thumb for GPT-style models (non-embedding params ≈ 12·L·d²).</p>
+<p><strong>GPT on top.</strong> Token embedding + position embedding → L blocks → final LayerNorm → linear head to vocabulary logits. <em>Weight tying</em> (Press &amp; Wolf, 2017) reuses the embedding matrix as the head, saving vocab·d parameters.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-14/day94_transformer_block.py</code> (about 20 s). <strong>Verified:</strong>
+- One block at d = 128: attention <strong>65,536</strong> (= 4d²), MLP <strong>131,712</strong> (= 8d² + 5d), LayerNorms <strong>512</strong>, total <strong>197,760</strong>.
+- The full GPT (vocab 65, ctx 128, d 128, L 4) has <strong>816,000</strong> parameters, with the head tied to the embedding (<strong>True</strong>).
+- Gradient flow at initialisation: the ratio of gradient norms of the first block's qkv to the last block's, under a random-projection loss:</p>
+<table>
+<thead>
+<tr>
+<th>depth</th>
+<th>pre-LN</th>
+<th>post-LN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>0.99</td>
+<td>0.97</td>
+</tr>
+<tr>
+<td>12</td>
+<td>1.20</td>
+<td>0.88</td>
+</tr>
+<tr>
+<td>24</td>
+<td>1.65</td>
+<td>0.98</td>
+</tr>
+</tbody>
+</table>
+<p>At this small width and at initialisation, <strong>there is no dramatic difference</strong>. Pre-LN gives the early blocks somewhat <em>larger</em> gradients as depth grows. Be wary of a too-simple story about "vanishing gradients in post-LN": the effect described in the literature appears during training with Adam and large learning rates, which the next test probes.
+- Pre-LN residual stream norm after blocks 1, 4, 8, 12: <strong>8.21, 8.88, 9.73, 10.67</strong>. The stream grows with depth because each block adds to it and nothing renormalises it, which is why the final LayerNorm is needed.
+- Training stability, 8 blocks, d = 64, 150 steps of Adam <strong>with no warmup</strong> on characters (mean loss over the last 20 steps):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>lr 3e-3</th>
+<th>lr 1e-2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pre-LN</td>
+<td>2.386</td>
+<td>2.355</td>
+</tr>
+<tr>
+<td>post-LN</td>
+<td>2.382</td>
+<td><strong>3.326</strong></td>
+</tr>
+</tbody>
+</table>
+<p>At the gentle learning rate the two are equal. At the aggressive one, pre-LN still improves while post-LN gets stuck far behind (uniform loss is ln 65 = 4.17, and the bigram baseline is 2.48). That is the practical reason for pre-LN: a wider range of usable learning rates without warmup. One seed per cell, so treat it as a demonstration, not a measurement.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Write <code>Block</code> and <code>PostLNBlock</code> yourself and check your parameter counts against the formulas.</li>
+<li>(40 min) Replace LayerNorm with RMSNorm (x / sqrt(mean(x²) + ε) · g) and rerun the stability test.</li>
+<li>(40 min) Replace the GELU MLP with SwiGLU at hidden size 4·d·2/3 and confirm the parameter count stays close to 8d².</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Non-embedding parameters of a 12-layer, d = 768 model by the 12Ld² rule? <em>Answer: 12·12·768² ≈ 84.9M (GPT-2 small is about 85M non-embedding, 124M with embeddings).</em></li>
+<li>Why does the MLP act per position? <em>Answer: it is applied independently to each token's vector; only attention mixes positions.</em></li>
+<li>What does weight tying save for vocab 50,257 and d = 768? <em>Answer: 38.6M parameters.</em></li>
+<li>Why is a final LayerNorm needed in pre-LN? <em>Answer: the residual stream is never normalised otherwise, and its norm grows with depth (8.2 → 10.7 here).</em></li>
+<li>Post-LN at lr 1e-2 ended at 3.326. What would you try first? <em>Answer: a warmup of a few hundred steps, or a lower learning rate.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can write a pre-LN block from memory and count its parameters.
+- [ ] I can state what the residual stream is.
+- [ ] I can explain, with my own numbers, why pre-LN is preferred.</p>
+<h3 id="extra-notes-reading-a-block-as-a-circuit">Extra notes: reading a block as a circuit</h3>
+<p>Since each sub-layer <em>adds</em> to the residual stream, you can think of the final logits as a sum of contributions from the embeddings and from every attention head and MLP. Interpretability research uses this view: it projects intermediate residual states through the final LayerNorm and head (the "logit lens") to see what the model "would predict" after each block. You can try it on tomorrow's model: after block 1 the predictions are bigram-like; after the last block they use more context.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Xiong et al. (2020) section 3 and compare its analysis with your stability table.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Walk me through one transformer block and its parameter count." Use the formulas above, then mention pre-LN, residuals, weight tying and the 12Ld² rule.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting the residual: the model trains much worse and deep versions fail.</li>
+<li>Applying the final LayerNorm twice, or forgetting it.</li>
+<li>Using <code>nn.Linear</code> biases in some places and not others, then wondering why counts disagree with a paper.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 95 trains a GPT made of these blocks.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-093.html">← Day 93</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-095.html">Day 95 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

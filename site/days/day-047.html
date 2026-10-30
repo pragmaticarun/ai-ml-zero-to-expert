@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 47 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="47">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-046.html">← Day 46</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-048.html">Day 48 →</a></nav>
+<h1>Day 47: k-means clustering and choosing k</h1>
+<p class="meta">Week 7 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-07.md">source: weeks/week-07.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-07/day47_kmeans.py"><code>code/week-07/day47_kmeans.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 46 (+1), Day 44 (+3), Day 40 (+7), Day 26 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Drop k pins on a map of points. Each point joins its nearest pin. Then move each pin to the centre of its group. Repeat until nothing moves. That is <strong>Lloyd's algorithm</strong> for k-means. It minimises <strong>inertia</strong>, the total squared distance from points to their centroid:</p>
+<blockquote>
+<p>J = Σᵢ ‖xᵢ − μ_{c(i)}‖²</p>
+</blockquote>
+<p>Each step (assign, then update) can only lower J, so it converges, but only to a <strong>local</strong> minimum that depends on the starting pins.</p>
+<p><strong>Initialisation.</strong> Random starts can put two pins in one blob and none in another. <strong>k-means++</strong> picks each new initial centroid with probability ∝ squared distance to the nearest existing centroid, so pins spread out. scikit-learn uses it by default with several restarts (<code>n_init</code>), keeping the lowest inertia.</p>
+<p><strong>Choosing k.</strong> Inertia always falls as k grows, so you can't minimise it over k. Two heuristics:
+- <strong>Elbow:</strong> look for the k where the drop flattens.
+- <strong>Silhouette:</strong> for each point, s = (b − a)/max(a, b), where a is its mean distance to its own cluster and b is its mean distance to the nearest other cluster. The average lies in [−1, 1], and higher is better.</p>
+<p>Neither is truth. Ask what the clusters are <em>for</em>.</p>
+<p><strong>Assumptions.</strong> k-means likes round, similar-sized, similar-density clusters, and it needs scaled features (Euclidean distance again).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-07/day47_kmeans.py</code>. Verified:
+- <strong>Blobs</strong> (1500 points, 4 true clusters with std 1.0): scratch Lloyd reaches inertia 2681.1 in 9 iterations. scikit-learn reaches 2680.9. ARI against the true labels is 0.8303 (Adjusted Rand Index: 1 is perfect, 0 is chance).
+- <strong>Initialisation matters.</strong> Over 20 seeds, random init ranged from inertia <strong>2680.9 to 20954.7</strong>. k-means++ ranged from 2680.9 to 3530.5.
+- <strong>Choosing k:</strong></p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>inertia</th>
+<th>silhouette</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>21344.5</td>
+<td>0.7136</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3754.6</td>
+<td><strong>0.7821</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>2680.9</td>
+<td>0.6083</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2370.1</td>
+<td>0.5822</td>
+</tr>
+<tr>
+<td>6</td>
+<td>2141.2</td>
+<td>0.4453</td>
+</tr>
+<tr>
+<td>7</td>
+<td>1890.6</td>
+<td>0.3371</td>
+</tr>
+<tr>
+<td>8</td>
+<td>1689.6</td>
+<td>0.3263</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest finding:</strong> silhouette picks <strong>k = 3</strong>, but the data was generated with 4 clusters. Two of the true centres are only 2.08 apart (with cluster std 1.0), so they overlap, and silhouette prefers merging them into one well-separated group. The elbow (a big drop to k = 3, a smaller one to 4, then a flat curve) is ambiguous between 3 and 4. This is normal. Validation without labels is a judgement call.
+- <strong>Digits</strong>, k = 10 on raw pixels: 43 iterations in about 35 ms. ARI against the true digit is 0.6512, and purity is 0.7891. The majority-digit map [2, 8, 4, 3, 1, 5, 1, 6, 0, 7] shows that <strong>digit 1 owns two clusters and digit 9 owns none</strong>. 9s merge with similar-looking digits.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Write <code>kmeans(X, k, iters, seed)</code> with vectorised assignment (the ‖x‖² − 2x·μ + ‖μ‖² trick) and empty-cluster handling (re-seed the empty cluster at the farthest point). Assert that inertia never increases.</li>
+<li>Implement k-means++ initialisation and reproduce the random vs ++ ranges.</li>
+<li>Plot inertia and silhouette against k. Then compute the <strong>gap statistic</strong>-style comparison: the inertia of a uniform-random dataset of the same bounding box, at each k.</li>
+<li>Digits: show each centroid as an 8×8 image. Do they look like digits?</li>
+<li>Stretch: Mini-batch k-means on 200,000 points (<code>MiniBatchKMeans</code>). Compare its time and inertia with full k-means. (Week 8's project writes the assignment kernel in Rust.)</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Points 0, 2, 10, 12 (1-D), k = 2, initial centroids 0 and 2. Run Lloyd by hand. <em>(Assign {0}, {2, 10, 12} → centroids 0 and 8; assign {0, 2}, {10, 12} → 1 and 11; then stable.)</em></li>
+<li>Why can't you choose k by minimising inertia? <em>(It keeps falling until k = m.)</em></li>
+<li>Silhouette of a point with a = 1, b = 4? <em>(0.75.)</em></li>
+<li>Two features, income in rupees and age in years, unscaled. Which one drives the clusters? <em>(Income.)</em></li>
+<li>Complexity of one Lloyd iteration? <em>(O(m·k·n).)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Describe Lloyd's two steps.
+  2. Why does k-means converge, and only locally?
+  3. What does k-means++ do?
+  4. Define silhouette.
+  5. Which k did silhouette pick, and what was the truth?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>k-means is a hard-assignment, equal-spherical-variance limit of the Gaussian mixture fitted by EM (tomorrow). Shrink the GMM's shared variance to 0 and its soft responsibilities become hard nearest-centroid assignments. That is the bridge to probabilistic clustering.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Using ARI to <em>choose</em> k when you have no labels. You don't, in real life.</li>
+<li>Clustering one-hot columns with Euclidean k-means. Consider k-modes or Gower distance.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: clusters that are not round (DBSCAN, linkage) and soft, probabilistic clusters (GMM via EM).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-046.html">← Day 46</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-048.html">Day 48 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

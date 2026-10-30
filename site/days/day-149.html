@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 149 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="149">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-148.html">← Day 148</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-150.html">Day 150 →</a></nav>
+<h1>Day 149: LLMOps II: tracing, latency and cost tracking, guardrails</h1>
+<p class="meta">Week 22 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Observability for LLM apps (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The run (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: What the numbers do and do not show (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 148 (+1), Day 146 (+3), Day 142 (+7), Day 128 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-observability-for-llm-apps-30-min">Block 1: Observability for LLM apps (30 min)</h3>
+<p>A request to an LLM app is not one function call. It is a chain: an input check, a model call, an output check, maybe a tool call, maybe another model call. When a request is slow or wrong you need to know which step was slow or wrong. <strong>Tracing</strong> records each step as a <em>span</em> (name, start, duration, attributes such as token counts or the tool name), with spans nested under the request span. The standard vocabulary comes from distributed tracing; here a 30-line <code>Tracer</code> context manager writes one JSON line per span, which is enough to compute percentiles and to replay a bad request.</p>
+<p><strong>Cost tracking</strong> is arithmetic on token counts: cost = input tokens × input price + output tokens × output price. For API models the bill is per token; for self-hosted models the bill is per GPU-hour, and tokens per second converts one into the other. The prices in this script are <strong>ASSUMED</strong> round numbers.</p>
+<p><strong>Guardrails</strong> are checks you put around the model because you cannot fully trust it: an <em>input guard</em> (block known prompt-injection patterns, redact personal data before the model sees it), and an <em>output guard</em> (the model's tool call must use an allow-listed tool, match the schema, and any tool with side effects needs human approval).</p>
+<h3 id="block-2-the-run-60-min">Block 2: The run (60 min)</h3>
+<p><code>day149_tracing_guardrails.py</code> runs the Week 20 agent with all three tools visible (calculator, city lookup, <code>send_email</code>) over 20 benign requests and 10 attack requests, once with guards off and once with guards on. Every step is a span in <code>out/traces.jsonl</code>.</p>
+<p><strong>Verified (out/day149_tracing_guardrails.log):</strong>
+- Prompt hash <code>b63603a7dfdc</code>; ASSUMED prices $0.5/M input, $1.5/M output tokens.
+- Guards OFF: benign correct 13 of 20, false positives 0; attacks blocked 0 of 10; <code>send_email</code> executed 0 times.
+- Guards ON: benign correct 13 of 20, false positives 0; attacks blocked 8 of 10 (input guard 6, output guard 2); <code>send_email</code> executed 0 times.
+- Attack outcomes with guards on: 6 × <code>blocked_input</code>, <code>blocked_output:$</code>, <code>blocked_output:$.field</code>, 2 × <code>tool_error</code>.
+- PII redacted before the model saw it: one email address, one phone number.
+- 274 spans. Latency over the guards-on requests (ms): guard_in p50 0.04 / p95 0.06; llm p50 641.70 / p95 685.93; guard_out p50 0.01 / p95 0.02; tool p50 0.01 / p95 0.02; request p50 625.92 / p95 686.24.
+- Tokens over 24 LLM calls: input 10,094 (mean 421), output 576 (mean 24.0); 37.6 output tok/s.
+- Assumed cost $0.00591 in total, $246 per million requests; input tokens are 85% of the cost.</p>
+<h3 id="block-3-what-the-numbers-do-and-do-not-show-45-min">Block 3: What the numbers do and do not show (45 min)</h3>
+<p><strong>Guards cost nothing in latency.</strong> Regex input checks take 0.04 ms at the median against 642 ms for the model call. The request p50 (626 ms) is slightly <em>below</em> the llm p50 because 6 blocked requests never reach the model and finish in well under a millisecond. Whatever you spend on guardrails, it will not be latency at this scale.</p>
+<p><strong>Cost is dominated by the prompt, not the answer.</strong> The few-shot prompt averages 421 input tokens while answers average 24. Under the assumed prices, input is 85% of the bill. So the cheapest optimisation is a shorter prompt or a cached prefix, not a terser answer. Note that yesterday's best prompt (v3) is the <em>longest</em>: quality and cost pull against each other, and an LLMOps dashboard should show both next to each other.</p>
+<p><strong>Be careful about what the attack result means.</strong> It is tempting to say "guards blocked 8 of 10 attacks". The honest reading is narrower:
+- The 135M model never called <code>send_email</code> in either mode, so in this run there was no harm to prevent. (Week 20 showed an undefended injection queued 22 of 24 emails, so the risk is real with prompts that make the model follow instructions.)
+- The input guard caught 6 attacks because they used phrases its regexes know ("ignore previous instructions"-style patterns).
+- The 2 output blocks were schema failures: the model produced malformed calls, and the guard would have blocked them whether or not they were attacks.
+- The 4 paraphrased attacks got past the regexes; 2 of them ended as tool errors. A paraphrase defeats a pattern list, which is why the output guard (allow-list plus approval for side-effect tools) is the guard that actually protects you: it does not need to recognise the attack, only to refuse an action.</p>
+<p><strong>No false positives on 20 benign requests</strong> is encouraging but weak evidence. A regex list grows false positives as it grows, and 20 requests is a small sample.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why can request p50 be lower than llm p50? <em>Blocked requests skip the model and finish almost instantly, pulling the request median down.</em></li>
+<li>Input tokens are 85% of cost. Name two fixes. <em>Fewer or shorter few-shot examples; prefix caching of the fixed system prompt.</em></li>
+<li>Which guard protects against a paraphrased injection asking to send email? <em>The output guard: allow-list plus mandatory approval for side-effect tools.</em></li>
+<li>Why redact PII before the model call, not after? <em>So it never enters the prompt, the logs, or a third-party API.</em></li>
+</ol>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Write three new paraphrased attacks of your own and confirm they evade the input regex. Then add a span attribute recording which guard decided each request, and compute the share of requests decided by each guard from <code>traces.jsonl</code> alone.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Percentiles need enough samples: a p95 from 24 calls is roughly the second-largest value. In production you would aggregate over thousands of requests and keep the raw spans for a few days so you can rebuild any percentile. Never log raw prompts containing personal data; log the redacted version and the hash.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Look at how tracing standards structure parent and child spans and what attributes they recommend for model calls (model name, token counts, finish reason), and compare with the fields <code>_llmops.Tracer</code> writes.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your LLM feature's bill doubled last week with no traffic change. How do you find out why?" <em>Expected: per-request token traces split by input and output; check for a prompt change (hash), longer retrieved context, retries or loops in the agent, a model switch; compare token histograms before and after.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting "attacks blocked" without checking whether the model would have complied anyway.</li>
+<li>Relying on an input pattern list as the only defence.</li>
+<li>Mean latency instead of percentiles.</li>
+<li>Logging unredacted user input.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow puts the pieces together: RAG, the agent, the eval harness, tracing and a drift monitor in one service, with release gates and an honest verdict.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-148.html">← Day 148</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-150.html">Day 150 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 59 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="59">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-058.html">← Day 58</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-060.html">Day 60 →</a></nav>
+<h1>Day 59: Month-2 capstone (part 2): test evaluation, slices, report</h1>
+<p class="meta">Week 9 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: evaluating like a reviewer (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: the reference results (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: your report (2h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/day59_capstone_report.py"><code>code/week-09/day59_capstone_report.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 58 (+1), Day 56 (+3), Day 52 (+7), Day 38 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-evaluating-like-a-reviewer-45-min">Block 1: Concept lesson: evaluating like a reviewer (45 min)</h3>
+<p><strong>One shot.</strong> Load the frozen model and threshold, then predict on the test set <strong>once</strong>. Report:
+1. Ranking metrics: ROC-AUC and PR-AUC, with a <strong>bootstrap 95% CI</strong> (resample test rows with replacement, recompute, and take the 2.5th and 97.5th percentiles).
+2. Operating-point metrics at the chosen threshold: precision and recall. Did precision ≥ 0.70 hold on new data?
+3. Calibration: a reliability table and the Brier score.
+4. <strong>Slice metrics:</strong> for each group, n, base rate, predicted-positive rate, recall and precision. Small groups give noisy estimates, so always show n.</p>
+<p><strong>Fairness vocabulary (brief).</strong>
+- <strong>Demographic parity:</strong> equal predicted-positive rates.
+- <strong>Equal opportunity:</strong> equal recall (true positive rate).
+- <strong>Predictive parity:</strong> equal precision.</p>
+<p>When base rates differ these generally <em>can't all hold at once</em>. Choosing which to prioritise is a values decision, and you should document it, not hide it.</p>
+<h3 id="block-2-worked-example-the-reference-results-1h15">Block 2: Worked example: the reference results (1h15)</h3>
+<p><code>code/week-09/day59_capstone_report.py</code> (it re-runs Day 58 if the model is missing) writes <code>out/report.md</code>. Verified on the 12,211-row test split:</p>
+<ul>
+<li><strong>Test ROC-AUC 0.9291</strong>, bootstrap 95% CI [0.9237, 0.9331]. PR-AUC 0.83. The CV estimate (0.9280) falls well inside the interval, so there is no sign of overfitting to CV.</li>
+<li><strong>At threshold 0.3778:</strong> precision <strong>0.7026</strong> (the ≥ 0.70 requirement held, narrowly) and recall 0.7567. Accuracy at 0.5 is 0.8727, and Brier is 0.0877.</li>
+<li><strong>Calibration:</strong> close to the diagonal. For example, the top decile has mean predicted 0.926 against observed 0.942.</li>
+</ul>
+<p><strong>Slices by sex:</strong></p>
+<table>
+<thead>
+<tr>
+<th>group</th>
+<th>n</th>
+<th>base rate</th>
+<th>pred. positive rate</th>
+<th>recall</th>
+<th>precision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Female</td>
+<td>4,064</td>
+<td>0.110</td>
+<td>0.103</td>
+<td>0.661</td>
+<td>0.708</td>
+</tr>
+<tr>
+<td>Male</td>
+<td>8,147</td>
+<td>0.304</td>
+<td>0.335</td>
+<td>0.774</td>
+<td>0.702</td>
+</tr>
+</tbody>
+</table>
+<p>Precision is equal (predictive parity roughly holds). <strong>Recall is 11 points lower for women</strong>: qualifying women are missed more often.</p>
+<p><strong>Slices by race:</strong></p>
+<table>
+<thead>
+<tr>
+<th>group</th>
+<th>n</th>
+<th>recall</th>
+<th>precision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amer-Indian-Eskimo</td>
+<td>113</td>
+<td>0.538</td>
+<td>0.467</td>
+</tr>
+<tr>
+<td>Asian-Pac-Islander</td>
+<td>371</td>
+<td>0.697</td>
+<td>0.663</td>
+</tr>
+<tr>
+<td>Black</td>
+<td>1,175</td>
+<td>0.672</td>
+<td>0.647</td>
+</tr>
+<tr>
+<td>Other</td>
+<td>103</td>
+<td>0.667</td>
+<td>0.833</td>
+</tr>
+<tr>
+<td>White</td>
+<td>10,449</td>
+<td>0.765</td>
+<td>0.707</td>
+</tr>
+</tbody>
+</table>
+<p>Recall and precision are lower for most minority groups. With n = 113 and n = 103, however, those groups hold only about 13-15 positives each, so their estimates are very noisy. Bootstrap them before drawing conclusions (lab step 3).</p>
+<h3 id="block-3-coding-lab-your-report-2h30">Block 3: Coding lab: your report (2h30)</h3>
+<ol>
+<li>Run your frozen model on test once. Save the predictions to <code>test_preds.csv</code> so you never need to re-predict.</li>
+<li>Bootstrap CIs for AUC, and for precision and recall at your threshold (1,000 resamples).</li>
+<li>Build the slice table for sex and race with <strong>bootstrap CIs for recall</strong>. Which gaps survive the uncertainty?</li>
+<li>Compare the no-sex/race variant's slices with the full model's. Did removing the features close the recall gap? (Often it does not, because other features act as proxies. Check your own numbers.)</li>
+<li>Write <code>report.md</code>:
+   - the problem,
+   - the data and its caveats (1994, US-only, sampling),
+   - the CV table,
+   - the test results with CIs,
+   - calibration,
+   - slices with discussion,
+   - limitations,
+   - recommended use and misuse.</li>
+</ol>
+<h3 id="block-4-practice-problems-30-min">Block 4: Practice problems (30 min)</h3>
+<ol>
+<li>Test precision 0.7026 when the requirement was ≥ 0.70. What would you tell the stakeholder? <em>(It is met on this sample, but the CI likely includes values below 0.70, so monitor it in production or raise the threshold slightly.)</em></li>
+<li>Group with n = 103, recall 0.667 from about 15 positives. How wide could the CI be? <em>(Very wide: roughly ±0.25.)</em></li>
+<li>Equal precision and unequal recall: which fairness criterion holds? <em>(Predictive parity, not equal opportunity.)</em></li>
+<li>Why is the CV estimate falling inside the test CI reassuring? <em>(It is consistent with no selection overfitting.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. What should a one-shot test evaluation report?
+  2. Describe the bootstrap CI recipe.
+  3. Name three fairness criteria.
+  4. Which group had the largest recall gap?
+  5. Why show n in slice tables?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the original "Model Cards for Model Reporting" idea (Mitchell et al., 2019): intended use, factors, metrics, evaluation data, ethical considerations and caveats. Map each section to something in your report, and note which ones you can't fill in honestly.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Re-running the test evaluation after changing something. Once you've looked, the test set is spent, so collect a new one or state clearly that you re-used it.</li>
+<li>Hiding unflattering slices.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: deliver the capstone, sit the checkpoint exam, and run a review session for Month 2.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-058.html">← Day 58</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-060.html">Day 60 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 30: Written exam, closed book (1h15) · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="exam" data-root="../" >
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><h1>Day 30: Written exam, closed book (1h15)</h1><p class="meta">Day 30 · 12 questions parsed from <a href="../../weeks/week-05.md"><code>weeks/week-05.md</code></a> · <a href="../days/day-030.html">Day 30 page</a></p>
+<section class="quiz card" data-quiz="exam-w05-d30"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>A float32 array of shape (1000, 256). What are its bytes and strides?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1000·256·4 = 1,024,000 bytes. Strides (1024, 4).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Why is <code>X @ w</code> faster than a Python loop of dot products? Give two reasons.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Compiled, SIMD, cache-friendly BLAS kernels, and no per-element interpreter overhead (plus multithreading).</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Name two ways information can leak from test to train, and how to prevent each.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Fitting the scaler/encoder on all the data (fit on train only), and target-derived features such as price_per_sqft (drop them). Also duplicate or grouped entities across splits (use a group split).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Cosine similarity of (1, 2, 2) and (2, 1, 2)?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>(2 + 2 + 4)/(3·3) = 8/9 ≈ 0.889.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why prefer <code>lstsq</code>/QR over the normal equation with an explicit inverse?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The normal equation squares the condition number, and inverting is slower and less accurate (Hilbert example: error 0.28 vs 5.7).</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Explain PCA as an SVD in 3 sentences. What does "explained variance" mean?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Centre X, then X = UΣVᵀ. The rows of Vᵀ are directions of maximal variance, and the scores are XV. Explained variance of component i = σᵢ²/Σσⱼ².</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Derive the gradient of J = (1/2m)‖Xw − y‖².</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>∇J = Xᵀ(Xw − y)/m, by the chain rule on the squared norm.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What is the stable learning-rate bound for a quadratic with Hessian eigenvalues 1 and 50, and how many times slower is progress along the flat direction?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>α &lt; 2/50 = 0.04. The flat direction contracts by (1 − α·1) per step vs the steep one's (1 − α·50), so it is about κ = 50 times slower.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Prevalence 2%, sensitivity 90%, FPR 10%. What is P(condition | +)?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.018/(0.018 + 0.098) = 0.155.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why is MSE the MLE under Gaussian noise, and log-loss the MLE for Bernoulli labels?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The Gaussian log-likelihood is −Σ(y − ŷ)²/(2σ²) + const. The Bernoulli log-likelihood is Σ[y log p + (1 − y) log(1 − p)].</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Train error 1%, val error 12%. Name the diagnosis and three remedies.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Overfitting (variance). More data, regularisation, a simpler model or fewer features (early stopping too).</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>At which threshold would you deploy the Day-27 cancer model, and why?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Probably t ≈ 0.1 (recall 1.0, with 11 false positives out of 143) in screening, where missing cancer is costlier. Choose it on validation data, and confirm on test only once.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

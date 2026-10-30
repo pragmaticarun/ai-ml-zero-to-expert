@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 157 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="157">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-156.html">← Day 156</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-158.html">Day 158 →</a></nav>
+<h1>Day 157: Pruning and distillation basics, at toy scale</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Two ways to make a model smaller (25 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 156 (+1), Day 154 (+3), Day 150 (+7), Day 136 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-two-ways-to-make-a-model-smaller-25-min">Block 1: Two ways to make a model smaller (25 min)</h3>
+<p><strong>Pruning</strong> removes weights. <em>Unstructured</em> pruning zeroes individual weights, usually the ones with the smallest magnitude, anywhere in the matrix. <em>Structured</em> pruning removes whole units (neurons, channels, attention heads), so the matrices actually get smaller. The distinction matters because ordinary dense kernels multiply zeros at full price. Unstructured sparsity only saves time with sparse kernels or hardware built for a sparsity pattern, and only at high sparsity. It always saves <em>compressed</em> file size, because zeros compress well, but that saving disappears once the weights are unpacked into memory.</p>
+<p><strong>Distillation</strong> trains a small <em>student</em> to imitate a large <em>teacher</em>. The student learns from the teacher's softened output distribution (softmax at temperature T &gt; 1) as well as from the true labels. The usual loss is α·T²·KL(teacher_T ‖ student_T) + (1 − α)·CE(labels). The T² keeps gradient scales comparable as T changes. The hoped-for benefit is that the soft targets carry "dark knowledge": which wrong classes are similar to the right one (a 7 looks more like a 1 than like a 0).</p>
+<h3 id="block-2-run-it-35-min">Block 2: Run it (35 min)</h3>
+<p><code>python day157_prune_distill.py</code> takes the Day 155 model (0.9741 accuracy, 796 µs at batch 256 on 1 thread) and runs three experiments. Each pruning variant gets a 5-epoch fine-tune at learning rate 5e-4.</p>
+<p><strong>Verified (out/day157_prune_distill.log):</strong>
+- <strong>Unstructured global L1 pruning</strong> (<code>torch.nn.utils.prune.global_unstructured</code> across all three Linear layers):</p>
+<table>
+<thead>
+<tr>
+<th>sparsity</th>
+<th>acc, no fine-tune</th>
+<th>acc after fine-tune</th>
+<th>dense b256 µs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.50</td>
+<td>0.9759</td>
+<td>0.9741</td>
+<td>803</td>
+</tr>
+<tr>
+<td>0.80</td>
+<td>0.9630</td>
+<td>0.9778</td>
+<td>785</td>
+</tr>
+<tr>
+<td>0.90</td>
+<td>0.8704</td>
+<td>0.9815</td>
+<td>807</td>
+</tr>
+<tr>
+<td>0.95</td>
+<td>0.2500</td>
+<td>0.8889</td>
+<td>782</td>
+</tr>
+<tr>
+<td>0.98</td>
+<td>0.1537</td>
+<td>0.1444</td>
+<td>783</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Structured pruning</strong> (keep the top-k hidden neurons by the L2 norm of their incoming weights, in both hidden layers, then fine-tune):</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>hidden</th>
+<th>params</th>
+<th>acc before fine-tune</th>
+<th>acc after</th>
+<th>b256 µs</th>
+<th>speed-up</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>256</td>
+<td>85,002</td>
+<td>0.9185</td>
+<td>0.9778</td>
+<td>234</td>
+<td>3.4x</td>
+</tr>
+<tr>
+<td>128</td>
+<td>26,122</td>
+<td>0.7426</td>
+<td>0.9759</td>
+<td>85</td>
+<td>9.3x</td>
+</tr>
+<tr>
+<td>64</td>
+<td>8,970</td>
+<td>0.5389</td>
+<td>0.9222</td>
+<td>44</td>
+<td>18.1x</td>
+</tr>
+<tr>
+<td>32</td>
+<td>3,466</td>
+<td>0.2315</td>
+<td>0.5870</td>
+<td>28</td>
+<td>28.8x</td>
+</tr>
+<tr>
+<td>16</td>
+<td>1,482</td>
+<td>0.1889</td>
+<td>0.2481</td>
+<td>23</td>
+<td>35.0x</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Distillation</strong> (student 64-h-10 with one hidden layer, T = 4, 5 seeds per arm, the same initial weights and batch order in both arms):</li>
+<li>h = 8, 30 epochs, α = 0.7: labels-only 0.8778 (sd 0.0226) vs distilled 0.8067 (sd 0.0280).</li>
+<li>h = 8, 120 epochs, α = 0.7: 0.9511 (sd 0.0066) vs 0.9293 (sd 0.0092).</li>
+<li>h = 8, 120 epochs, α = 0.3: 0.9511 vs 0.9326 (sd 0.0079).</li>
+<li>h = 16, 120 epochs, α = 0.3: 0.9696 (sd 0.0050) vs 0.9626 (sd 0.0078).</li>
+<li>Distillation was worse on every seed in every setting. The gap shrank from about −7 points to about −0.2 to −1.3 points as training lengthened and α fell.</li>
+</ul>
+<h3 id="block-3-interpretation-35-min">Block 3: Interpretation (35 min)</h3>
+<p><strong>Unstructured pruning: accuracy holds up, speed does not move.</strong> At 90% zeros the fine-tuned model scored 0.9815, slightly above the unpruned 0.9741. That is within noise on a 540-row test set, where one row is 0.19 points, but it clearly did not get worse. Latency stayed at 782-807 µs throughout, the same as the dense model, because the dense GEMM multiplies the zeros anyway. Two thresholds stand out. Without fine-tuning, accuracy collapses between 90% and 95% sparsity (0.8704 to 0.2500). With fine-tuning, the model recovers at 95% (0.8889) but not at 98% (0.1444): at 98% the remaining 2% of weights cannot express the function. <em>Fine-tuning after pruning is not optional.</em></p>
+<p><strong>Structured pruning is what makes a model faster on a CPU.</strong> Keeping 128 of 512 neurons cut parameters from 301,066 to 26,122 (11.5x fewer). After 5 epochs of fine-tuning, accuracy was 0.9759, and batch-256 latency fell to 85 µs (9.3x faster). That is the deployable result of the day, and Day 161 ships it. Below 64 neurons, accuracy falls off a cliff with only 5 epochs of fine-tuning (0.5870 at 32). A smaller model trained longer, or trained from scratch (Day 157's distillation students reached 0.9696 with only 16 hidden units after 120 epochs), would do better. Pruning is a starting point for a small model, not magic.</p>
+<p>Speed-up is not proportional to parameter count. At 16 hidden units the model has about 200x fewer parameters, but it is only 35x faster, because fixed costs (Python call, allocation, the 64-input and 10-output layers) take over. The same Amdahl's-law effect showed up in Week 22's profiling.</p>
+<p><strong>Distillation did not help here, and that is the honest result.</strong> The literature reports gains when the teacher knows something the labels do not: many classes with real similarity structure, noisy or incomplete labels, or extra unlabelled data the teacher can label. Here the student sees the same 1,257 clean training images the teacher saw, and the teacher is only 97.4% accurate, so its soft targets also carry its errors. With a short budget (30 epochs) the KL term, scaled by T² = 16 with α = 0.7, dominates and slows learning of the true labels. That explains why the gap is largest there and shrinks with longer training and smaller α. To give distillation a fair test, add <em>unlabelled</em> inputs (e.g. augmented digits) that only the teacher can label, or use a harder dataset. What not to do is tune α and T on the test set until distillation "wins".</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why did latency not change at 90% unstructured sparsity? <em>Dense kernels multiply every element, zeros included. The saving needs sparse kernels or a hardware-supported sparsity pattern.</em></li>
+<li>At hidden = 128, parameters fell 11.5x but latency only 9.3x. Why? <em>Per-call fixed costs and the input/output layers do not shrink. Small kernels also run closer to overhead-bound than compute-bound.</em></li>
+<li>Distillation lost on every seed. Name two changes that might make it help. <em>Add teacher-labelled unlabelled data; use a harder task with similar classes; lengthen training or lower α. Pick them before looking at the test set.</em></li>
+<li>Why is "0.9815 at 90% sparsity" not evidence that pruning <em>improves</em> the model? <em>The difference from 0.9741 is 4 test rows out of 540. Without repeats or a confidence interval it is within noise.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Run the structured pruning with 20 fine-tuning epochs instead of 5 and see where the accuracy cliff moves. Then train a 64-128-128-10 model <em>from scratch</em> for the same total epochs and compare it with the pruned one. Is pruning better than starting small?</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li><code>prune.remove</code> makes the mask permanent. Before that call, PyTorch keeps <code>weight_orig</code> plus a mask, which makes the model <em>bigger</em> in memory.</li>
+<li>Choosing neurons by incoming-weight L2 norm is one simple criterion. Others use activation statistics or gradients. For the second layer we indexed the columns by the neurons kept in layer 1, so the shapes stay consistent.</li>
+<li>Some recent CPU and mobile backends support specific sparse patterns. Check your runtime's docs before relying on it, and measure.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read the PyTorch pruning tutorial's sections on structured pruning (<code>ln_structured</code>) and iterative pruning schedules. Then compare one-shot 90% pruning against five rounds of 37% pruning (0.63⁵ ≈ 0.1 left) with fine-tuning between rounds.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"We need the model 5x faster on a mid-range phone with at most 1 point of accuracy loss." Plan: profile first (Day 155). Try int8 first (Day 156: about 3-4x on GEMMs here). If that is not enough, prune structurally and fine-tune, trying widths from about 50% downwards. Distil only with unlabelled data the teacher can use. Measure every candidate on the target device against the budget (Day 161).</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Claiming a speed-up from unstructured sparsity without a sparse kernel.</li>
+<li>Skipping fine-tuning after pruning.</li>
+<li>Reading a 0.7-point difference on 540 test rows as real.</li>
+<li>Tuning distillation hyperparameters on the test set.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 158 moves from a 300k-parameter MLP to a 135M-parameter LLM and asks the on-device question that matters most: will it fit in memory?</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-156.html">← Day 156</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-158.html">Day 158 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

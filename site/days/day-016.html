@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 16 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="16">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-015.html">← Day 15</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-017.html">Day 17 →</a></nav>
+<h1>Day 16: Partial derivatives, gradients, gradient checking</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-03/day16_gradients.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/day16_gradients.py"><code>code/week-03/day16_gradients.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 15 (+1), Day 13 (+3), Day 9 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> With two parameters, the cost is a landscape over a 2-D map. Each <strong>partial derivative</strong> is the slope if you walk only east (∂J/∂w₁) or only north (∂J/∂w₂). Stack them and you get the <strong>gradient</strong>, an arrow pointing <em>uphill</em>, in the steepest direction, with a length equal to the steepness. Gradient descent walks against that arrow.</p>
+<p><strong>Concrete example (verified).</strong> f(x, y) = x² + 3y² + xy at (1, −2):
+- ∂f/∂x = 2x + y = 0
+- ∂f/∂y = 6y + x = −11
+- gradient = (0, −11). Numerically we get the same values, with relative error <strong>7e-11</strong>.
+- One step against the gradient with size 0.1: f goes from <strong>11 → 2.53</strong>.</p>
+<p><strong>Plain-language maths: the MSE gradient.</strong> For m examples, X (m × n), weights w (n), and J(w) = (1/2m)‖Xw − y‖²:</p>
+<p>∇J = (1/m) Xᵀ(Xw − y)</p>
+<p>Reading it: compute the error vector e = Xw − y (one number per example). Then for each feature j, ∂J/∂wⱼ = average over examples of (error × feature j). Features that are big on examples with big positive errors get pushed down hardest. This is the "error × input" pattern from yesterday, vectorised with the transpose from Day 9. The lab checks it on random data with relative error <strong>9.3e-11</strong> ✓.</p>
+<p><strong>Gradient checking recipe.</strong>
+1. Analytic gradient g.
+2. Numerical gradient g̃ₖ = [J(w + h eₖ) − J(w − h eₖ)]/(2h) for each k.
+3. Relative error ‖g − g̃‖/‖g + g̃‖.
+The rule of thumb: &lt; 1e-7 is great, ~1e-5 deserves a look, and &gt; 1e-3 is almost certainly a bug.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Derive ∇J for two examples and one weight (no bias). J(w) = (1/4)[(wx₁ − y₁)² + (wx₂ − y₂)²], so dJ/dw = (1/2)[(wx₁ − y₁)x₁ + (wx₂ − y₂)x₂] = (1/m) Σ eᵢxᵢ ✓ with m = 2 (the ½ in the cost cancels the 2 from the power).
+Numbers: x = (1, 2), y = (2, 3), w = 1. The errors are (−1, −1), so dJ/dw = ½[(−1)(1) + (−1)(2)] = <strong>−1.5</strong>. In matrix form: X = [[1], [2]] and Xᵀe = 1·(−1) + 2·(−1) = −3, divided by m = 2 gives −1.5 ✓.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-03day16_gradientspy">Block 3: Coding lab (2h): <code>code/week-03/day16_gradients.py</code></h3>
+<p>Tasks:
+1. Add a bias b. Derive ∂J/∂b = mean(e) and gradient-check it.
+2. <strong>Plant a bug:</strong> use <code>X @ (X@w - y)</code> instead of <code>X.T @ …</code> (with a square X so that it doesn't crash). Watch the gradient check catch it.
+3. Gradient-check f(w) = Σ log(1 + exp(wᵢ)) against the analytic σ(w).
+4. Draw the contour plot of f(x, y) and the gradient arrows (<code>plt.quiver</code>) on a grid. Notice that the arrows are perpendicular to the contours.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>∇ of f(x, y) = x²y + y³? <em>Answer:</em> (2xy, x² + 3y²).</li>
+<li>At a minimum, what is the gradient? <em>Answer:</em> the zero vector.</li>
+<li>Is the gradient perpendicular or parallel to the contour lines? <em>Answer:</em> perpendicular.</li>
+<li>What is the shape of ∇J for w of shape (n,)? <em>Answer:</em> (n,).</li>
+<li>The relative error of a gradient check is 0.3. What next? <em>Answer:</em> look for a bug. Check transposes, the missing 1/m and the sign.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 15 (+1):</strong> differentiate (3w − 12)² and evaluate it at w = 2 (−36).</li>
+<li><strong>Day 13 (+3):</strong> why must the residuals sum to 0 with an intercept?</li>
+<li><strong>Day 9 (+7):</strong> explain (AB)ᵀ = BᵀAᵀ with shapes.</li>
+<li><strong>Self-check:</strong>
+  1. What is a gradient?
+  2. Give the vectorised MSE gradient.
+  3. What are the gradient-check thresholds?
+  4. Gradient of the bias?
+  5. Why does the gradient point uphill?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Jacobians and Hessians.</strong> For a vector-valued function f: ℝⁿ → ℝᵏ, the matrix of all partial derivatives is the <strong>Jacobian</strong> (k × n). Backprop multiplies vectors by Jacobians without ever building them explicitly. The matrix of <em>second</em> derivatives of a scalar cost is the <strong>Hessian</strong> (n × n). For the MSE cost it is XᵀX/m, which is exactly the matrix whose eigenvalues set the learning-rate limit on Day 18 and whose condition number explains Day 25's slow convergence. Compute XᵀX/m for the Day-16 random data and print its eigenvalues. You'll use this link three more times this month.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting 1/m makes the gradient m times too big, which leads to divergence on large datasets.</li>
+<li>Shape (n, 1) vs (n,) makes <code>X.T @ e</code> an (n, m) matrix through broadcasting. Assert shapes.</li>
+<li>Checking with h too small (see Day 15).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>You now have the full "error × input" gradient for linear regression. Day 23 runs it in a loop.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-015.html">← Day 15</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-017.html">Day 17 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 32 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="32">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-031.html">← Day 31</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-033.html">Day 33 →</a></nav>
+<h1>Day 32: Polynomial features and the bias-variance trade-off in practice</h1>
+<p class="meta">Week 5 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-05.md">source: weeks/week-05.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-05/day32_poly_bias_variance.py"><code>code/week-05/day32_poly_bias_variance.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 31 (+1), Day 29 (+3), Day 25 (+7), Day 11 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A straight line cannot follow a sine wave, however much data you give it. That is <strong>bias</strong>: the model family is too simple. A degree-15 polynomial can thread through every noisy point, but refit it on a fresh sample and it wiggles somewhere else. That is <strong>variance</strong>: the model reacts to the particular noise it saw. The test error you care about is the sum of three parts:</p>
+<blockquote>
+<p>expected test MSE = bias² + variance + irreducible noise σ²</p>
+</blockquote>
+<p>You can't beat σ², since it is randomness in the labels themselves. You trade the other two by choosing model flexibility (degree, depth, k, λ).</p>
+<p><strong>Polynomial features.</strong> <code>PolynomialFeatures(d)</code> turns x into [1, x, x², …, x^d]. With n inputs and degree d, the number of columns grows like C(n+d, d). For California's 8 features at degree 2 that is already 45 columns, so pair polynomials with scaling and ridge.</p>
+<p><strong>Ng-style diagnosis.</strong> Plot train and validation error against flexibility:
+- Both high and close together → high bias. Add features or flexibility.
+- Train low, validation much higher → high variance. Get more data, regularise or simplify.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-05/day32_poly_bias_variance.py</code> uses y = sin(2πx) + noise (σ = 0.3, so σ² = 0.09) with 30 training points and a 1000-point validation set. Verified degree sweep (selected rows):</p>
+<table>
+<thead>
+<tr>
+<th>degree</th>
+<th>train MSE</th>
+<th>val MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.3753</td>
+<td>0.3215</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.1152</td>
+<td><strong>0.1050</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>0.0984</td>
+<td>0.1141</td>
+</tr>
+<tr>
+<td>11</td>
+<td>0.0932</td>
+<td>0.1496</td>
+</tr>
+<tr>
+<td>15</td>
+<td>0.0912</td>
+<td>0.1328</td>
+</tr>
+</tbody>
+</table>
+<p>Train error keeps falling. Validation error bottoms out at degree 3 and then rises. The curve is not perfectly smooth (degree 15 is lower than degree 13) because a single 30-point sample is noisy. That is exactly why we average over many samples next.</p>
+<p><strong>Measured decomposition</strong> (200 independent training sets of 30 points each, error averaged over a grid):</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>bias²</th>
+<th>variance</th>
+<th>bias²+var+σ²</th>
+<th>measured test MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>degree 1</td>
+<td>0.1543</td>
+<td>0.0205</td>
+<td>0.2648</td>
+<td>0.2604</td>
+</tr>
+<tr>
+<td>degree 3</td>
+<td>0.0029</td>
+<td>0.0124</td>
+<td>0.1053</td>
+<td>0.1074</td>
+</tr>
+<tr>
+<td>degree 9</td>
+<td>0.0010</td>
+<td>0.1544</td>
+<td>0.2454</td>
+<td>0.2528</td>
+</tr>
+<tr>
+<td>degree 9, ridge α=1e-3</td>
+<td>0.0009</td>
+<td>0.0195</td>
+<td>0.1104</td>
+<td>0.1130</td>
+</tr>
+</tbody>
+</table>
+<p>Two lessons are in the numbers. (1) The formula holds: the predicted sum lies within about 0.008 of the measured MSE. (2) Even a tiny ridge penalty cut degree 9's variance from 0.154 to 0.020 (about 8×) without raising its bias. Regularisation lets you keep a flexible model and tame it.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Run the script and open <code>out/day32_degree_sweep.png</code>. Mark the noise floor and the best degree.</li>
+<li>Change the training size from 30 to 300. Predict first, then measure: which degree is best now, and how does degree 9's variance change? (Write the prediction down before you run it.)</li>
+<li>Add a ridge λ sweep at degree 12 and plot val MSE against λ. You should get a U-shape again, this time in λ rather than degree.</li>
+<li>Apply the idea to real data: on California, compare <code>PolynomialFeatures(1/2/3)</code> + <code>StandardScaler</code> + <code>Ridge(alpha=1)</code> with a 5-fold CV score. Note how long degree 3 takes, and its column count.</li>
+<li>Stretch: build the decomposition for k-NN regression with k = 1, 5 and 25. Which k has the most variance?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Train MSE 0.02, val MSE 0.40, noise σ² ≈ 0.05. Diagnosis and two fixes? <em>(High variance: more data, more regularisation, lower degree.)</em></li>
+<li>Train 0.38, val 0.40, σ² ≈ 0.05. Diagnosis? <em>(High bias: add features or flexibility.)</em></li>
+<li>How many degree-2 polynomial features (with bias) come from 3 inputs? <em>(C(5,2) = 10.)</em></li>
+<li>Why can't test MSE drop below σ²? <em>(The labels' noise is independent of any function of x.)</em></li>
+<li>Does more data reduce bias? <em>(No, mostly variance. Bias is a property of the model family.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. State the decomposition of expected test MSE.
+  2. What do the train and validation curves look like under high bias, and under high variance?
+  3. In our run, which degree was best, and what was its measured test MSE?
+  4. How did ridge change degree 9's variance?
+  5. Why is one train/val split noisy for choosing degree?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>Where the decomposition comes from.</strong> Write ŷ = f̂(x) with E over training sets. Then E[(y − ŷ)²] = σ² + (f(x) − E ŷ)² + E[(ŷ − E ŷ)²]. The cross terms vanish because the noise has mean zero and is independent of the training set. The decomposition is exact for squared error. For 0-1 loss there is no clean additive version, which is why practitioners use the train/val <em>gap</em> as a practical proxy for variance.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Fitting <code>PolynomialFeatures</code> with huge raw values (x³ with x ≈ 1000 gives 1e9), which wrecks the numerics. Scale after expanding, and tame heavy-tailed inputs first (you will see a dramatic failure tomorrow).</li>
+<li>Choosing the degree on the test set. Use validation or CV.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: cross-validation, which replaces one noisy split with k averaged splits, plus systematic hyperparameter search.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-031.html">← Day 31</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-033.html">Day 33 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

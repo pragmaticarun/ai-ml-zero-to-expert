@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 24 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="24">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-23.html">← Week 23</a><a href="../syllabus.html">Syllabus</a><a href="week-25.html">Week 25 →</a></nav>
+<h1>Week 24 (Days 162-168)</h1><p class="meta"><a href="../../weeks/week-24.md">source: weeks/week-24.md</a> · <a href="../../pdf/week-24.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-162.html">Day 162: Fairness metrics and their trade-offs</a> <span class="st" data-st="162"></span></li><li><a href="../days/day-163.html">Day 163: Bias mitigation: reweighing and group thresholds</a> <span class="st" data-st="163"></span></li><li><a href="../days/day-164.html">Day 164: Interpretability: permutation importance, Shapley, LIME-style, saliency, probing</a> <span class="st" data-st="164"></span></li><li><a href="../days/day-165.html">Day 165: Privacy: differential privacy, DP-SGD, membership inference</a> <span class="st" data-st="165"></span></li><li><a href="../days/day-166.html">Day 166: Robustness, adversarial examples, and distribution shift</a> <span class="st" data-st="166"></span></li><li><a href="../days/day-167.html">Day 167: LLM safety, model cards, governance, environmental cost</a> <span class="st" data-st="167"></span></li><li><a href="../days/day-168.html">Day 168: PROJECT W24: responsible-AI audit of an earlier model; Quiz 24</a> <span class="st" data-st="168"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-24"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>On Day 162, what were the Male/Female selection rates and DI at t=0.5, and what were the base rates?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Sel 0.257 / 0.073, DI 0.29; base rates 0.304 / 0.111.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Why did dropping the sex feature barely change DI?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Other features proxy sex (AUC 0.933); DI moved only 0.29→0.30.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>State the impossibility result that unequal base rates force, in one sentence.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>An imperfect classifier cannot simultaneously satisfy equal precision (or calibration) and equalised odds when base rates differ.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>On Day 163, what happened to Female precision under reweighing, and under demographic-parity thresholds?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Reweighing: Female precision 0.741→0.600. DP thresholds: Female precision 0.488.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why must group thresholds be chosen on a train-side split?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>So the fairness target is not fit on the same data you report; test remains an honest estimate.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Name the top-3 permutation-importance features on Day 164, and the top-3 Shapley features for the highest-score row.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Permutation: marital-status, capital-gain, education-num. Shapley (top row): capital-gain, marital-status, education-num.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What ε did Opacus report for DP-SGD at σ=1.0 (δ=1e-5), and what was the test accuracy?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>ε ≈ 1.436 (Opacus RDPAccountant); test acc 0.8481.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Compare MIA AUC for the Adult LR, the overfit MLP, and DP-SGD σ=1.0.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Adult LR 0.4989; overfit MLP 0.5678; DP-SGD σ=1.0 0.4981.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>On Day 166, what were clean, FGSM@8/255, PGD@8/255, and random-sign@8/255 accuracies?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Clean 0.7220; FGSM 0.0420; PGD 0.0000; random-sign 0.6720.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>What was the age-shift accuracy drop (train &lt;40 → test ≥40), and the domain-classifier AUC with age hidden?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Acc 0.8954 → 0.6945; domain AUC 0.800 (random-split control 0.498).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>On Day 167, what were refusal, over-refusal, and injection-canary results for SmolLM2-135M-Instruct?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Refused 1/3 harmful; over-refusal 0/3 benign; canary did not fire (answered 2+2=4).</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>What go/no-go did Day 168 record, and which mitigation did it prefer for TPR parity?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Course artefact YES, real decision system NO; prefer equal-opportunity group thresholds for TPR parity.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> Days 162-168 are written in full. This is Month 6's responsible-AI and safety week: fairness metrics and trade-offs, bias mitigation, interpretability, differential privacy and membership inference, adversarial robustness and distribution shift, LLM safety plus model cards and governance from verified official sources, and a weekly project that audits one earlier model with a written report. Every number comes from <code>code/week-24/day162_*.py</code> to <code>day168_*.py</code>, each run on this box, with logs in <code>code/week-24/out/</code>. Shared helpers (Adult loader, logistic-regression pipeline, group metrics, Month 3 CNN loader) are in <code>code/week-24/_dep.py</code>.</p>
+<p><strong>Retitled from the original SYLLABUS rows.</strong> The rows for 162-164 were deployment leftovers (QAT/pruning/distillation, llama.cpp tokens/sec, real-time multimedia). Those topics were covered in Week 23 (Days 156-157, 159). This week follows the responsible-AI brief instead. The SYLLABUS rows are updated to match. Days 165-168 already named fairness, privacy/security, explainability/docs and the audit project; they are kept and expanded.</p>
+<p><strong>The dataset and models.</strong> Fairness, mitigation, interpretability (tabular), privacy and the Day 168 audit use <strong>Adult</strong> (OpenML <code>adult</code> version 2 / UCI Adult Census Income), already cached via <code>data/download.py</code> and <code>common.load_adult</code>. A 70/30 stratified split (seed 0) gives 34,189 train and 14,653 test rows; P(&gt;50K) on test is 0.239, and the Female share is 0.335. The audited protected attribute is <strong>sex</strong> (Female = 1). The model is a scikit-learn <code>LogisticRegression</code> (C=1, max_iter=2000) behind OneHotEncoder + StandardScaler. Adversarial and CNN interpretability reuse the <strong>Month 3 CIFAR-10-small CNN</strong> (Day 73, weights in <code>code/week-11/out/day73_cnn.pt</code>). LLM safety uses <strong>SmolLM2-135M-Instruct</strong> from the local Hugging Face cache.</p>
+<p><strong>Not available, and labelled wherever it appears:</strong>
+- <strong>No RAPL / power meter.</strong> Energy figures use measured wall-clock times multiplied by an <strong>ASSUMED</strong> 45 W package draw. Every joule/kWh figure is labelled ASSUMED.
+- <strong>No legal advice.</strong> NIST AI RMF and EU AI Act notes come from pages/PDFs opened this session (NIST.AI.100-1.pdf; the Commission AI Act overview). They are not compliance guidance.
+- <strong>Opacus</strong> 1.6.0 was installed for a cross-check of the RDP accountant only; DP-SGD itself is implemented from scratch in Day 165.</p>
+<p><strong>Compute note.</strong> CPU-only 8-core Xeon, ~15 GB RAM. Adult logistic regression fits in under a second. The CNN adversarial loop and SmolLM2 greedy decode are the slowest steps (~few seconds each). A GPU would change Day 166 (faster PGD) and Day 167 (faster generation) but would not change any fairness or privacy arithmetic.</p>
+<p><strong>Sources</strong> (opened and checked this week; links in <code>docs/resources.md</code>): OpenML Adult / UCI; NIST AI RMF 1.0 (NIST.AI.100-1); EU Commission AI Act overview page for Regulation (EU) 2024/1689; Opacus RDPAccountant; Week 21 Day 149 injection-guard numbers (restated, not re-run). Explanations here are original, not copied.</p>
+<hr />
+<h2 id="weekly-quiz-week-24-12-questions-40-minutes-covers-days-162-168">Weekly quiz: Week 24 (12 questions; 40 minutes; covers Days 162-168)</h2>
+<ol>
+<li>On Day 162, what were the Male/Female selection rates and DI at t=0.5, and what were the base rates?</li>
+<li>Why did dropping the sex feature barely change DI?</li>
+<li>State the impossibility result that unequal base rates force, in one sentence.</li>
+<li>On Day 163, what happened to Female precision under reweighing, and under demographic-parity thresholds?</li>
+<li>Why must group thresholds be chosen on a train-side split?</li>
+<li>Name the top-3 permutation-importance features on Day 164, and the top-3 Shapley features for the highest-score row.</li>
+<li>What ε did Opacus report for DP-SGD at σ=1.0 (δ=1e-5), and what was the test accuracy?</li>
+<li>Compare MIA AUC for the Adult LR, the overfit MLP, and DP-SGD σ=1.0.</li>
+<li>On Day 166, what were clean, FGSM@8/255, PGD@8/255, and random-sign@8/255 accuracies?</li>
+<li>What was the age-shift accuracy drop (train &lt;40 → test ≥40), and the domain-classifier AUC with age hidden?</li>
+<li>On Day 167, what were refusal, over-refusal, and injection-canary results for SmolLM2-135M-Instruct?</li>
+<li>What go/no-go did Day 168 record, and which mitigation did it prefer for TPR parity?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>Sel 0.257 / 0.073, DI 0.29; base rates 0.304 / 0.111.</li>
+<li>Other features proxy sex (AUC 0.933); DI moved only 0.29→0.30.</li>
+<li>An imperfect classifier cannot simultaneously satisfy equal precision (or calibration) and equalised odds when base rates differ.</li>
+<li>Reweighing: Female precision 0.741→0.600. DP thresholds: Female precision 0.488.</li>
+<li>So the fairness target is not fit on the same data you report; test remains an honest estimate.</li>
+<li>Permutation: marital-status, capital-gain, education-num. Shapley (top row): capital-gain, marital-status, education-num.</li>
+<li>ε ≈ 1.436 (Opacus RDPAccountant); test acc 0.8481.</li>
+<li>Adult LR 0.4989; overfit MLP 0.5678; DP-SGD σ=1.0 0.4981.</li>
+<li>Clean 0.7220; FGSM 0.0420; PGD 0.0000; random-sign 0.6720.</li>
+<li>Acc 0.8954 → 0.6945; domain AUC 0.800 (random-split control 0.498).</li>
+<li>Refused 1/3 harmful; over-refusal 0/3 benign; canary did not fire (answered 2+2=4).</li>
+<li>Course artefact YES, real decision system NO; prefer equal-opportunity group thresholds for TPR parity.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

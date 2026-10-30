@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 6 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="6">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-005.html">← Day 5</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-007.html">Day 7 →</a></nav>
+<h1>Day 6: Train/validation/test splits, reproducibility, and leakage</h1>
+<p class="meta">Week 1 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-01.md">source: weeks/week-01.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-01/day06_splits_reproducibility.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-01/day06_splits_reproducibility.py"><code>code/week-01/day06_splits_reproducibility.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 5 (+1), Day 3 (+3).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A model that is graded on the data it studied is like a student who has seen the exam paper: the score means nothing. We hold back data the model never sees during training:
+- <strong>Train set:</strong> used to fit the parameters.
+- <strong>Validation (dev) set:</strong> used to make <em>choices</em> such as features, learning rate, model type. It gets "used up" slowly as you peek at it.
+- <strong>Test set:</strong> used once at the end for an honest estimate. If you tune on it, it has become another dev set.</p>
+<p>Typical split: 60/20/20 for small data. With millions of examples, 98/1/1 is fine, because 1% is already plenty.</p>
+<p><strong>Concrete example (verified).</strong> We use 300 points with y = 3x + noise (std 1). The splits are 180/60/60 with <code>random_state=0</code>. The train MSE is 0.927, val 1.409 and test 0.917. All are near the noise variance of 1.0. The 1.409 on validation is just sampling noise from 60 points: a single number from a small set is uncertain.</p>
+<p><strong>Reproducibility.</strong> The same seed gives the same split, and the lab prints the identical first value 0.4724 twice. Seed 1 gives −1.553. Record seeds, library versions and data versions. ML results are only half-reproducible by default, so build the habit now.</p>
+<p><strong>Leakage, the silent killer.</strong> Here is the demo in the lab. We take 100 rows, <strong>2000 pure-noise features</strong>, and a pure-noise target. If we choose the 10 "best" features using all 100 rows, including the 20 we later test on, a linear model gets test <strong>R² = 0.506</strong>. It looks predictive, yet it is noise. If we choose features using only the 80 training rows, the test R² is <strong>−0.10</strong>: worse than predicting the mean, which is the truth. Any decision that uses test data (feature selection, scaling statistics, imputation medians, deduplication) leaks.</p>
+<p><strong>Plain-language maths.</strong> The test error estimates the <strong>generalisation error</strong>, the expected error on new data from the same distribution. It is a sample mean, so its uncertainty shrinks like 1/√n_test (you will see this on Day 20 with the CLT).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Why does selecting on all the data inflate R²? With 2000 noise features and 100 rows, some features correlate with y by chance. The typical |corr| from pure chance is about 1/√100 = 0.1, and the maximum over 2000 features is much bigger. When the selection uses the test rows, it picks features whose chance correlations <em>include</em> the test rows, so those correlations "work" on the test set too. Selection on train only picks chance correlations that are <em>independent</em> of the test rows, and they vanish there. Rule: <strong>the test set must be invisible to every decision.</strong></p>
+<h3 id="block-3-coding-lab-2h-codeweek-01day06_splits_reproducibilitypy">Block 3: Coding lab (2h): <code>code/week-01/day06_splits_reproducibility.py</code></h3>
+<p>Tasks:
+1. Repeat the clean experiment with 20 different seeds and plot a histogram of test R². What is the spread? (This is why one split can mislead. Cross-validation comes on Day 33.)
+2. Add a time order: generate data where y drifts upward over the row index. Compare a random split with a "past → future" split. Which is honest for forecasting?
+3. Make a deliberately leaky scaler: fit <code>(X - mean)/std</code> on all data and then split. On this data the effect is tiny. Explain why it can be big on small or skewed data.
+4. Write a <code>split(df, seed)</code> helper that saves the row indices to disk so the split can be reproduced exactly.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>You tuned 50 hyperparameter combinations on the test set. Is the reported test score optimistic or pessimistic? <em>Answer:</em> optimistic.</li>
+<li>You have 1M images. Suggest a split. <em>Answer:</em> something like 98/1/1.</li>
+<li>Patient data has several scans per patient. How should you split? <em>Answer:</em> by patient (group split), otherwise near-duplicates leak.</li>
+<li>Is computing the mean for imputation before splitting a leak? <em>Answer:</em> yes, a small one.</li>
+<li>Train MSE 0.1, val MSE 5.0. What is likely going on? <em>Answer:</em> overfitting (high variance), or a bug in the val pipeline.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 5 (+1):</strong> sketch the four residual patterns from memory.</li>
+<li><strong>Day 3 (+3):</strong> explain to an imaginary colleague why <code>A @ B</code> beats loops, using the words <em>interpreter</em>, <em>SIMD</em> and <em>cache</em>.</li>
+<li><strong>Self-check:</strong>
+  1. What is each of train, val and test for?
+  2. Give two forms of leakage.
+  3. Why record seeds?
+  4. How does test error uncertainty scale with n?
+  5. When should you split by group or time?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><strong>Too-good-to-be-true results:</strong> suspect leakage first. Look for target-derived features, duplicates across splits, and future information.</li>
+<li><strong>Re-shuffling every run</strong> without a seed makes debugging impossible.</li>
+<li><strong>Stratify classification splits</strong> (<code>stratify=y</code>) so that rare classes appear in every split (used on Day 26).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Write a "split contract" at the top of every project: how you split, which seed, what the test set is for, and when you will look at it (once).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-005.html">← Day 5</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-007.html">Day 7 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 91 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="91">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-090.html">← Day 90</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-092.html">Day 92 →</a></nav>
+<h1>Day 91: PROJECT W13: attention from scratch (Q, K, V); Quiz 13</h1>
+<p class="meta">Week 13 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-13.md">source: weeks/week-13.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h) (the weekly project))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-13/day91_attention_scratch.py"><code>code/week-13/day91_attention_scratch.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 90 (+1), Day 88 (+3), Day 84 (+7), Day 70 (+21; quick 15-min skim of its self-check).</p>
+<p>This is the first day of Month 4. The flashcards tag it <code>m4</code>.</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>From Day 81 to here.</strong> On Day 81 the decoder of a seq2seq model learned to look back at all encoder states with a weighted average, and exact match at length 16 rose from 0.000 to 0.292. Attention generalises that idea: every position in a sequence can build its output as a weighted average of every other position, with the weights computed from the content itself.</p>
+<p><strong>Queries, keys and values.</strong> Each input row x_t (one token's vector) is projected three ways: a query q_t = x_t W_Q ("what am I looking for?"), a key k_t = x_t W_K ("what do I contain?") and a value v_t = x_t W_V ("what do I pass on?"). The score of position s for position t is the dot product q_t · k_s. A softmax over s turns scores into weights that sum to 1, and the output is the weighted sum of values.</p>
+<p><strong>Scaled dot-product attention</strong> (Vaswani et al., 2017):</p>
+<p>Attention(Q, K, V) = softmax(Q Kᵀ / √d_k) V.</p>
+<p><strong>Why divide by √d_k.</strong> If the entries of q and k are independent with mean 0 and variance 1, then q · k is a sum of d_k such products, with variance d_k. Large scores push the softmax into saturation (nearly one-hot), where gradients vanish. Dividing by √d_k restores variance 1.</p>
+<p><strong>Causal mask.</strong> For a language model, position t must not see positions after t. Set those scores to −∞ before the softmax, so their weights are exactly 0. The weight matrix becomes lower-triangular.</p>
+<p><strong>Permutation equivariance.</strong> Attention has no notion of order: permuting the input rows permutes the output rows in the same way. That is why transformers add positional information (Day 92 onward).</p>
+<p><strong>Multi-head attention.</strong> Split the model dimension D into h heads of size D/h, run attention in each head independently, concatenate the results and apply an output projection W_O. Different heads can attend to different things. With four D × D matrices (W_Q, W_K, W_V, W_O) and no biases, the parameter count is 4D².</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-13/day91_attention_scratch.py</code> (about 1 s). It implements attention in NumPy and checks it against PyTorch. <strong>Verified:</strong>
+- 5 tokens, d = 8: weight rows sum to 1 (<strong>True</strong>), weight shape <strong>(5, 5)</strong>.
+- Causal mask: upper triangle all zero (<strong>True</strong>). The weights, rounded:</p>
+<table>
+<thead>
+<tr>
+<th>query \ key</th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1.000</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0.879</td>
+<td>0.121</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.417</td>
+<td>0.289</td>
+<td>0.295</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.282</td>
+<td>0.237</td>
+<td>0.290</td>
+<td>0.191</td>
+<td>0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0.336</td>
+<td>0.056</td>
+<td>0.238</td>
+<td>0.106</td>
+<td>0.264</td>
+</tr>
+</tbody>
+</table>
+<p>The first token can only attend to itself, so its weight is exactly 1.
+- Max difference from <code>torch.nn.functional.scaled_dot_product_attention</code> with the causal flag: <strong>1.1e-16</strong>.
+- Standard deviation of q · k for random unit-variance vectors: d_k = 4: <strong>2.00</strong> → <strong>1.00</strong> after scaling; d_k = 64: <strong>8.39</strong> → <strong>1.05</strong>; d_k = 1024: <strong>31.25</strong> → <strong>0.98</strong>. Unscaled, the spread grows like √d_k (2, 8, 32), as predicted.
+- Permuting the input rows permutes the outputs: <strong>True</strong>.
+- My multi-head attention (D = 16, h = 4) vs <code>nn.MultiheadAttention</code> with the same weights: max diff <strong>8.5e-08</strong>; parameters <strong>1,024</strong> = 4·D² = <strong>1,024</strong>.</p>
+<h3 id="block-3-coding-lab-2h-the-weekly-project">Block 3: Coding lab (2h) (the weekly project)</h3>
+<ol>
+<li>(45 min) Write <code>attention(Q, K, V, mask=None)</code> in NumPy without looking at the script. Test it: rows of the weights sum to 1; the causal weights have a zero upper triangle; the output matches PyTorch to 1e-6.</li>
+<li>(45 min) Write multi-head attention with reshape and transpose only (no loops over heads). Load the weights of an <code>nn.MultiheadAttention(16, 4, bias=False)</code> into it and match its output.</li>
+<li>(30 min) Show the saturation problem: for d_k = 512, compute the softmax of unscaled scores for one query against 10 keys and report the largest weight. Repeat with scaling. Then compute the gradient of the softmax output with respect to the scores in both cases and compare their norms.</li>
+</ol>
+<p><strong>Deliverable.</strong> <code>code/week-13/my_attention.py</code> with the three tests passing, and a paragraph explaining the √d_k table in your own words.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Q is 5 × 8, K is 5 × 8, V is 5 × 3. Shapes of the scores, the weights and the output? <em>Answer: 5 × 5, 5 × 5, 5 × 3.</em></li>
+<li>Why −∞ and not a large negative number like −1e9? <em>Answer: either works in float32; −∞ gives exactly 0 weight, but a row of all −∞ gives NaN, so real code must handle fully masked rows.</em></li>
+<li>Parameters of multi-head attention with D = 512 and no biases? <em>Answer: 4·512² = 1,048,576.</em></li>
+<li>Cost of computing Q Kᵀ for sequence length T and dimension d? <em>Answer: O(T² d); quadratic in sequence length.</em></li>
+<li>Why does the first row of the causal weights always equal [1, 0, 0, 0, 0]? <em>Answer: only one key is visible, and softmax over a single element is 1.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can write scaled dot-product attention from memory and explain each factor.
+- [ ] I can derive why the variance of q · k is d_k.
+- [ ] My multi-head implementation matches PyTorch.
+- [ ] I took Quiz 13 below and marked it.</p>
+<h3 id="extra-notes-attention-as-a-soft-dictionary-lookup">Extra notes: attention as a soft dictionary lookup</h3>
+<p>A Python dictionary maps a query key to exactly one value: if the query equals a stored key, return its value. Attention is the differentiable version. Every stored item has a key and a value; the query is compared with every key by a dot product; the softmax turns the similarities into a probability distribution; and the result is the expected value under that distribution. If one similarity is much larger than the others, the softmax is nearly one-hot and attention behaves like an exact lookup. If they are similar, it returns a blend. The temperature of this lookup is set by the score scale, which is exactly what √d_k controls. Because every step is differentiable, the network can learn <em>what</em> to use as keys and queries (through W_Q and W_K) by gradient descent. Day 81's attention was this lookup with the decoder state as query and encoder states as keys and values. Self-attention, today's version, uses the same sequence for all three. In Month 4 the transformer block stacks self-attention with a small MLP, residual connections (Day 72) and layer norm (Day 69), all of which you already know.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Vaswani et al., "Attention Is All You Need" (2017), section 3.2 only, and compare their equation with your code.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Why is attention scaled by √d_k?" The dot product of two random d_k-dimensional vectors with unit-variance entries has variance d_k; large scores saturate the softmax and kill gradients; scaling keeps the scores at unit variance. Quote the measured table: 31.25 → 0.98 at d_k = 1024.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Softmax over the wrong axis (over queries instead of keys). Check that each <strong>row</strong> sums to 1.</li>
+<li>Forgetting to subtract the row maximum before <code>exp</code>, which overflows for large scores.</li>
+<li>Mixing up the head split: reshape to (T, h, D/h) and then transpose to (h, T, D/h), not reshape directly to (h, T, D/h).</li>
+<li>Applying the mask after the softmax, which leaves the rows not summing to 1.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Month 4 continues with positional encodings and a full transformer block. Take Quiz 13 now.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-090.html">← Day 90</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-092.html">Day 92 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

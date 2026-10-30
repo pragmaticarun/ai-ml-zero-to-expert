@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 143 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="143">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-142.html">← Day 142</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-144.html">Day 144 →</a></nav>
+<h1>Day 143: Experiment tracking and reproducibility</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 142 (+1), Day 140 (+3), Day 136 (+7), Day 122 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>After 20 experiments, nobody remembers which learning rate produced the good number. An <strong>experiment tracker</strong> records for each run:
+- the <strong>parameters</strong> (hyperparameters and the data version);
+- the <strong>metrics</strong> (validation scores, possibly per epoch);
+- the <strong>artefacts</strong> (model file, plots);
+- the <strong>environment</strong> (library versions, git commit, hardware).</p>
+<p>You can then query the runs ("mean validation accuracy by config"). MLflow is the common open-source choice: runs grouped in experiments, logged with <code>log_params</code>/<code>log_metrics</code>, and queried with <code>search_runs</code> into a pandas table. A tracker can be as small as a JSON-lines file. The discipline matters more than the tool.</p>
+<p><strong>Selection hygiene.</strong> Choose configurations by <em>mean over seeds</em> on validation data. Touch the test set once, at the end. Picking the single best run out of many is a maximum over noise, and it is optimistic.</p>
+<p><strong>Reproducibility levels:</strong>
+1. Same process, same seed → bit-identical weights. You need to seed every RNG: Python, numpy, torch, and the data-split RNG.
+2. Fresh process → same weights. You also need fixed library versions and no hidden state.
+3. Different thread count or hardware → same weights. Not guaranteed: parallel floating-point reductions may run in a different order. GPUs add non-deterministic kernels unless you enable deterministic algorithms (at some speed cost).
+4. Different machine or library version → usually close, not identical.</p>
+<p>Verify reproducibility by <strong>hashing the trained weights</strong>, not by eyeballing accuracy.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day143_tracking_repro.py</code> runs a grid: hidden size {8, 32, 128} × lr {1e-3, 1e-2} × 3 seeds, scored on a validation split carved from training data. It logs every run to both MLflow (file store) and a small own JSON-lines tracker. The MLflow setup needed <code>MLFLOW_ALLOW_FILE_STORE=true</code>, because version 3.17 refuses the file store by default, and sqlite needs SQLAlchemy, which is not in mlflow-skinny. The script then retrains the chosen config, reports test accuracy once, and hashes the weights (<code>_mlops.weights_hash</code>, SHA-256 over all parameter bytes) across seeds, processes and thread counts.</p>
+<p><strong>Verified (out/day143_tracking_repro.log):</strong>
+- 18 runs logged to both trackers in 4.4 s.
+- Mean ± std of validation accuracy over 3 seeds:</p>
+<table>
+<thead>
+<tr>
+<th>h</th>
+<th>lr</th>
+<th>mean</th>
+<th>std</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>128</td>
+<td>0.001</td>
+<td>0.972</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td>32</td>
+<td>0.01</td>
+<td>0.972</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.01</td>
+<td>0.969</td>
+<td>0.005</td>
+</tr>
+<tr>
+<td>32</td>
+<td>0.001</td>
+<td>0.969</td>
+<td>0.005</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0.001</td>
+<td>0.969</td>
+<td>0.005</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0.01</td>
+<td>0.963</td>
+<td>0.009</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Own tracker: the single best run is h=8 lr=0.001 seed 0 (val 0.972), but that config's mean is 0.969, so the "best run" is a lucky seed.</li>
+<li>Chosen by mean: h=128 lr=0.001. <strong>Test accuracy 0.951</strong>, reported once. It is lower than validation; this is selection optimism plus small-sample noise.</li>
+<li>Same seed twice: weights <code>53df326a18b85c38</code> both times, equal. Seed 1: <code>61b59b2a992a880a</code>, with test accuracy 0.972 vs 0.965 for seed 0. The seed alone moves test accuracy by one example.</li>
+<li>Fresh process with 1 thread and with 4 threads: both <code>53df326a18b85c38</code>. On this small CPU model, thread count did not change the result; that is not guaranteed in general.</li>
+<li>Environment logged: python 3.13.5, torch 2.15.0+cpu, numpy 2.5.4, mlflow 3.17.2.</li>
+</ul>
+<p>The Day 147 project uses the tied-best h=32 lr=1e-2 seed-0 config: weights <code>53df326a18b85c38</code>, test 0.965.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add per-epoch validation loss with <code>mlflow.log_metric(step=...)</code> and plot two runs.</li>
+<li>Log the Day 142 data hash as a parameter, so <code>search_runs</code> can filter by data version.</li>
+<li>Set <code>torch.use_deterministic_algorithms(True)</code> and re-run. Does anything change on CPU?</li>
+<li>Add 5 more seeds to the two tied configs. Does the tie break?</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why choose by mean over seeds? <em>A single best run is a maximum over noise. Here h=8 "won" a single run but has mean 0.969.</em></li>
+<li>Why is test accuracy (0.951) below validation (0.972)? <em>Selection on validation is optimistic, and 143 test rows are noisy.</em></li>
+<li>How do you prove a run is reproducible? <em>Hash the weights. Equal hashes mean bit-identical models.</em></li>
+<li>Will 1 vs 4 threads always give equal weights? <em>No. Reduction order can change floating-point results. Here it happened to match.</em></li>
+<li>What does mlflow-skinny lack that blocked sqlite? <em>SQLAlchemy.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Could you re-create your best Week 20 result from its log alone today? List what is missing.</p>
+<p><strong>Extra notes.</strong> Record the git commit and a <code>pip freeze</code> with every run. "It worked last month" is usually a library-upgrade story.</p>
+<p><strong>Going deeper.</strong> Read MLflow's tracking and model-registry docs. A registry adds named versions and stages (staging, production) on top of the runs we logged; Day 146's canary is how a version moves between stages.</p>
+<p><strong>Interview-style question (15 min).</strong> "A colleague reports 98% from one run. What do you ask?" How many runs and seeds were tried? Mean and spread? Was the test set used for selection? Which data version and environment? Can it be reproduced from the logged parameters?</p>
+<p><strong>Common mistakes.</strong> Seeding torch but not the data split. Tuning on test. Reporting the max over seeds. Not logging library versions. Assuming GPU runs are deterministic.</p>
+<p><strong>What to do next.</strong> Day 144 packages the model: export to ONNX, serve over HTTP, and measure latency under load.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-142.html">← Day 142</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-144.html">Day 144 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

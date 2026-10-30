@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 126 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="126">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-125.html">← Day 125</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-127.html">Day 127 →</a></nav>
+<h1>Day 126: PROJECT W18: model-free agents on FrozenLake 8x8 vs the DP optimum; Quiz 18</h1>
+<p class="meta">Week 18 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-18.md">source: weeks/week-18.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h): the project)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h): Quiz 18)</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 125 (+1), Day 123 (+3), Day 119 (+7), Day 105 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>The project question is: <strong>how close do model-free learners get to the planning optimum, and how should we measure it?</strong> On FrozenLake 8x8 (slippery, γ 0.99), DP gives the exact answer (Day 122), so learning can be scored against the truth. That is rarely possible in real problems.</p>
+<p>There are three metrics, and each answers a different question:
+1. <em><em>max Q(start) vs V<em>(start).</em></em> Has the agent learned the <em>values</em>? SARSA learns the value of its ε-greedy policy, so it should come out below V</em>.
+2. <strong>Policy agreement.</strong> In what fraction of non-terminal states is the greedy action optimal? Count an action as optimal if its one-step lookahead under V* equals the best one, so that ties are allowed.
+3. <strong>Greedy success in gymnasium.</strong> How well does the policy actually do in the real environment, with its 100-step limit? Use 2,000 evaluation episodes with fixed seeds.</p>
+<p>There is also one <em>online</em> metric: the success rate over the last 1,000 training episodes, with ε at 0.05. It is collected in our own environment, with a 200-step cap per episode. Because the cap is longer than gymnasium's 100 steps, online success can come out <em>higher</em> than greedy success in gymnasium. Always state the conditions behind a metric.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>day126_project.py</code> runs tabular Q-learning and SARSA from scratch: α 0.1, ε from 1 to 0.05 over 80% of the episodes, random tie-breaking, 5,000 and 20,000 episodes, 3 seeds each. The 8x8 map has 64 states and 4 actions.</p>
+<p><strong>Verified (out/day126_project.log):</strong> DP optimum: V(start) 0.415; greedy success in gymnasium 0.643. This is 2,000 episodes with different seeds from Day 122, which measured 0.632 on the same policy, so the evaluation noise is about ±0.01.</p>
+<table>
+<thead>
+<tr>
+<th>Agent, episodes</th>
+<th>max Q(start), seeds 0/1/2</th>
+<th>Policy optimal in</th>
+<th>Greedy success (gymnasium)</th>
+<th>Online success, last 1000</th>
+<th>Time per seed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-learning, 5k</td>
+<td>0.391 / 0.382 / 0.409</td>
+<td>79% / 77% / 81%</td>
+<td>0.611 / 0.552 / 0.513</td>
+<td>0.645 / 0.600 / 0.649</td>
+<td>4 s</td>
+</tr>
+<tr>
+<td>SARSA, 5k</td>
+<td>0.260 / 0.249 / 0.249</td>
+<td>66% / 60% / 79%</td>
+<td>0.484 / 0.322 / 0.551</td>
+<td>0.640 / 0.582 / 0.602</td>
+<td>4 s</td>
+</tr>
+<tr>
+<td>Q-learning, 20k</td>
+<td>0.407 / 0.398 / 0.397</td>
+<td>74% / 75% / 85%</td>
+<td>0.376 / 0.593 / 0.623</td>
+<td>0.661 / 0.639 / 0.601</td>
+<td>15 s</td>
+</tr>
+<tr>
+<td>SARSA, 20k</td>
+<td>0.289 / 0.283 / 0.287</td>
+<td>85% / 74% / 81%</td>
+<td>0.571 / 0.466 / 0.565</td>
+<td>0.641 / 0.624 / 0.664</td>
+<td>15 s</td>
+</tr>
+</tbody>
+</table>
+<p>Findings, all from this table:
+- Q-learning's start value comes close to V* (0.382-0.409 vs 0.415). SARSA's settles about 0.13 lower, as expected for the value of an ε-greedy policy.
+- No learned policy reached the DP policy's 0.643. The best was 0.623.
+- More episodes did <strong>not</strong> reliably help: Q-learning seed 0 <em>dropped</em> from 0.611 to 0.376. With a constant α = 0.1, Q keeps moving, and a few wrong arrows in states the agent rarely visits can send it towards holes.
+- Value accuracy, policy agreement and real success disagree with one another, so report all three.</p>
+<h3 id="block-3-lab-2h-the-project">Block 3: Lab (2h): the project</h3>
+<ol>
+<li>Run the script (about 2 minutes) and reproduce the table.</li>
+<li><strong>Improve it.</strong> Pick one: a decaying α (for example 1/(1 + visits)), Expected SARSA, or more episodes with ε → 0. Make a written prediction first, then report all 3 seeds.</li>
+<li><strong>Add DQN as a baseline</strong> (optional): one-hot state into Day 125's network. Compare its success and wall-clock time with the tabular methods. Then explain why a table is the right tool for 64 states.</li>
+<li>Write a one-page report: setup, the table, the three metrics, one failure case with its greedy arrows printed, and what you would do with a GPU. The honest answer is that it would do little for 64 states; GPUs matter for large networks and image observations.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why is SARSA's max Q(start) lower? <strong>Answer:</strong> it estimates returns under ε-greedy behaviour, which includes 5% random moves on a slippery lake full of holes.</li>
+<li>Why can 79% policy agreement still mean much lower success? <strong>Answer:</strong> the 21% of wrong states can lie on the paths the agent actually travels, and on a slippery lake one wrong arrow near a hole costs a lot.</li>
+<li>Why does Q-learning seed 0 get worse at 20k episodes? <strong>Answer:</strong> a constant step size means Q never settles. Its greedy policy at the moment training stopped was simply a worse one.</li>
+</ol>
+<h3 id="block-5-review-1h-quiz-18">Block 5: Review (1h): Quiz 18</h3>
+<p>Take the weekly quiz below closed-book (40 minutes), then mark it.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>This project is a small version of how RL work should be reported: several seeds, an exact or strong baseline, evaluation separate from training, and stated episode limits.</li>
+<li>Policy gradients and REINFORCE move to Week 19, which updates the planned titles in SYLLABUS.md.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Use the DP solution to compute the <em>exact</em> value of each learned policy (policy evaluation with the learned π), and plot it against the gymnasium success rate.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"How do you know your RL agent is good?" Good answer: compare it with a known optimum or a strong baseline, use several seeds and a greedy evaluation on held-out seeds, state the episode limits and the discount, and look at the failure cases, not just the mean.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Comparing an online ε-greedy score with a greedy score.</li>
+<li>Mixing up training and evaluation environment limits (200 vs 100 steps here).</li>
+<li>Presenting the best seed as the result.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 19 covers policy gradients (REINFORCE, baselines, actor-critic), then agents and tool use.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-125.html">← Day 125</a><a href="../weeks/week-18.html">Week 18</a><a rel="next" href="day-127.html">Day 127 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

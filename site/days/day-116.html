@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 116 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="116">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-115.html">← Day 115</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-117.html">Day 117 →</a></nav>
+<h1>Day 116: Quantisation from scratch (RTN int8/int4)</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/day116_quant_rtn.py"><code>code/week-17/day116_quant_rtn.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 115 (+1), Day 113 (+3), Day 109 (+7), Day 95 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why quantise?</strong> LLM inference at small batch is limited by memory bandwidth: each generated token reads every weight. Storing weights in 8 or 4 bits instead of 32 or 16 cuts memory and, with suitable kernels, time. The cost is rounding error.</p>
+<p><strong>Uniform quantisation.</strong> For a group of weights w, choose a scale s and (optionally) a zero point z; store q = clamp(round(w/s) + z, qmin, qmax) and reconstruct ŵ = s·(q − z).
+- <em>Symmetric</em>: z = 0, s = max|w| / (2^(b−1) − 1). Simple, good for roughly symmetric weights.
+- <em>Asymmetric</em>: uses min and max, so the full integer range covers [min, max].
+- <em>Round-to-nearest (RTN)</em> is the simplest choice: each weight rounded independently.</p>
+<p><strong>Granularity.</strong> One scale for a whole matrix (<em>per-tensor</em>) is ruined by outliers: one large weight forces a large scale and all small weights round to zero. <em>Per-channel</em> (one scale per output row) and <em>group-wise</em> (one scale per g consecutive weights, e.g. 64) adapt to local ranges, at the cost of storing more scales. Group size must divide the row length: SmolLM2's 576-wide rows allow 32 or 64 but not 128.</p>
+<p><strong>Measuring.</strong> Relative weight error ‖W − Ŵ‖/‖W‖ is cheap but indirect; what matters is model quality, here perplexity on held-out text (Shakespeare validation, as in Week 15).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/day116_quant_rtn.py</code> quantises all 210 linear layers of SmolLM2-135M (106.2M weights; the tied embedding / lm_head stays fp32) and evaluates perplexity.</p>
+<p><strong>Verified (out/day116_quant_rtn.log):</strong> fp32 baseline perplexity <strong>26.29</strong>, linear weights 424.7 MB. Example outlier: layer 0 <code>down_proj</code> max|w| = 2.875 vs mean |w| = 0.1441 (20×).</p>
+<table>
+<thead>
+<tr>
+<th>Scheme</th>
+<th>Rel. weight error</th>
+<th>Size (incl. scales)</th>
+<th>Perplexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>int8 per-tensor</td>
+<td>0.0364</td>
+<td>106.2 MB</td>
+<td>28.55</td>
+</tr>
+<tr>
+<td>int8 per-channel</td>
+<td>0.0085</td>
+<td>106.5 MB</td>
+<td><strong>26.50</strong></td>
+</tr>
+<tr>
+<td>int4 per-tensor</td>
+<td>0.5832</td>
+<td>53.1 MB</td>
+<td>1,561,367.93</td>
+</tr>
+<tr>
+<td>int4 per-channel</td>
+<td>0.1547</td>
+<td>53.4 MB</td>
+<td>64.84</td>
+</tr>
+<tr>
+<td>int4 group-64</td>
+<td>0.1128</td>
+<td>56.4 MB</td>
+<td>36.89</td>
+</tr>
+<tr>
+<td>int4 group-32</td>
+<td>0.1006</td>
+<td>59.7 MB</td>
+<td>33.27</td>
+</tr>
+<tr>
+<td>int4 group-64 asymmetric</td>
+<td>0.0941</td>
+<td>59.7 MB</td>
+<td>33.69</td>
+</tr>
+<tr>
+<td>int3 group-64</td>
+<td>0.2623</td>
+<td>43.1 MB</td>
+<td>231.67</td>
+</tr>
+</tbody>
+</table>
+<p>Each evaluation took about 1 s. Reading: int8 per-channel is almost free (26.29 → 26.50) at a quarter of the memory. At 4 bits granularity decides everything: per-tensor destroys the model, per-channel doubles perplexity, group-32 costs about 7 points. Smaller groups and asymmetric zero points cost about 3 MB more for the scales and zero points. At 3 bits, RTN breaks down. Weight error predicts the order of the rows but not the size of the perplexity change.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about 30 s).</li>
+<li>Plot a histogram of one layer's weights and mark the int4 per-tensor levels. Why do most weights round to 0?</li>
+<li>Find the five layers with the largest relative error under int4 per-channel. Keep only those in int8 and re-measure perplexity (mixed precision).</li>
+<li>Quantise activations too (per-token int8) for one layer and measure output error.</li>
+<li>Compute exact storage for int4 group-64 with fp16 scales and compare with the logged size.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Quantise w = [0.1, −0.4, 0.25, 2.0] to symmetric int4 per-tensor (qmax = 7). What is the scale and what is reconstructed?</li>
+<li>Why does per-tensor int4 fail but per-channel survive?</li>
+<li>What is the storage overhead of fp16 scales for group size 64 at int4?</li>
+<li>Why can relative weight error mislead?</li>
+</ol>
+<p><strong>Answers.</strong> (1) s = 2.0/7 ≈ 0.286; q = round([0.35, −1.4, 0.875, 7]) = [0, −1, 1, 7]; ŵ ≈ [0, −0.286, 0.286, 2.0]: the small weights are badly represented. (2) Outliers in some rows set a huge global scale; per-row scales isolate them. (3) 16 bits per 64 weights = 0.25 bits per weight, about 6% on top of 4 bits. (4) Errors in some layers (or directions that align with large activations) matter far more for the output than others.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can write symmetric and asymmetric quantise/dequantise.
+- [ ] I can explain per-tensor, per-channel and group-wise scales.
+- [ ] I can explain why outliers matter.
+- [ ] I can read the Day 116 table and pick a scheme for a memory budget.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>This is simulated quantisation: weights were rounded and stored back in fp32, so nothing got faster; the sizes are what the integer storage would take. A real deployment stores packed integers and uses a kernel that dequantises on the fly (Day 117's Rust kernel is a small example).</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read "LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale" (Dettmers et al.) on outlier features.</li>
+<li>Read the "A Survey of Quantization Methods for Efficient Neural Network Inference" (Gholami et al.).</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"You need to run a model in a quarter of its fp16 memory. What would you try?" Points: int4 weights with group-wise scales; measure perplexity and task metrics; use calibration-based methods (GPTQ/AWQ) instead of RTN; keep sensitive layers (embeddings, lm_head, outlier layers) in higher precision; check kernel support on the target hardware; remember the KV cache also needs memory.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Using per-tensor scales at 4 bits.</li>
+<li>Reporting weight error instead of model quality.</li>
+<li>Claiming speed-ups from simulated quantisation.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: use calibration data to quantise better (GPTQ, AWQ) and write a real int8 kernel in Rust.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-115.html">← Day 115</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-117.html">Day 117 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

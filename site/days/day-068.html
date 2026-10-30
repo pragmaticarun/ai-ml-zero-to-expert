@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 68 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="68">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-067.html">← Day 67</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-069.html">Day 69 →</a></nav>
+<h1>Day 68: Regularisation: L2, dropout, early stopping, augmentation</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day68_regularisation.py"><code>code/week-10/day68_regularisation.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 67 (+1), Day 65 (+3), Day 61 (+7), Day 47 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A network with hundreds of thousands of parameters can memorise 2,000 images. Regularisation makes memorising harder or less attractive so that what the network learns generalises.</p>
+<p><strong>The tools.</strong>
+- <strong>Weight decay (L2).</strong> Adds λ‖θ‖² to the loss (or decays weights directly, AdamW). Prefers small weights, smoother functions.
+- <strong>Dropout.</strong> In training, zero each unit with probability p and scale the survivors by 1/(1−p) ("inverted dropout"), so at evaluation you simply use all units. It stops units from relying on specific partners.
+- <strong>Early stopping.</strong> Track validation loss; stop when it has not improved for <code>patience</code> epochs and restore the best weights. It is cheap and almost always worth having.
+- <strong>Data augmentation.</strong> Generate label-preserving variants (shifts, flips, crops, noise). It adds information about invariances you believe in. Be careful: a horizontal flip is fine for clothes, but wrong for digits like 2 and 5 if orientation matters.</p>
+<p><strong>What to watch.</strong> Train accuracy vs validation accuracy, and above all <strong>validation loss</strong>. Accuracy can stay flat while the loss rises because the model becomes over-confident on its mistakes.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-10/day68_regularisation.py</code>: Fashion-MNIST, only <strong>2,000</strong> training and <strong>5,000</strong> validation images, an MLP trained 60 epochs, one setting at a time. <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>setting</th>
+<th>train acc</th>
+<th>final val acc</th>
+<th>final val loss</th>
+<th>best val loss (epoch)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>baseline</td>
+<td>1.0</td>
+<td>0.8330</td>
+<td>1.063</td>
+<td>0.501 (ep 6)</td>
+</tr>
+<tr>
+<td>weight decay</td>
+<td>1.0</td>
+<td>0.8328</td>
+<td>0.894</td>
+<td>0.505 (ep 6)</td>
+</tr>
+<tr>
+<td>dropout</td>
+<td>0.9515</td>
+<td>0.8290</td>
+<td>0.675</td>
+<td>0.522 (ep 15)</td>
+</tr>
+<tr>
+<td>shift augmentation</td>
+<td>0.8790</td>
+<td>0.8228</td>
+<td>0.574</td>
+<td>0.535 (ep 46)</td>
+</tr>
+<tr>
+<td>all combined</td>
+<td>0.7985</td>
+<td>0.7738</td>
+<td>0.625</td>
+<td>0.560 (ep 59)</td>
+</tr>
+</tbody>
+</table>
+<p>How to read this honestly:
+- The baseline memorises the training set (train acc 1.0) and its validation loss more than doubles after epoch 6, while validation accuracy looks fine. That is over-confidence.
+- Each regulariser reduced the final validation loss and delayed the best epoch. None improved final validation <strong>accuracy</strong> in this short budget.
+- "All combined" over-regularised: still improving at epoch 59, lowest accuracy. More regularisation is not automatically better; it needs more epochs or less strength.
+- Early stopping (patience 5) halted after epoch 15 and restored epoch 10 weights: val loss <strong>0.546</strong>, acc <strong>0.8196</strong>.</p>
+<p>The script also prints a dropout layer's output in train vs eval mode so you can see the zeros and the 1/(1−p) scaling.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Write an <code>EarlyStopping</code> class (patience, min_delta, keeps a deep copy of the best <code>state_dict</code>). Use it on the baseline.</li>
+<li>(40 min) Sweep dropout p in {0.1, 0.3, 0.5} and weight decay in {1e-4, 1e-3, 1e-2}. Plot final val loss.</li>
+<li>(40 min) Add augmentation with <code>torch.roll</code> shifts of ±2 pixels. Then try horizontal flips on Fashion-MNIST and on MNIST digits. Which one hurts?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Dropout p = 0.2, a unit outputs 1.0 and survives. What is its value in training? <em>Answer: 1/(1−0.2) = 1.25.</em></li>
+<li>Why monitor validation loss instead of accuracy for early stopping? <em>Answer: it reacts to over-confidence before accuracy changes.</em></li>
+<li>Name one augmentation that would be wrong for MNIST. <em>Answer: 180° rotation (6 vs 9) or horizontal flip.</em></li>
+<li>Your model has train acc 0.80, val acc 0.79. Should you add dropout? <em>Answer: no, that is underfitting; increase capacity or train longer.</em></li>
+<li>Why did "all combined" score lowest? <em>Answer: too much regularisation for the budget; it was still improving.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>For each tool, write one sentence on <em>what problem it addresses</em> and one on <em>a sign it is too strong</em>. Self-check:
+- [ ] I can explain inverted dropout.
+- [ ] I can read the table above and say which settings over-regularised.
+- [ ] I can implement early stopping with weight restoring.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look up label smoothing (used on Day 87) and mixup. Both regularise the targets instead of the weights.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your validation accuracy is stable but validation loss climbs. Is the model getting worse?" Explain calibration, over-confidence, and why the decision depends on whether you use probabilities downstream.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting <code>model.eval()</code>, so dropout is active during evaluation and validation accuracy is noisy and low.</li>
+<li>Augmenting the validation set.</li>
+<li>Applying weight decay to batch-norm and bias parameters without thinking (often excluded in practice).</li>
+<li>Restoring "best" weights by reference instead of copying, so the restored model equals the last.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 69 adds normalisation layers, which make deep networks much easier to train.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-067.html">← Day 67</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-069.html">Day 69 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

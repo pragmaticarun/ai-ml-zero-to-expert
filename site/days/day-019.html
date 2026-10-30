@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 19 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="19">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-018.html">← Day 18</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-020.html">Day 20 →</a></nav>
+<h1>Day 19: Probability and Bayes&#x27; rule</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-03/day19_probability_bayes.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/day19_probability_bayes.py"><code>code/week-03/day19_probability_bayes.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 18 (+1), Day 16 (+3), Day 12 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Probability is the bookkeeping of uncertainty. A model that outputs "spam with probability 0.9" is more useful than one that just says "spam", because you can choose how cautious to be (thresholds, Day 27). <strong>Bayes' rule</strong> updates a belief with evidence: P(cause | evidence) = P(evidence | cause)·P(cause)/P(evidence).</p>
+<p><strong>Concrete example: the medical-test surprise (verified).</strong> A disease affects 1% of people. A test catches 95% of sick people (sensitivity) and wrongly flags 5% of healthy people. If you test positive, how likely are you to be sick? Most people say about 95%. Bayes says:
+P(sick | +) = 0.95·0.01 / (0.95·0.01 + 0.05·0.99) = 0.0095/0.059 = <strong>0.161</strong>.
+A simulation of 1,000,000 people gives <strong>0.1617</strong> (from 59,169 positives) ✓. Most positives are false positives because healthy people vastly outnumber sick ones. This <strong>base-rate</strong> effect is why fraud and anomaly detectors produce so many false alarms, and why accuracy is a bad metric for rare classes (Day 27).</p>
+<p><strong>Plain-language maths.</strong>
+- P(A) is between 0 and 1. P(not A) = 1 − P(A).
+- Conditional: P(A | B) = P(A and B)/P(B), meaning "restrict to the world where B happened".
+- Independence: P(A and B) = P(A)P(B). The lab estimates P(sum = 7) ≈ <strong>0.1668</strong> (exact 1/6) and P(sum = 7 | first die = 3) ≈ <strong>0.1676</strong>, also 1/6. So "sum is 7" is independent of the first die, a nice surprise.
+- Law of total probability: P(+) = P(+ | sick)P(sick) + P(+ | healthy)P(healthy).
+- Bayes: posterior ∝ likelihood × prior.</p>
+<p><strong>ML link: naive Bayes.</strong> If 40% of spam contains "free", 2% of ham does, and 30% of mail is spam, then P(spam | "free") = 0.4·0.3/(0.4·0.3 + 0.02·0.7) = <strong>0.8955</strong> (verified). With many words assumed independent, you multiply their likelihoods. That is the naive Bayes classifier (Day 37).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Re-do the medical test with a <strong>second independent positive test</strong>. The posterior after test 1 is 0.161, and it becomes the new prior.
+P(sick | ++) = 0.95·0.161 / (0.95·0.161 + 0.05·0.839) = 0.153/(0.153 + 0.042) = <strong>0.785</strong>.
+Two positives turn "unlikely" into "likely". Sequential Bayesian updating is the root of filtering methods (Kalman filters, if you've done sensor work on Android).</p>
+<h3 id="block-3-coding-lab-2h-codeweek-03day19_probability_bayespy">Block 3: Coding lab (2h): <code>code/week-03/day19_probability_bayes.py</code></h3>
+<p>Tasks:
+1. Verify the two-test result (0.785) by simulation.
+2. Make the prevalence a slider (a loop over 0.1%, 1%, 10%, 50%) and plot P(sick | +). When does a positive mean "probably sick"?
+3. Estimate P(at least two people share a birthday) for 23 people by simulation (~0.507).
+4. Build a 3-word naive Bayes spam scorer with made-up word probabilities, and check one email by hand.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>P(A) = 0.3, P(B | A) = 0.5. What is P(A and B)? <em>Answer:</em> 0.15.</li>
+<li>A fair coin is flipped 3 times. What is P(at least one head)? <em>Answer:</em> 1 − 1/8 = 7/8.</li>
+<li>A detector has 99% sensitivity and a 1% false-positive rate, and fraud prevalence is 0.1%. What is P(fraud | alert)? <em>Answer:</em> 0.00099/(0.00099 + 0.00999) ≈ 0.09.</li>
+<li>Are "disjoint" and "independent" the same? <em>Answer:</em> no. Disjoint events with non-zero probability are <em>dependent</em>.</li>
+<li>What does "posterior ∝ likelihood × prior" mean? <em>Hint:</em> normalise afterwards so the probabilities sum to 1.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 18 (+1):</strong> the stable α for f = 5w² (&lt; 0.2).</li>
+<li><strong>Day 16 (+3):</strong> derive ∂J/∂b for MSE.</li>
+<li><strong>Day 12 (+7):</strong> why centre data before PCA?</li>
+<li><strong>Self-check:</strong>
+  1. Bayes' rule formula?
+  2. Explain the base-rate effect.
+  3. Define independence.
+  4. Law of total probability?
+  5. P(sick | +) in the example?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Odds form of Bayes.</strong> Posterior odds = prior odds × likelihood ratio. For the test: prior odds 1:99, likelihood ratio 0.95/0.05 = 19, so the posterior odds are 19:99, giving probability 19/118 = 0.161. Each extra independent positive multiplies the odds by 19 again: 361:99 gives 0.785, which matches the worked example. This form is handy for mental arithmetic and is exactly what naive Bayes does in log space: add log likelihood ratios.</p>
+<p><strong>Conditional vs joint tables.</strong> Build a 2 × 2 table of counts (sick/healthy × positive/negative) for 10,000 people. Reading P(sick | +) off the counts makes the base-rate effect obvious: 95 true positives vs 495 false positives.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Confusing P(A | B) with P(B | A) (the "prosecutor's fallacy").</li>
+<li>Ignoring the prior or base rate.</li>
+<li>Simulations with too few samples. The error shrinks like 1/√N (tomorrow).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Whenever someone reports "95% accurate", ask: "what's the base rate, and what's P(true | flagged)?"</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-018.html">← Day 18</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-020.html">Day 20 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

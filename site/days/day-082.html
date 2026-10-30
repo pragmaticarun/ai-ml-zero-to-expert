@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 82 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="82">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-081.html">← Day 81</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-083.html">Day 83 →</a></nav>
+<h1>Day 82: Mixed precision; profiling a PyTorch training run</h1>
+<p class="meta">Week 12 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-12.md">source: weeks/week-12.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-12/day82_mixed_precision_profiling.py"><code>code/week-12/day82_mixed_precision_profiling.py</code></a></li><li><a href="../../code/week-12/rust_loader"><code>code/week-12/rust_loader</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 81 (+1), Day 79 (+3), Day 75 (+7), Day 61 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Number formats.</strong>
+- <strong>fp32:</strong> 8 exponent bits, 23 mantissa bits.
+- <strong>fp16:</strong> 5 exponent, 10 mantissa: precise but tiny range (max about 65,504).
+- <strong>bf16:</strong> 8 exponent (same range as fp32), 7 mantissa: coarse but hard to overflow.</p>
+<p><strong>Mixed precision.</strong> Run matmuls and convolutions in 16-bit (faster, half the memory traffic, tensor cores on GPUs), keep master weights and reductions in fp32. In PyTorch: <code>torch.autocast(device_type, dtype)</code>. With fp16, small gradients underflow to 0, so use <strong>loss scaling</strong> (<code>torch.amp.GradScaler</code>): multiply the loss by S before backward, divide gradients by S before the step, skip steps with inf/NaN. bf16 usually doesn't need scaling.</p>
+<p><strong>Profiling.</strong> Measure before optimising. <code>torch.profiler</code> records time per operator, shapes and memory, and exports a Chrome trace. Typical findings: data loading stalls, too-small batches, CPU-GPU syncs (<code>.item()</code> in the loop), unexpected copies.</p>
+<p><strong>Why Rust here?</strong> As a multimedia developer you may own data pipelines. Python loops over samples are slow; a small compiled kernel (Rust with PyO3, built by maturin) can gather and normalise a batch, and use several threads, without the GIL.</p>
+<p><strong>Honesty note.</strong> This box is CPU-only. bf16 speedups on CPU depend on the processor's instructions and are not representative of GPUs.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-12/day82_mixed_precision_profiling.py</code>. Build the Rust module first: <code>cd code/week-12/rust_loader &amp;&amp; maturin develop --release</code>. <strong>Verified:</strong>
+- finfo: fp32 max <strong>3.403e38</strong>, eps <strong>1.192e-7</strong>; fp16 max <strong>6.550e4</strong>, smallest normal <strong>6.104e-5</strong>, eps <strong>9.766e-4</strong>; bf16 max <strong>3.390e38</strong>, eps <strong>7.812e-3</strong>.
+- 70000 → <strong>inf</strong> in fp16, <strong>70144</strong> in bf16; 1 + 1e-3 in bf16 = <strong>1.0</strong>.
+- A gradient of 1e-8 is <strong>0</strong> in fp16. Scaled by 65,536 first: <strong>6.5517e-4</strong>, unscaled back <strong>9.997e-9</strong>. That is loss scaling in one line.
+- 1024×1024 matmul: fp32 <strong>1.77–1.85 ms</strong>, bf16 <strong>0.58–0.69 ms</strong> (including casts). Relative error vs float64: fp32 <strong>3.4e-7</strong>, bf16 <strong>2.9e-3</strong>.
+- CNN on MNIST (10k training images), 2 epochs: fp32 <strong>2.2 s</strong>, test <strong>0.9573</strong>; bf16 autocast <strong>1.4 s</strong>, test <strong>0.9574</strong> (a rerun gave 1.0 s / 0.9573 and 1.3 s / 0.9578: on CPU bf16 is not reliably faster). Under autocast, weights stay fp32 and the logits come out as bf16.
+- Profiler top operators: <code>mkldnn_convolution</code> <strong>22.46%</strong>, <code>convolution_backward</code> <strong>16.51%</strong>, <code>max_pool2d</code> <strong>16.00%</strong>, <code>threshold_backward</code> <strong>11.92%</strong>; total <strong>63.2 ms</strong> for the profiled steps. Trace: <code>out/day82_trace.json</code> (open in <code>chrome://tracing</code> or Perfetto).
+- Rust collate of 512 CIFAR images to a (512, 3072) float array: max diff vs NumPy <strong>4.8e-7</strong>; NumPy <strong>1.52 ms</strong>, torch <strong>0.25 ms</strong>, Rust serial <strong>0.46 ms</strong>, Rust rayon <strong>0.77 ms</strong>. Parallelism <em>lost</em> at this size: thread start-up costs more than the work. A bad index raises a Python <code>IndexError</code>.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(30 min) Add <code>torch.autocast("cpu", torch.bfloat16)</code> to your Day-73 CNN; compare time and accuracy.</li>
+<li>(30 min) Profile one epoch; find the top 5 operators; open the trace.</li>
+<li>(60 min) Read <code>rust_loader/src/lib.rs</code>. Add a function that also applies a random horizontal flip per sample. Rebuild with maturin and test against NumPy.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why does bf16 rarely need loss scaling? <em>Answer: same exponent range as fp32, so small gradients don't underflow.</em></li>
+<li>Why keep master weights in fp32? <em>Answer: small updates (lr × grad) would round to zero against large weights in 16-bit.</em></li>
+<li><code>.item()</code> in a GPU training loop: what's the cost? <em>Answer: forces a device sync every step.</em></li>
+<li>bf16 matmul error 2.9e-3: acceptable for what? <em>Answer: training forward/backward usually; not for numerics that need high precision.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can state the bit layouts of the three formats.
+- [ ] I can explain loss scaling with the 1e-8 example.
+- [ ] I can read a profiler table.</p>
+<h3 id="extra-notes-how-a-profiler-table-guides-you">Extra notes: how a profiler table guides you</h3>
+<p>Read a <code>torch.profiler</code> table in three passes. First, sort by total self time and look at the top five operators: in our CNN, convolution forward and backward together take about 39%, max-pooling 16% and the ReLU backward (<code>threshold_backward</code>) 12%. That says the model is compute-bound in its convolutions, which is expected; the fix would be a smaller model, channels-last memory format, or bf16. Second, look for operators that should not be there: <code>aten::copy_</code> or <code>aten::to</code> in large amounts mean dtype or device conversions inside the loop; <code>aten::item</code> means synchronisation. Third, open the Chrome trace to see gaps: idle periods between steps on a GPU usually mean the data loader is the bottleneck, which is where a compiled collate kernel such as the Rust one helps.</p>
+<p>About the Rust module: <code>rust_loader</code> exposes <code>collate(images_u8, indices, mean, std)</code> and <code>collate_par</code> (the same with a thread pool). It copies the selected uint8 rows into a new float32 array and normalises them, checking that every index is in range and raising <code>IndexError</code> otherwise. PyO3 converts NumPy arrays without copying the input, and releasing the GIL lets the parallel version use several cores. Treat its speedup as specific to this box and batch size: measure on your own pipeline before replacing working Python.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>PyTorch's "Automatic Mixed Precision" recipe and the <code>torch.profiler</code> tutorial (both in <code>docs/resources.md</code>); the PyO3 user guide for Rust extensions.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Training is slower than expected. How do you find out why?" Profile; check GPU/CPU utilisation, data loader time, syncs, batch size; fix the biggest item first; measure again.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Calling <code>scaler.step</code> without <code>scaler.update</code>.</li>
+<li>Optimising code that the profiler shows is 2% of time.</li>
+<li>Benchmarking without warm-up or with a single run.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 83: the same ideas (autodiff, compilation, vectorisation) in JAX.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-081.html">← Day 81</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-083.html">Day 83 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 145 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="145">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-144.html">← Day 144</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-146.html">Day 146 →</a></nav>
+<h1>Day 145: Monitoring, drift detection (PSI and KS) and the label-error loop</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 144 (+1), Day 142 (+3), Day 138 (+7), Day 124 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>After launch you usually do not get labels immediately, so you monitor <em>proxies</em>. What to watch:
+- <strong>Service health:</strong> errors, latency, rejected inputs.
+- <strong>Input drift:</strong> has P(x) moved away from the training data?
+- <strong>Output drift:</strong> has the distribution of predictions moved?
+- <strong>Performance</strong>, once delayed labels arrive.</p>
+<p>Kinds of shift:
+- <em>Covariate shift</em> is a change in P(x).
+- <em>Prior or label shift</em> is a change in P(y). Inputs move because the class mix moved.
+- <em>Concept drift</em> is a change in P(y|x). It is the dangerous one, and it is invisible to input monitoring.</p>
+<p><strong>PSI (population stability index).</strong>
+- Bin a feature using reference-data quantiles (deciles here).
+- Compare the fraction of data in each bin, reference e vs current a: PSI = Σ (a − e)·ln(a/e).
+- Common rules of thumb are &lt; 0.1 stable, 0.1-0.2 moderate, &gt; 0.2 large. These numbers ignore sample size and how many features you test, which today's run shows matters.</p>
+<p><strong>Two-sample KS test.</strong> The statistic is the maximum gap between the two empirical CDFs, and it comes with a p-value. Testing 30 features at p &lt; 0.01 each gives many chances of a false alarm. <strong>Bonferroni</strong> (p &lt; 0.01/30) controls the family-wise rate.</p>
+<p><strong>Drift ≠ degradation.</strong> A shifted input may lie in a region the model handles fine. Alert on drift to <em>investigate</em>; judge harm with labels.</p>
+<p><strong>Data-centric error loop.</strong> Label noise is common in real datasets. Train with cross-validation, and flag training rows where the <em>out-of-fold</em> model gives the given label very low probability. Out-of-fold matters: a model that saw a row will just memorise its wrong label. Then have a human review the flagged rows, fix or drop them, retrain, and measure. This is the idea behind confident-learning tools such as cleanlab, done by hand here.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day145_drift_labels.py</code> implements PSI (decile bins from the reference, infinite outer edges) and its own KS statistic, checked against <code>scipy.stats.ks_2samp</code>. Reference = training split. Each "production" batch is 200 rows resampled from the test split, with an injected fault. Accuracy is measured on each batch because we know its labels. Then it flips 5% of training labels, gets 5-fold out-of-fold probabilities, flags rows whose given label has out-of-fold probability &lt; 0.2, and retrains without them.</p>
+<p><strong>Verified (out/day145_drift_labels.log):</strong>
+- Own KS statistic 0.0859 = scipy's 0.0859 (train vs test "mean radius").</p>
+<table>
+<thead>
+<tr>
+<th>batch (200 rows)</th>
+<th>PSI&gt;0.2 (of 30)</th>
+<th>KS p&lt;0.01</th>
+<th>KS Bonferroni</th>
+<th>accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no drift</td>
+<td>2 (max 0.31)</td>
+<td>1</td>
+<td>0</td>
+<td>0.945</td>
+</tr>
+<tr>
+<td>texture +1 sd</td>
+<td>6 (max 2.16)</td>
+<td>1</td>
+<td>1</td>
+<td>0.985</td>
+</tr>
+<tr>
+<td>area ×1.3</td>
+<td>6 (max 1.27)</td>
+<td>4</td>
+<td>3</td>
+<td>0.945</td>
+</tr>
+<tr>
+<td>prior shift, 80% malignant</td>
+<td>24 (max 0.84)</td>
+<td>26</td>
+<td>24</td>
+<td>0.965</td>
+</tr>
+<tr>
+<td>noise +0.3 sd, all features</td>
+<td>1 (max 0.24)</td>
+<td>2</td>
+<td>0</td>
+<td>0.965</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>False alarms over 50 no-drift batches (any feature flagged): PSI &gt; 0.2 <strong>48/50</strong>; KS p &lt; 0.01 26/50; KS Bonferroni 2/50.</li>
+<li>Output PSI of the predicted probability: 0.79 under prior shift, 0.05 with no drift.</li>
+<li>Label loop: 21 flips; 37 flagged, 20 of them true flips (precision 0.54, recall 0.95). Test accuracy: clean labels 0.965, noisy labels 0.909, noisy minus flagged rows 0.958.</li>
+</ul>
+<p>Readings:
+- The PSI &gt; 0.2 rule fires on 48 of 50 <em>clean</em> batches. With 30 features and 200 rows, sampling noise alone pushes some feature over 0.2. That is why Day 147 calibrates the threshold on no-drift windows instead.
+- Bonferroni-KS is quiet on clean data (2/50) and still catches texture, area and prior shift. Both tests nearly miss the noise injection.
+- <strong>No injected drift lowered accuracy.</strong> Texture +1 sd even <em>raised</em> it, to 0.985, on this batch. Drift alerts are a reason to look, not proof of harm.
+- Prior shift lights up almost every feature and the output distribution, a signature that differs from a single-feature sensor fault (area).
+- Label noise cost 5.6 points of test accuracy, and removing flagged rows recovered almost all of it: 0.958 vs 0.965. That is despite dropping 17 correctly labelled rows. In practice, send flagged rows to review instead of deleting them.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Plot no-drift PSI against batch size (50, 200, 1000). How should the threshold scale with window size?</li>
+<li>Inject <em>concept drift</em>: flip the label rule for large-area rows while keeping x unchanged. Which monitor notices? (Only labelled performance can.)</li>
+<li>Replace the 0.2 cut-off on out-of-fold probability with 0.1 and 0.3. Plot precision against recall.</li>
+<li>Use output PSI alone as the monitor. Which injected faults does it catch?</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why did PSI &gt; 0.2 alarm 48/50 times on clean data? <em>Thirty features times sampling noise in 200-row batches: the threshold ignores multiplicity and sample size.</em></li>
+<li>What does Bonferroni do? <em>It divides the significance level by the number of tests to control the chance of any false alarm.</em></li>
+<li>Did drift imply worse accuracy here? <em>No. Accuracy stayed at or above the no-drift 0.945 in every case.</em></li>
+<li>Why use out-of-fold predictions to find label errors? <em>An in-sample model memorises the wrong labels.</em></li>
+<li>Which shift can input monitoring never see? <em>Concept drift, a change in P(y|x) with P(x) unchanged.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>For a model you care about, how long would it take for labels to arrive after a prediction? What would you monitor in that gap?</p>
+<p><strong>Extra notes.</strong> Monitor the <em>same</em> features the model uses, computed by the <em>same</em> code. Keep the reference data versioned (Day 142) so "drift relative to what" is answerable.</p>
+<p><strong>Going deeper.</strong> Compare PSI with Jensen-Shannon distance and with a learned "domain classifier" that tries to tell reference rows from current rows. Its AUC is a multivariate drift score.</p>
+<p><strong>Interview-style question (15 min).</strong> "Your drift dashboard is always red and people ignore it. Fix it." Calibrate thresholds on historical no-drift windows. Correct for the number of features. Alert on sustained drift in important features. Pair drift with output and performance signals. Route alerts to investigation runbooks rather than pages.</p>
+<p><strong>Common mistakes.</strong> Using PSI rule-of-thumb thresholds blindly. Testing many features without correction. Equating drift with degradation. Finding label errors in-sample. Auto-deleting flagged rows.</p>
+<p><strong>What to do next.</strong> Day 146 covers changing models safely (A/B tests and canaries), what serving costs, and how CI and containers fit, with untested example files.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-144.html">← Day 144</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-146.html">Day 146 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

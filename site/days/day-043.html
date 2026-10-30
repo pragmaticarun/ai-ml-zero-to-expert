@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 43 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="43">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-042.html">← Day 42</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-044.html">Day 44 →</a></nav>
+<h1>Day 43: Feature importance, permutation importance, SHAP intuition</h1>
+<p class="meta">Week 7 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-07.md">source: weeks/week-07.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-07/day43_importance.py"><code>code/week-07/day43_importance.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 42 (+1), Day 40 (+3), Day 36 (+7), Day 22 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why explain?</strong> To debug (is the model using a leaked ID?), to build trust, to generate hypotheses, and sometimes because regulation requires it. Remember, though, that importance describes <strong>the model</strong>, not the world. A feature can matter to the model without causing the outcome.</p>
+<p><strong>Three tools.</strong>
+1. <strong>Impurity importance (MDI):</strong> for trees, sum how much each feature's splits reduced impurity. It is free and fast. It is computed on <em>training</em> data and is known to favour high-cardinality or continuous features, which have more possible split points.
+2. <strong>Permutation importance:</strong> shuffle one column in held-out data and measure the drop in score. It is model-agnostic and measured on test data. Caveat: with two correlated features, shuffling one leaves the other to carry the signal, so both look unimportant.
+3. <strong>Shapley values (the idea behind SHAP):</strong> a fair split of one prediction among features, borrowed from game theory. Feature j's value is its marginal contribution v(S ∪ {j}) − v(S), averaged over all orders in which features could "join". It has three key properties:
+   - <strong>Efficiency:</strong> the values sum to f(x) − f(baseline).
+   - <strong>Symmetry:</strong> equal contributors get equal shares.
+   - <strong>Null player:</strong> a feature that never changes anything gets 0.</p>
+<p>Exact computation needs 2ⁿ subsets. Libraries approximate it, or use model structure (TreeSHAP).</p>
+<p><strong>A sanity trick:</strong> add a column of pure random numbers. Any feature ranked <em>below</em> it is indistinguishable from noise.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-07/day43_importance.py</code> on California, with a random forest (100 trees, test R² 0.7921) plus a planted <code>RANDOM_id</code> column:</p>
+<table>
+<thead>
+<tr>
+<th>feature</th>
+<th>MDI</th>
+<th>permutation (test R² drop)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MedInc</td>
+<td>0.5277</td>
+<td>0.7917</td>
+</tr>
+<tr>
+<td>Latitude</td>
+<td>0.0811</td>
+<td>0.3938</td>
+</tr>
+<tr>
+<td>Longitude</td>
+<td>0.0807</td>
+<td>0.2979</td>
+</tr>
+<tr>
+<td>AveOccup</td>
+<td>0.1336</td>
+<td>0.1993</td>
+</tr>
+<tr>
+<td>HouseAge</td>
+<td>0.0551</td>
+<td>0.0696</td>
+</tr>
+<tr>
+<td>AveRooms</td>
+<td>0.0456</td>
+<td>0.0304</td>
+</tr>
+<tr>
+<td>AveBedrms</td>
+<td>0.0285</td>
+<td>0.0081</td>
+</tr>
+<tr>
+<td>Population</td>
+<td>0.0288</td>
+<td>0.0078</td>
+</tr>
+<tr>
+<td>RANDOM_id</td>
+<td>0.0189</td>
+<td>0.0021</td>
+</tr>
+</tbody>
+</table>
+<p>What to notice:
+1. The two methods disagree on the ordering. MDI ranks AveOccup second, while permutation ranks Latitude and Longitude well above it. Location matters a lot on held-out data.
+2. <strong>Honest finding:</strong> in this run the random column ranked <strong>last (9 of 9)</strong> even by MDI. The well-documented MDI bias towards continuous noise features did <em>not</em> show up strongly here (min_samples_leaf=1 forests on 16k rows). Its MDI of 0.0189 is close to Population's 0.0288, though, so Population and AveBedrms are barely above noise under either method.</p>
+<p><strong>Exact Shapley by brute force</strong> (a linear model on 4 features, baseline = training mean, test row 0 with MedInc 4.152, HouseAge 22, AveRooms 5.663, Latitude 32.58): φ = MedInc +0.122, HouseAge −0.1147, AveRooms −0.0043, Latitude +0.1348. They sum to <strong>0.1379</strong>, which equals f(x) − f(baseline) (efficiency). They also match the known closed form for linear models, wⱼ(xⱼ − meanⱼ), exactly. That gives you a test that your Shapley code is right before you trust it on a non-linear model.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Implement permutation importance yourself (5 shuffles per feature, report mean ± std) and compare with <code>sklearn.inspection.permutation_importance</code>.</li>
+<li>Correlation trap: add <code>Latitude_copy = Latitude + small noise</code> and recompute both importances. What happens to Latitude's permutation importance?</li>
+<li>Extend the brute-force Shapley code to the random forest on 6 features (64 subsets per feature) for 3 rows. Check that efficiency holds.</li>
+<li>Write a paragraph explaining one prediction to a non-technical reader, using your Shapley values.</li>
+<li>Stretch: install <code>shap</code> in your own venv (it is not part of the course requirements) and compare <code>TreeExplainer</code> values with your brute force on the 6-feature forest.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Two features, f = 3·x₁ + 2·x₂, baseline (0, 0), x = (1, 1). Shapley values? <em>(3 and 2.)</em></li>
+<li>f = x₁·x₂ with baseline (0, 0) and x = (1, 1). Shapley values? <em>(0.5 each: v({1}) = v({2}) = 0 and v({1,2}) = 1.)</em></li>
+<li>Why compute permutation importance on test rather than train data? <em>(Train importance rewards memorised features.)</em></li>
+<li>Two perfectly correlated features. What does permutation show? <em>(Both low; the model uses either.)</em></li>
+<li>Does high importance imply causation? <em>(No.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Name the three importance methods and one flaw of each.
+  2. State Shapley efficiency.
+  3. What does the random-column trick test?
+  4. Which feature topped both lists?
+  5. Why did Latitude rise under permutation?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>"Baseline" choice changes Shapley values. The interventional version (ours) replaces missing features with baseline values and can create unrealistic rows, such as a big house with zero rooms. Conditional versions sample realistic values but blur credit between correlated features. No version is "the truth". Say which one you used.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reporting MDI on an overfit forest as "what matters".</li>
+<li>Explaining a model whose test score is poor. Explanations of a bad model explain nothing about the world.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow you <em>create</em> features, and measure that a good encoding can matter more than the choice of model.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-042.html">← Day 42</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-044.html">Day 44 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

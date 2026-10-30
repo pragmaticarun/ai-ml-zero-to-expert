@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 164 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="164">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-163.html">← Day 163</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-165.html">Day 165 →</a></nav>
+<h1>Day 164: Interpretability: permutation importance, Shapley, LIME-style, saliency, probing</h1>
+<p class="meta">Week 24 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-24.md">source: weeks/week-24.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Five tools, five questions (25 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 163 (+1), Day 161 (+3), Day 157 (+7), Day 143 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-five-tools-five-questions-25-min">Block 1: Five tools, five questions (25 min)</h3>
+<ul>
+<li><strong>Permutation importance:</strong> how much does accuracy fall when one feature is shuffled? Global, model-agnostic, cheap.</li>
+<li><strong>Shapley values (sampled):</strong> each feature's average marginal contribution to the prediction, over feature orderings. Additive: Σ φ = f(x) − E[f].</li>
+<li><strong>LIME-style local surrogate:</strong> perturb the instance, fit a weighted linear model on the perturbations.</li>
+<li><strong>Gradient saliency / occlusion:</strong> for a CNN, which pixels the loss cares about, and whether blanking them hurts more than blanking random pixels.</li>
+<li><strong>Linear probing:</strong> how linearly separable a concept is at each layer.</li>
+</ul>
+<p>None of these prove causality. They are debugging and communication tools.</p>
+<h3 id="block-2-run-it-40-min">Block 2: Run it (40 min)</h3>
+<p><code>python day164_interpret.py</code>.</p>
+<p><strong>Verified (out/day164_interpret.log):</strong>
+- Permutation importance (3,000 test rows, 3 repeats, base acc 0.8517): marital-status +0.0592, capital-gain +0.0341, education-num +0.0308, occupation +0.0137, relationship +0.0118, age +0.0072, <strong>sex +0.0068</strong>, … race +0.0011, fnlwgt +0.0010.
+- Sampled Shapley (300 permutations, 18.8 s) for the highest-P(&gt;50K) test row: f(x)=34.562, E[f(bg)]=−2.063, Σφ=36.625 (efficiency exact). Top: capital-gain +31.866 (value 99999), marital-status +1.534, education-num +1.287.
+- LIME-style (1,000 perturbations): capital-gain +29.299, marital-status +1.358, education-num +1.291. Top-3 agreement with Shapley: <strong>3/3</strong>.
+- Month 3 CNN test acc 0.7420 on 2,500 images. Gradient saliency: mean 0.369 of mass in the central 16×16 (25% of pixels). Occlusion of top-saliency 10% of pixels: confidence 0.775 → 0.406; random 10%: → 0.382.
+- Linear probe animal-vs-vehicle: pixels 0.7648 → block1 0.8932 → block2 0.9332 → block3 <strong>0.9416</strong> (majority baseline 0.5948).</p>
+<h3 id="block-3-interpretation-35-min">Block 3: Interpretation (35 min)</h3>
+<p><strong>Sex is not among the top drivers; the proxies are.</strong> Permutation importance ranks sex seventh (+0.0068), behind marital-status and capital-gain. That matches Day 162's finding that dropping sex barely changes DI: the model leans on correlated features.</p>
+<p><strong>Shapley and LIME agreed on this row.</strong> Efficiency held exactly (Σφ = f(x)−E[f]), and the top-3 features matched. Agreement on one high-score row is encouraging but not a proof; check more rows before trusting a local explanation in a report.</p>
+<p><strong>Saliency without a check is weak.</strong> Central concentration (0.369 vs 0.25 area) suggests the CNN looks at the object more than the border, but the occlusion test barely separated top-saliency from random (0.406 vs 0.382). For this small CNN and this metric, gradient saliency is only a soft hint. Always pair saliency with an intervention (occlusion, insertion).</p>
+<p><strong>Probing shows the concept forming.</strong> Animal-vs-vehicle goes from 0.76 on pixels to 0.94 at block3. Later layers are more linearly separable for this coarse concept — the usual deep-learning story, measured rather than assumed. Probes also keep you honest about what a representation <em>contains</em> versus what the trained head <em>uses</em>: a concept can be linearly present and still unused by the final classifier.</p>
+<p><strong>How to put these tools in an audit.</strong> Day 168 will cite permutation importance to show that sex is not a top driver and that proxies are, cite Shapley/LIME for one local case study, and treat saliency as supporting evidence only where an occlusion check exists. Interpretability without the fairness numbers of Day 162 is incomplete; fairness numbers without a "why" are hard to act on.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why is permutation importance not causal? <em>Shuffling one feature breaks its joint distribution with the others; the drop mixes direct and proxy effects.</em></li>
+<li>What does Shapley efficiency check? <em>Σφ should equal f(x) − E[f(background)].</em></li>
+<li>Why pair saliency with occlusion? <em>Gradients can highlight pixels that do not actually change the prediction when removed.</em></li>
+<li>What does a rising probe accuracy across blocks mean? <em>The concept becomes more linearly readable in deeper representations.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Compute Shapley for 20 random test rows and report how often marital-status is in the top-3. Then occlude the <em>least</em>-salient 10% of pixels and check that confidence barely moves.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Capital-gain = 99999 is an Adult dataset clipping artefact; the huge Shapley value is real for that row and also a data-quality flag.</li>
+<li>Our Shapley sampler fills missing features from a single background row per permutation; KernelSHAP uses a different coalition kernel. Both are approximations.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Implement KernelSHAP with a small feature subset and compare φ to today's permutation sampler.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Show me why the model denied this applicant." Use a local method (Shapley/LIME), state the baseline, show Σφ, and warn that correlated features (marital-status vs sex) make attribution ambiguous.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Treating feature importance as proof of discrimination without the fairness metrics of Day 162.</li>
+<li>Publishing saliency maps with no occlusion/insertion check.</li>
+<li>Explaining a probability when the method was run on logits (or vice versa).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 165 moves from "what the model uses" to "what the model leaks".</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-163.html">← Day 163</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-165.html">Day 165 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

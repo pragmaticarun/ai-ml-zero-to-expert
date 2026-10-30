@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 46 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="46">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-045.html">← Day 45</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-047.html">Day 47 →</a></nav>
+<h1>Day 46: Pipelines, ColumnTransformer, leakage-proof preprocessing</h1>
+<p class="meta">Week 7 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-07.md">source: weeks/week-07.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-07/day46_pipelines.py"><code>code/week-07/day46_pipelines.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 45 (+1), Day 43 (+3), Day 39 (+7), Day 25 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> <strong>Leakage</strong> means information from validation or test rows sneaks into training. It inflates scores and breaks in production. The classic forms are:
+- Preprocessing (scaling, imputation, feature selection, target encoding) fitted on all rows before splitting.
+- Duplicates across splits.
+- Features computed from the future.
+- Features that are proxies for the label.</p>
+<p><strong>The structural fix: a <code>Pipeline</code>.</strong> Chain transformers and a final estimator into one object. When <code>cross_validate</code> refits it per fold, every <code>fit</code> sees only that fold's training rows. <code>ColumnTransformer</code> applies different preprocessing to different columns: numeric → impute + scale, categorical → impute + one-hot. <code>make_column_selector(dtype_include=...)</code> picks columns by type.</p>
+<p><strong>Searching inside pipelines.</strong> Hyperparameters are addressed as <code>step__param</code> (e.g. <code>clf__C</code>, <code>prep__cat__onehot__min_frequency</code>). So <code>GridSearchCV</code> can tune preprocessing and model together.</p>
+<p><strong>Deployment bonus.</strong> One fitted object maps raw rows to predictions. Persist it on Day 57.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-07/day46_pipelines.py</code>. Verified:</p>
+<p><strong>1. The leak, demonstrated on pure noise.</strong> 200 rows, 5000 random features and random labels, so the truth is 50% accuracy.
+- Select the 20 features most correlated with y using <em>all rows</em>, then 5-fold CV a logistic regression: <strong>0.770 accuracy</strong>. That is pure fiction.
+- Put <code>SelectKBest</code> <em>inside</em> the pipeline: <strong>0.470</strong>, i.e. chance, which is the truth.</p>
+<p><strong>2. Adult with a full pipeline.</strong> Numeric: median impute + scale. Categorical: constant impute "missing" + one-hot with <code>handle_unknown="ignore"</code>. Then logistic regression. A grid over C gives CV ROC-AUC 0.01: 0.9048, 0.1: 0.9068, 1: 0.9068, 10: 0.9067. Best C = 0.1, <strong>test ROC-AUC 0.9057</strong> (touched once).
+- The fitted transformer produces <strong>108 features</strong>, with readable names (<code>num__age</code>, <code>cat__native-country_missing</code>, ...) from <code>get_feature_names_out()</code>.
+- A row with occupation = "Astronaut" (never seen in training) still gets a prediction (0.016) instead of a crash. Unknown categories become all-zeros.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Rebuild the adult pipeline from memory with <code>make_column_selector</code>. Print the step names, and set one parameter with <code>set_params</code>.</li>
+<li>Reproduce the noise leak with k = 5, 20 and 100 selected features. How does the fake accuracy change with k?</li>
+<li>Write a custom transformer class (<code>fit</code> returns self, <code>transform</code> adds <code>log1p(capital-gain)</code> and a <code>capital-gain &gt; 0</code> flag), using <code>BaseEstimator</code> and <code>TransformerMixin</code>. Put it in the pipeline and grid-search a flag that turns it on or off.</li>
+<li>Tune <code>OneHotEncoder(min_frequency=...)</code> ∈ {1, 20, 100} together with C. How many features does each produce?</li>
+<li>Stretch: draw a pipeline diagram (Jupyter renders one; in a script, <code>sklearn.utils.estimator_html_repr</code> writes HTML).</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Which of these leak if done before the split: (a) dropping a column, (b) standard scaling, (c) target encoding, (d) removing exact duplicate rows? <em>(b mildly; c badly. a is safe if it doesn't depend on y. d is safe and recommended before splitting.)</em></li>
+<li>Parameter name for C in <code>Pipeline([("prep", ct), ("clf", LogisticRegression())])</code>? <em>(<code>clf__C</code>.)</em></li>
+<li>Why did noise-feature selection give 0.77? <em>(With 5000 features, some correlate with y by chance on these 200 rows, and selection saw the validation rows.)</em></li>
+<li>What does <code>handle_unknown="ignore"</code> do? <em>(It encodes unseen categories as all-zeros.)</em></li>
+<li>Name two leaks a pipeline does <em>not</em> prevent. <em>(Future-information features; duplicates across splits.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Define leakage with two examples.
+  2. How does a pipeline prevent preprocessing leakage?
+  3. What were the leaky and honest accuracies on noise?
+  4. How do you name nested parameters?
+  5. What happens with unseen categories?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Kaufman et al.'s taxonomy of leakage (2012, "Leakage in data mining") distinguishes leakage in features (proxies for the target) from leakage in training examples (rows that cross the split boundary). Search for it if you want the formal treatment. Its core lesson is that leakage is usually found by suspicion of <em>too-good</em> results.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Our model scored 0.99 AUC in the notebook and 0.71 in production. What happened?" Write a debugging plan in five steps.
+1. Diff the training and serving code paths. Was preprocessing fitted on all data, or re-implemented by hand at serving time?
+2. List every feature's timestamp against the prediction time, to spot future information.
+3. Search for duplicate or near-duplicate entities across the splits.
+4. Rank features by importance and ask whether the top one is a proxy for the label.
+5. Rebuild the evaluation with one <code>Pipeline</code> and a split that mimics production (by time or by entity).</p>
+<p>Connect each step to a leak type from Block 1.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><code>fit_transform</code> on test data. Only <code>transform</code>.</li>
+<li>Forgetting that <code>GridSearchCV.best_estimator_</code> was already refit on the full training split.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow begins unsupervised learning: there are no labels, only structure.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-045.html">← Day 45</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-047.html">Day 47 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

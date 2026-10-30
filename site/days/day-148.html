@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 148 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="148">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-147.html">← Day 147</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-149.html">Day 149 →</a></nav>
+<h1>Day 148: LLMOps I: prompt versioning, eval harnesses and regression gates</h1>
+<p class="meta">Week 22 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Why LLM apps need their own ops (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The harness on this box (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Reading the results (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 147 (+1), Day 145 (+3), Day 141 (+7), Day 127 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-why-llm-apps-need-their-own-ops-30-min">Block 1: Why LLM apps need their own ops (30 min)</h3>
+<p>A classic model ships as a weights file plus code. An LLM app ships as weights plus code plus a <em>prompt</em>, and the prompt is the part people change most often, frequently by hand, often without a test. A one-word edit to a system message can fix one class of question and silently break another. LLMOps is the discipline of treating prompts, few-shot examples, model choice and decoding settings as versioned artifacts, then gating every change on an evaluation that runs automatically.</p>
+<p>Three ideas carry the whole day:
+1. <strong>Content-addressed versions.</strong> A prompt's identity is the hash of its full text (system message, few-shot turns, template). Two prompts with the same name but different text are different versions, and an eval result is always tied to a hash, not to a name like "v3-final".
+2. <strong>A fixed eval set with a held-out slice.</strong> You tune prompts on the "seen" cases. The held-out cases tell you whether the improvement generalises or whether you just memorised your own test set.
+3. <strong>A regression gate, not just an average.</strong> "13 passes is more than 7" is not enough to ship. The gate also asks: did the candidate break anything the baseline got right?</p>
+<h3 id="block-2-the-harness-on-this-box-60-min">Block 2: The harness on this box (60 min)</h3>
+<p><code>_llmops.py</code> holds a <code>Registry</code> (prompts keyed by a 12-character SHA-256 prefix of their canonical JSON), a JSON generation <code>Cache</code> keyed by (prompt hash, input, decoding settings), and a <code>Tracer</code> used tomorrow. <code>day148_prompts_evals.py</code> registers four prompt versions for the Week 20 tool-calling task and runs each over 24 cases (18 seen, 6 held-out) with greedy decoding on SmolLM2-135M-Instruct. A case passes if the output parses as JSON, validates against the tool schema, and gives the correct tool result.</p>
+<p><strong>Verified (out/day148_prompts_evals.log):</strong>
+- Registry hashes: v1 zero-shot <code>8b536272f079</code>, v2 3-shot <code>81a052ecaa64</code>, v3 4-shot (adds a <code>temp_c</code> example) <code>24a6cf8d8a20</code>, v4 (v3 with the system message reworded) <code>a431b360acd3</code>.
+- v1 zero-shot: pass 0/24 (seen 0/18, held-out 0/6), 24.5 s.
+- v2 3-shot: pass 7/24 (seen 6, held-out 1), 15.1 s.
+- v3 4-shot: pass 13/24 (seen 9, held-out 4), 15.9 s.
+- v4 reworded: pass 13/24 (seen 9, held-out 4), 15.2 s.
+- Re-running v3 from the cache: 24 hits, 0 new generations, identical results.
+- Determinism: 5 cases generated twice with greedy decoding gave identical outputs.
+- Gate v1→v2: lost 0, gained 7, exact McNemar p=0.016, PASS.
+- Gate v2→v3: lost 3, gained 9, p=0.146, <strong>FAIL</strong>; regressed cases <code>Compute 1024/16.</code>, <code>Compute 99/3.</code>, <code>Compute 45%7.</code>.
+- Gate v3→v4: lost 0, gained 0, p=1.000, PASS.</p>
+<h3 id="block-3-reading-the-results-45-min">Block 3: Reading the results (45 min)</h3>
+<p>The headline is the v2→v3 gate. Adding a fourth few-shot example (a temperature conversion) almost doubled the score, 7 to 13 of 24, and improved the held-out slice from 1 to 4 of 6. A dashboard that tracks only the pass rate would ship it. The gate refused, because three arithmetic cases that v2 solved now fail. With a 135M model, a new example pulls the model's outputs towards that example's shape, and the calculator cases paid for it. Whether you then ship v3 is a product decision (perhaps the temperature cases matter more), but it must be a <em>decision</em>, made with the list of broken cases in front of you, not an accident.</p>
+<p>The McNemar test is the right paired test here: both prompts answer the same 24 cases, so the only informative cases are the discordant ones (lost or gained). With 3 lost and 9 gained the p-value is 0.146, which says that on 24 cases you cannot even be confident v3 is better overall. Small eval sets give weak evidence. That is a reason to grow the eval set, not to stop gating.</p>
+<p>The v3→v4 row shows a second use of the gate: a "harmless" rewording that changes nothing should produce exactly zero discordant cases, and here it did. If it had flipped cases, you would have learned that the model is sensitive to wording you considered cosmetic.</p>
+<p>The cache matters for cost and for honesty. Re-running v3 cost 0 generations, so you can re-score with a fixed metric bug at no cost, and because greedy decoding was deterministic here, cached outputs equal fresh outputs. With sampling (temperature above 0), a cache freezes one random draw, and you would need several samples per case to estimate a pass rate.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why key a prompt by a content hash rather than a name? <em>Because names get reused for edited text; the hash ties every eval result to the exact text that produced it.</em></li>
+<li>v3 scored 13 vs v2's 7. Why did the gate fail? <em>It lost 3 cases that v2 passed (<code>1024/16</code>, <code>99/3</code>, <code>45%7</code>); the gate forbids losing seen cases the baseline passed.</em></li>
+<li>What does p=0.146 tell you? <em>With only 12 discordant cases, the improvement is not statistically clear on 24 cases.</em></li>
+<li>When is a generation cache unsafe? <em>When decoding is stochastic, or when the key omits something that changes outputs (model version, decoding settings, tool schemas).</em></li>
+</ol>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Add a v5 prompt that keeps v3's four examples but adds one arithmetic example with integer division. Register it, run the harness, and run the gate against both v2 and v3. Write down which cases move. Then add three new held-out cases you write <em>before</em> looking at v5's outputs.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>The harness has four parts that every LLM eval needs, whatever the scale: a dataset with stable IDs, a runner that records the prompt hash and decoding settings next to every output, a scorer that is deterministic code (here: parse, schema-validate, execute, compare), and a comparator that reports per-case diffs. A score from an LLM judge would be a fifth part, and it would itself need versioning and a check against human labels.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read about pairwise statistical tests for classifiers (McNemar, and the bootstrap over cases) and think about how many cases you need before a 5-point improvement is detectable.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your team edits prompts in a shared doc and ships them on Fridays. Design the minimum process that stops silent regressions." <em>Expected: prompts in version control keyed by hash; an eval set with held-out slice; CI runs the eval on every change; a gate on per-case regressions as well as the aggregate; diff report attached to the review.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Tuning on the held-out cases until they pass.</li>
+<li>Comparing two prompts run on different case sets or with different decoding settings.</li>
+<li>Trusting an aggregate with no per-case diff.</li>
+<li>Caching outputs without the model version in the key.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow adds the production half: traces, latency percentiles, token cost, and guardrails, all on the same agent.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-147.html">← Day 147</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-149.html">Day 149 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

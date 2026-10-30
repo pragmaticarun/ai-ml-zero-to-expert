@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 16 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="16">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-15.html">← Week 15</a><a href="../syllabus.html">Syllabus</a><a href="week-17.html">Week 17 →</a></nav>
+<h1>Week 16 (Days 106-112): Preference tuning: RLHF, reward models, DPO and evaluation pitfalls</h1><p class="meta"><a href="../../weeks/week-16.md">source: weeks/week-16.md</a> · <a href="../../pdf/week-16.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-106.html">Day 106: RLHF overview: preferences, Bradley-Terry and the KL-regularised objective</a> <span class="st" data-st="106"></span></li><li><a href="../days/day-107.html">Day 107: Reward modelling on a small LM, and shortcuts</a> <span class="st" data-st="107"></span></li><li><a href="../days/day-108.html">Day 108: DPO from scratch</a> <span class="st" data-st="108"></span></li><li><a href="../days/day-109.html">Day 109: β, learning rate and forgetting in DPO</a> <span class="st" data-st="109"></span></li><li><a href="../days/day-110.html">Day 110: LLM evaluation pitfalls</a> <span class="st" data-st="110"></span></li><li><a href="../days/day-111.html">Day 111: Best-of-n, verifiers and exploiting an implicit reward</a> <span class="st" data-st="111"></span></li><li><a href="../days/day-112.html">Day 112: PROJECT W16: SFT vs DPO vs DPO+NLL; Quiz 16</a> <span class="st" data-st="112"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-16"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Name the three stages of the classic RLHF pipeline.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>SFT on demonstrations; reward model from pairwise preferences; policy optimisation (e.g. PPO) against the RM with a KL penalty to the SFT/reference model.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Write the Bradley-Terry probability that y_w is preferred to y_l.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>P = σ(r(x, y_w) − r(x, y_l)).</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Why is a reward model's output defined only up to a constant per prompt?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>BT uses only reward differences, so adding a constant changes nothing (Day 106 measured a 0.0e+00 change in loss).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>What is the closed-form optimum of the KL-regularised objective for one prompt?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>π*(y) ∝ π_ref(y)·exp(r(y)/β).</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>In Day 106's bandit, what happened to expected reward and KL as β went from 5.0 to 0.05?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Expected reward rose from 0.309 to 0.993 and KL to the reference rose from 0.002 to 2.816.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Why is the reward read from the last token in a causal-LM reward model?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>In a causal model only the last position has attended to the entire prompt and answer.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What did RM B (chosen always ending with "!") score when the "!" was moved to the wrong answer, and what does that show?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.00 pairwise accuracy: it learned the planted shortcut rather than correctness (also only 0.62 with no "!" at all).</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Write the DPO loss.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>L = −log σ(β[(log π_θ(y_w|x) − log π_ref(y_w|x)) − (log π_θ(y_l|x) − log π_ref(y_l|x))]).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>On Day 108, preference accuracy was 1.00 but exact match 0.17. Explain.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>DPO satisfied the loss mainly by pushing the rejected answer down (Δ −126.7 nats held-out) while raising the chosen one only a little (+8.6); that does not make the correct answer the greedy output, and outputs degraded.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>What did increasing β from 0.1 to 0.5 do to Δlog-prob of the rejected answer on Day 109?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It shrank from −81.2 to −10.3 nats: larger β keeps the policy closer to the reference.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Why was the DPO implicit reward a bad best-of-n scorer on Day 111?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It is a log-ratio trained only on chosen/rejected kinds of answers; on new samples it favoured ones the reference found very unlikely, scoring 0.00 vs 0.20 for the verifier.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>On Day 112, which objectives reached 0.70 exact match, and why did plain DPO not help on this task?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>SFT on chosen and DPO+NLL both reached 0.70 (plain DPO 0.23). The chosen answers were exactly correct, so imitation already captured the full signal; the NLL term stopped DPO from merely lowering the rejected answer.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 4). This week replaces the older Week 16 plan (embeddings, RAG, prompting, quantisation, KV cache), which moves to later weeks (see <code>SYLLABUS.md</code>). Every number below was printed by a script in <code>code/week-16/</code> on this box (torch 2.15.0+cpu, transformers 5.21.1, 8 CPU threads, no GPU), with logs in <code>code/week-16/out/*.log</code>. Scripts were run one at a time. Shared helpers are in <code>code/week-16/_pref.py</code>, which reuses <code>code/week-15/_hf.py</code> and <code>_lora.py</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Understand the RLHF pipeline: supervised fine-tuning, a reward model from pairwise preferences, then KL-regularised policy optimisation.</li>
+<li>Fit a Bradley-Terry reward model, first on a toy problem and then on a small language model, and watch it learn a shortcut.</li>
+<li>Derive and implement Direct Preference Optimisation (DPO) from scratch on SmolLM2-135M-Instruct with LoRA.</li>
+<li>See what β and the learning rate do, and why "preference accuracy = 1.00" does not mean the model is good.</li>
+<li>Measure evaluation pitfalls: small test sets, prompt wording, metric choice, contamination.</li>
+<li>Use inference-time selection (best-of-n) and see a reward being exploited.</li>
+<li>Weekly project: SFT vs DPO vs DPO+NLL on the same data and budget.</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 106 RLHF toys] --&gt; B[Day 107 reward model]
+  B --&gt; C[Day 108 DPO from scratch]
+  C --&gt; D[Day 109 beta and lr sweep]
+  D --&gt; E[Day 110 eval pitfalls]
+  E --&gt; F[Day 111 best-of-n]
+  F --&gt; G[Day 112 project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note (CPU vs GPU).</strong> All language-model work uses SmolLM2-135M(-Instruct), LoRA r=8 or r=16, batches of 4-8 <em>pairs</em> and 60-120 steps. One DPO step (4 pairs, so 8 sequences forward and backward) took about 0.6-0.7 s here (120 steps in 84 s; 60 steps in 35-36 s). That shows the <em>mechanics</em> and the failure modes. It does not reproduce real preference tuning, which uses tens of thousands of human or AI-labelled pairs, models of 1-70B parameters, and GPUs. On a GPU you would also run PPO properly (it needs a policy, a reference, a reward model and a value model in memory at once, plus sampling in the loop), which is not practical on this CPU.</p>
+<p><strong>Models and data.</strong> <code>HuggingFaceTB/SmolLM2-135M</code> and <code>HuggingFaceTB/SmolLM2-135M-Instruct</code> from the local Hugging Face cache (verified in Week 15). The preference data is <strong>synthetic and generated by the scripts</strong>: prompts "Reverse the order of these words: …" over a fixed 40-word vocabulary, 1,000 training prompts and 40 held-out test prompts (test prompts that also occur in training are removed). <em>Chosen</em> = the correctly reversed words; <em>rejected</em> = the words left in their original order (or a random other order where stated). Synthetic pairs make the "true" preference unambiguous, which is what we need to see the algorithms clearly; real preference data is noisy and subjective.</p>
+<hr />
+<h2 id="weekly-quiz-week-16">Weekly quiz: Week 16</h2>
+<ol>
+<li>Name the three stages of the classic RLHF pipeline.</li>
+<li>Write the Bradley-Terry probability that y_w is preferred to y_l.</li>
+<li>Why is a reward model's output defined only up to a constant per prompt?</li>
+<li>What is the closed-form optimum of the KL-regularised objective for one prompt?</li>
+<li>In Day 106's bandit, what happened to expected reward and KL as β went from 5.0 to 0.05?</li>
+<li>Why is the reward read from the last token in a causal-LM reward model?</li>
+<li>What did RM B (chosen always ending with "!") score when the "!" was moved to the wrong answer, and what does that show?</li>
+<li>Write the DPO loss.</li>
+<li>On Day 108, preference accuracy was 1.00 but exact match 0.17. Explain.</li>
+<li>What did increasing β from 0.1 to 0.5 do to Δlog-prob of the rejected answer on Day 109?</li>
+<li>Why was the DPO implicit reward a bad best-of-n scorer on Day 111?</li>
+<li>On Day 112, which objectives reached 0.70 exact match, and why did plain DPO not help on this task?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>SFT on demonstrations; reward model from pairwise preferences; policy optimisation (e.g. PPO) against the RM with a KL penalty to the SFT/reference model.</li>
+<li>P = σ(r(x, y_w) − r(x, y_l)).</li>
+<li>BT uses only reward differences, so adding a constant changes nothing (Day 106 measured a 0.0e+00 change in loss).</li>
+<li>π*(y) ∝ π_ref(y)·exp(r(y)/β).</li>
+<li>Expected reward rose from 0.309 to 0.993 and KL to the reference rose from 0.002 to 2.816.</li>
+<li>In a causal model only the last position has attended to the entire prompt and answer.</li>
+<li>0.00 pairwise accuracy: it learned the planted shortcut rather than correctness (also only 0.62 with no "!" at all).</li>
+<li>L = −log σ(β[(log π_θ(y_w|x) − log π_ref(y_w|x)) − (log π_θ(y_l|x) − log π_ref(y_l|x))]).</li>
+<li>DPO satisfied the loss mainly by pushing the rejected answer down (Δ −126.7 nats held-out) while raising the chosen one only a little (+8.6); that does not make the correct answer the greedy output, and outputs degraded.</li>
+<li>It shrank from −81.2 to −10.3 nats: larger β keeps the policy closer to the reference.</li>
+<li>It is a log-ratio trained only on chosen/rejected kinds of answers; on new samples it favoured ones the reference found very unlikely, scoring 0.00 vs 0.20 for the verifier.</li>
+<li>SFT on chosen and DPO+NLL both reached 0.70 (plain DPO 0.23). The chosen answers were exactly correct, so imitation already captured the full signal; the NLL term stopped DPO from merely lowering the rejected answer.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

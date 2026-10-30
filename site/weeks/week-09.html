@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 9 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="9">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-08.html">← Week 8</a><a href="../syllabus.html">Syllabus</a><a href="week-10.html">Week 10 →</a></nav>
+<h1>Week 9 (Days 57-63): Reproducibility, Month-2 capstone, and the first neural networks</h1><p class="meta"><a href="../../weeks/week-09.md">source: weeks/week-09.md</a> · <a href="../../pdf/week-09.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-057.html">Day 57: Reproducible experiments: seeds, configs, model persistence</a> <span class="st" data-st="57"></span></li><li><a href="../days/day-058.html">Day 58: MONTH-2 CAPSTONE (part 1): build and compare, CV only</a> <span class="st" data-st="58"></span></li><li><a href="../days/day-059.html">Day 59: Month-2 capstone (part 2): test evaluation, slices, report</a> <span class="st" data-st="59"></span></li><li><a href="../days/day-060.html">Day 60: MONTH-2 CAPSTONE delivery + checkpoint exam and review</a> <span class="st" data-st="60"></span></li><li><a href="../days/day-061.html">Day 61: The perceptron and the logistic neuron</a> <span class="st" data-st="61"></span></li><li><a href="../days/day-062.html">Day 62: Multilayer networks: forward propagation, activations, initialisation</a> <span class="st" data-st="62"></span></li><li><a href="../days/day-063.html">Day 63: PROJECT W9: NumPy MLP with hand-derived backprop on digits; Quiz 9</a> <span class="st" data-st="63"></span></li></ul><h3>Exams this week</h3><ul><li><a href="../exams/w09-d60.html">Day 60: Checkpoint exam: code (1h15)</a></li><li><a href="../exams/w09-d60-2.html">Day 60: Checkpoint exam: concepts (1h)</a></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-09"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Name four things a run record must contain.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Any four of: data hash, config, metric, library versions, commit, timestamp, artefact path.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What was the 5-seed AUC spread on Day 57, and what does it imply for model comparisons?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Std 0.0008 (mean 0.9286). Differences under about 0.002 are not distinguishable.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Why verify predictions after a joblib round trip?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>To confirm the saved pipeline reproduces the original predictions exactly.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Which capstone model won CV, and was the margin meaningful?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>hist_gb_tuned (0.9280 vs 0.9277), well within the std of 0.003. Not meaningful.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>What threshold met precision ≥ 0.70, and did it hold on test?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.3778. Test precision was 0.7026, so yes, narrowly.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Give the test AUC and its bootstrap CI.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.9291, [0.9237, 0.9331].</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Which fairness criterion roughly held across sexes, and which did not?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Predictive parity (precision 0.708 vs 0.702) roughly held. Equal opportunity did not (recall 0.661 vs 0.774).</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Why does the perceptron fail on XOR?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>XOR is not linearly separable.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Maximum of the sigmoid derivative?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.25, at z = 0.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Parameter count of 64→32→10?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>2,410.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>What happened to the activation std after 10 ReLU layers with std-1 init?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It exploded to about 1.5e7.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Write dZ2 for softmax plus cross-entropy, and state the gradient-check pass criterion.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>dZ2 = (P − Y)/m. The check passes when the relative error is below about 1e−7 (ours was about 1e−10).</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full. Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Make an experiment reproducible: seeds, a data fingerprint, a config, model persistence and a run log.</li>
+<li>Build, evaluate and report the <strong>Month-2 capstone</strong>: a complete tabular ML project with an honest single test evaluation, calibration, slice analysis and a model card.</li>
+<li>Pass the Month-2 checkpoint exam (six self-graded code exercises).</li>
+<li>Start Month 3: perceptrons, forward propagation, and a NumPy MLP trained with hand-derived backprop.</li>
+</ol>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  R[Day 57 reproducibility] --&gt; B[Day 58 capstone build: CV only]
+  B --&gt; E[Day 59 test once + slices + report]
+  E --&gt; D[Day 60 delivery + checkpoint exam]
+  D --&gt; P[Day 61 perceptron &amp; XOR]
+  P --&gt; F[Day 62 forward prop &amp; init]
+  F --&gt; M[Day 63 NumPy MLP + backprop]
+</code></pre></div>
+
+<p><strong>Datasets:</strong> adult (OpenML), as in Weeks 6-8, and scikit-learn's bundled digits. No new downloads.</p>
+<hr />
+<h2 id="weekly-quiz-week-9">Weekly quiz: Week 9</h2>
+<ol>
+<li>Name four things a run record must contain.</li>
+<li>What was the 5-seed AUC spread on Day 57, and what does it imply for model comparisons?</li>
+<li>Why verify predictions after a joblib round trip?</li>
+<li>Which capstone model won CV, and was the margin meaningful?</li>
+<li>What threshold met precision ≥ 0.70, and did it hold on test?</li>
+<li>Give the test AUC and its bootstrap CI.</li>
+<li>Which fairness criterion roughly held across sexes, and which did not?</li>
+<li>Why does the perceptron fail on XOR?</li>
+<li>Maximum of the sigmoid derivative?</li>
+<li>Parameter count of 64→32→10?</li>
+<li>What happened to the activation std after 10 ReLU layers with std-1 init?</li>
+<li>Write dZ2 for softmax plus cross-entropy, and state the gradient-check pass criterion.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>Any four of: data hash, config, metric, library versions, commit, timestamp, artefact path.</li>
+<li>Std 0.0008 (mean 0.9286). Differences under about 0.002 are not distinguishable.</li>
+<li>To confirm the saved pipeline reproduces the original predictions exactly.</li>
+<li>hist_gb_tuned (0.9280 vs 0.9277), well within the std of 0.003. Not meaningful.</li>
+<li>0.3778. Test precision was 0.7026, so yes, narrowly.</li>
+<li>0.9291, [0.9237, 0.9331].</li>
+<li>Predictive parity (precision 0.708 vs 0.702) roughly held. Equal opportunity did not (recall 0.661 vs 0.774).</li>
+<li>XOR is not linearly separable.</li>
+<li>0.25, at z = 0.</li>
+<li>2,410.</li>
+<li>It exploded to about 1.5e7.</li>
+<li>dZ2 = (P − Y)/m. The check passes when the relative error is below about 1e−7 (ours was about 1e−10).</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

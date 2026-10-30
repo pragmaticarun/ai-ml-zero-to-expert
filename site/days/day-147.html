@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 147 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="147">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-146.html">← Day 146</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-148.html">Day 148 →</a></nav>
+<h1>Day 147: Weekly project: a production-style model service</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 146 (+1), Day 144 (+3), Day 140 (+7), Day 126 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>The project joins the week's pieces into one small service that a reviewer could actually operate:
+1. <strong>Traceable artefacts.</strong> An ONNX model plus <code>meta.json</code>, which records the model weight hash, data-version hash (Day 142), threshold (Day 141's cost choice), feature names, drift reference and calibrated drift threshold, and golden predictions.
+2. <strong>A strict interface.</strong> Wrong shapes, NaNs, wrong types and oversized batches get HTTP <strong>422</strong>, fixing the Day 144 flaw where a bad shape returned 200.
+3. <strong>Tests as a release gate:</strong> health, golden-prediction parity, an accuracy floor, bad inputs, a batch limit, and a drift alarm that must stay quiet on clean data and fire on drifted data.
+4. <strong>Monitoring built in.</strong> <code>/metrics</code> reports request, row and rejection counts, model-only p95 latency, and drift (max PSI over a rolling 500-input window, which feature, and whether it alerts).
+5. <strong>A calibrated drift threshold.</strong> Day 145 showed PSI &gt; 0.2 alarms on 48/50 clean batches. Instead, take the 99th percentile of max-PSI over no-drift windows.
+6. <strong>A load test against an SLO</strong> (p95 &lt; 50 ms on this box).
+7. <strong>A model card</strong> generated from the same run, so its numbers cannot drift from reality.
+8. <strong>Container and CI files</strong>, clearly labelled UNTESTED.</p>
+<p><strong>Model cards</strong> (from Mitchell et al.'s proposal; written here in my own structure) document what a model is, the data it used, intended and out-of-scope uses, metrics with uncertainty and by slice, how it is monitored, and known limits. Writing the card <em>from the run</em> rather than by hand keeps it honest.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day147_project.py</code>:
+- trains the Day 143 tied-best default config (h=32, lr=1e-2, seed 0), exports it to ONNX, and writes <code>project/artifacts/</code>;
+- calibrates the drift threshold on 200 no-drift windows of 143 rows resampled from the training data;
+- runs <code>pytest</code> on <code>project/test_service.py</code>;
+- starts <code>project/service.py</code> under uvicorn, runs a 500-request load test at concurrency 8, and sends clean traffic then area ×1.3 traffic, reading <code>/metrics</code> after each;
+- writes <code>project/MODEL_CARD.md</code>.</p>
+<p><strong>Two bugs found and fixed while building it:</strong>
+- An <code>exec</code> of the service file inside the build script overwrote its artefact path, causing FileNotFoundError on <code>meta.json</code>. I removed the exec.
+- A test sending <code>float("nan")</code> crashed <em>inside the test client</em>, because strict JSON cannot encode NaN. Python's JSON parser <em>does</em> accept the literal <code>NaN</code>, though, so a real client can send it. The test now posts the raw text <code>NaN</code> and checks for a 422.</p>
+<p><strong>Verified (out/day147_project.log):</strong>
+- Data version <code>9f2384ac7409</code>; model <code>53df326a18b85c38</code>; test accuracy 0.965; threshold 0.8. At 0.8: missed malignant 2, false alarms 4; accuracy by mean-area tertile small 1.000, medium 0.915, large 0.958. Day 141's large-tertile 0.979 was at threshold 0.5; the higher threshold trades accuracy for fewer misses.
+- Calibrated drift threshold: <strong>0.234</strong> (99th percentile of max-PSI over 30 features), vs the 0.2 rule of thumb.
+- pytest: <strong>10 passed</strong>.
+- Load test, 500 single-row requests at concurrency 8: p50 7.8 ms, p95 21.7 ms, 769 req/s. SLO p95 &lt; 50 ms met. Model-only p95 about 0.17 ms, so roughly 99% of request time is not the model.
+- <code>/metrics</code> after 500 clean rows: max PSI 0.187 ("worst symmetry"), alert false, rejected 0.
+- <code>/metrics</code> after 500 rows with area ×1.3: max PSI 0.658 ("mean area"), <strong>alert true</strong>. It names the right feature.</p>
+<p>Honest limits:
+- The threshold was calibrated on 143-row windows while the service uses 500-row windows. Larger windows have less sampling noise, so the threshold is conservative there (fewer false alarms, slower detection).
+- Labels are not observed, so the service cannot see accuracy loss or concept drift.
+- One seed; 143 test rows, where one error is 0.007.
+- Docker and CI are untested, and the load test ran client and server on one machine.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Recalibrate the drift threshold with 500-row windows to match the service, and re-run the quiet and loud tests.</li>
+<li>Add a <code>/feedback</code> endpoint that accepts delayed labels and reports rolling accuracy. Then inject concept drift and watch it.</li>
+<li>Add a shadow model (Day 143's h=128 config) that scores every request without affecting the response. Log disagreement rate and latency.</li>
+<li>Make the CI workflow fail if <code>MODEL_CARD.md</code> changes without a version bump.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why generate the model card from the run? <em>So every number in it is the measured one, and it cannot go stale.</em></li>
+<li>What do golden-prediction tests catch? <em>Export, preprocessing or dependency changes that alter outputs.</em></li>
+<li>Why calibrate the PSI threshold? <em>A fixed 0.2 gave 48/50 false alarms with 30 features. Calibration gives 0.234 at a 1% false-alarm target per window.</em></li>
+<li>Did the drift alert identify the cause? <em>Yes. Max PSI 0.658 on "mean area" after area ×1.3.</em></li>
+<li>What can this service still not detect? <em>Concept drift and accuracy loss, without labels.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>If you were on call for this service, which single <code>/metrics</code> field would you page on, and which would you only chart?</p>
+<p><strong>Extra notes.</strong> Real services add authentication, rate limiting, structured logs, tracing, multiple replicas and a registry-driven deploy. Each is a layer on the same skeleton.</p>
+<p><strong>Going deeper.</strong> Build the Dockerfile on a machine that has Docker, fix whatever breaks, and record what you changed. Until then it stays labelled UNTESTED.</p>
+<p><strong>Interview-style question (15 min).</strong> "Walk me through what happens when this model is retrained." New data is validated and versioned. Training is tracked and reproducible, with selection by mean over seeds. CI exports, checks parity and runs golden, floor and input tests. A new card is generated. Then shadow, canary with rollback, and promotion, with the drift reference updated to the new training data.</p>
+<p><strong>Common mistakes.</strong> Hand-written model cards. Thresholds copied from blog posts. Returning 200 on errors. Tests that only run on the happy path. Calling localhost load tests production numbers.</p>
+<p><strong>What to do next.</strong> Week 22 continues Month 5. LLMOps (originally scheduled for Day 143) and the Month-5 capstone (originally Days 144-147) move later; see the SYLLABUS.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-146.html">← Day 146</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-148.html">Day 148 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

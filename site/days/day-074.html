@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 74 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="74">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-073.html">← Day 73</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-075.html">Day 75 →</a></nav>
+<h1>Day 74: Transfer learning and fine-tuning a pretrained CNN</h1>
+<p class="meta">Week 11 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-11.md">source: weeks/week-11.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-11/day74_transfer.py"><code>code/week-11/day74_transfer.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 73 (+1), Day 71 (+3), Day 67 (+7), Day 53 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> The early layers of a network trained on ImageNet detect edges, textures and parts that are useful for almost any photo. Reusing them means you need far less data and compute for a new task.</p>
+<p><strong>Three options, from cheapest to most flexible.</strong>
+1. <strong>Frozen features:</strong> run the pretrained network up to the penultimate layer once, save the features, train a linear classifier (logistic regression) on top.
+2. <strong>Fine-tune the top:</strong> replace the final layer, unfreeze the last stage, train with a small LR.
+3. <strong>Fine-tune everything:</strong> usually with a smaller LR for early layers (discriminative LRs).</p>
+<p><strong>Practical details.</strong>
+- Use the <strong>same preprocessing</strong> the weights were trained with (resize, ImageNet mean/std). torchvision's weight enums expose <code>transforms()</code> and metadata.
+- Resize small images up (here 32→64; ImageNet models expect larger inputs; 64 is a CPU compromise).
+- BN layers in a frozen backbone should stay in eval mode.
+- Pretrained weights carry the biases and licence terms of their training data. Read the model card.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-11/day74_transfer.py</code> (about 1 minute plus a 45 MB weight download the first time). Only <strong>2,000</strong> training images, validated on 2,500, inputs 64×64. <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>approach</th>
+<th>val acc</th>
+<th>time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ResNet-18 from scratch, 6 epochs</td>
+<td>0.3852</td>
+<td>about 21-30 s</td>
+</tr>
+<tr>
+<td>frozen ImageNet features (512-d) + logistic regression</td>
+<td>0.6424</td>
+<td>13 s incl. feature extraction</td>
+</tr>
+<tr>
+<td>fine-tune layer4 + fc, 4 epochs</td>
+<td><strong>0.6856</strong></td>
+<td>8 s</td>
+</tr>
+</tbody>
+</table>
+<p>Fine-tuning trained <strong>8,398,858</strong> of <strong>11,181,642</strong> parameters. torchvision's metadata reports <strong>69.758</strong> ImageNet top-1 accuracy for these weights. With 2,000 images, the pretrained features beat training from scratch by about 0.26-0.30, and cost less time. Compare: the Day-73 CNN + BN needed 15,000 images to reach 0.7444.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Reproduce the frozen-features approach with your own feature extraction loop (<code>model.fc = nn.Identity()</code>).</li>
+<li>(40 min) Fine-tune with two LR groups (backbone 1e-4, head 1e-2). Compare with the script.</li>
+<li>(40 min) Vary the training set size: 500, 2,000, 8,000. Plot val accuracy for "from scratch" vs "frozen features". Where do they cross, if at all?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why use ImageNet mean/std rather than CIFAR statistics for the pretrained model? <em>Answer: the weights expect inputs distributed as in their training.</em></li>
+<li>When is frozen features + linear model the right choice? <em>Answer: little data, little compute, need for a quick strong baseline.</em></li>
+<li>What fraction of parameters were trainable in our fine-tune? <em>Answer: 8,398,858 / 11,181,642 ≈ 75% (layer4 is most of ResNet-18).</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can list three transfer strategies and when to use each.
+- [ ] I know why preprocessing must match.
+- [ ] I can freeze and unfreeze parameters with <code>requires_grad_</code>.</p>
+<h3 id="extra-notes-choosing-between-the-three-options">Extra notes: choosing between the three options</h3>
+<p>Think of two axes: how much labelled data you have, and how similar your images are to ImageNet photos. Little data and similar images (our 2,000 CIFAR photos): frozen features and a linear model are a strong, cheap baseline; fine-tuning the top stage adds a little (0.6424 → 0.6856 here). Lots of data and similar images: fine-tune everything with a small LR. Little data and very different images (medical scans, spectrograms, satellite bands): frozen high-level features fit less well; fine-tune earlier layers and use strong augmentation, or look for a backbone pretrained on similar data. Lots of data and very different images: training from scratch becomes competitive, but pretrained initialisation still usually speeds up convergence.</p>
+<p>Two engineering details matter in practice. First, cache the frozen features: extracting 512-d features once and training logistic regression on them takes seconds, while running the backbone every epoch wastes most of the compute. Second, check what your pretrained model saw. ImageNet contains classes that overlap with CIFAR-10 (many dog and bird species, cars, ships), which is part of why transfer works so well here; it also means a "held-out" evaluation can be optimistic if your test images resemble the pretraining data very closely. For a real product, read the model card and the licence of the weights, and keep a record of the exact weight file (here <code>resnet18-f37072fd.pth</code>) so results can be reproduced.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look at the torchvision "Models and pre-trained weights" page (linked in <code>docs/resources.md</code>) and compare ResNet-18 with a MobileNet on the same 2,000 images.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"You have 300 labelled images of product defects. What do you build first?" Pretrained backbone, frozen features baseline, strong augmentation, careful validation (maybe cross-validation), then fine-tuning.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting to replace the 1000-class head.</li>
+<li>Frozen layers still updating because the optimiser received all parameters and <code>requires_grad</code> was not turned off.</li>
+<li>Resizing inconsistently between training and evaluation.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 75 builds the habits that tell you, fast, whether a training run is broken.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-073.html">← Day 73</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-075.html">Day 75 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

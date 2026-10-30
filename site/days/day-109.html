@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 109 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="109">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-108.html">← Day 108</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-110.html">Day 110 →</a></nav>
+<h1>Day 109: β, learning rate and forgetting in DPO</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day109_dpo_sweep.py"><code>code/week-16/day109_dpo_sweep.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 108 (+1), Day 106 (+3), Day 102 (+7), Day 88 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>β in DPO.</strong> In the RLHF objective β is the KL weight. In the DPO loss it is the scale on log-ratios inside the sigmoid. Larger β means a given log-prob change produces a bigger margin, so the loss saturates <em>sooner</em> and the gradient weight σ(−margin) drops sooner. The policy therefore moves less from π_ref. Smaller β lets the policy move further before the loss is satisfied. That is the same direction as in Day 106: big β = stay close.</p>
+<p><strong>Learning rate interacts.</strong> With LoRA at lr 5e-4 (Day 108) the optimiser can satisfy the loss in a few steps by drastic changes. Lower lr changes the path, not only the speed: a small step size finds changes closer to the reference.</p>
+<p><strong>Forgetting.</strong> Preference tuning can damage abilities that the pairs do not cover. A cheap proxy is perplexity on held-out general text. We reuse Week 15's Shakespeare validation text: 8 windows of 256 tokens, on which the instruct model scored 32.05 (Week 15 log <code>day104_eval_finetuned.log</code>).</p>
+<p><strong>Measuring movement.</strong> Three numbers tell you how far the policy moved: Δlog-prob of chosen and rejected on held-out pairs, the change in general perplexity, and sample outputs. A full KL estimate would require sampling from the policy; Δlog-probs on the pairs are a cheap substitute.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-16/day109_dpo_sweep.py</code> reruns <code>day108_dpo.py</code> with lr 1e-4, 60 steps × 4 pairs, and β ∈ {0.1, 0.5}, and adds the Shakespeare perplexity.</p>
+<p><strong>Verified (out/day109_dpo_sweep.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Held-out margin</th>
+<th>Δ chosen</th>
+<th>Δ rejected</th>
+<th>Exact match</th>
+<th>Shakespeare ppl</th>
+<th>Example output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Day 108: β 0.1, lr 5e-4, 120 steps</td>
+<td>13.53</td>
+<td>+8.6</td>
+<td>−126.7</td>
+<td>0.17</td>
+<td>not measured</td>
+<td>"clouds orange springfirehose"</td>
+</tr>
+<tr>
+<td>β 0.1, lr 1e-4, 60 steps</td>
+<td>9.19</td>
+<td>+10.7</td>
+<td>−81.2</td>
+<td>0.23</td>
+<td>32.35</td>
+<td>"clouds orange spring"</td>
+</tr>
+<tr>
+<td>β 0.5, lr 1e-4, 60 steps</td>
+<td>11.32</td>
+<td>+12.3</td>
+<td>−10.3</td>
+<td>0.20</td>
+<td>32.14</td>
+<td>"cloud orange lemon spring"</td>
+</tr>
+</tbody>
+</table>
+<p>Both lr 1e-4 runs trained in 35-36 s and reached held-out preference accuracy 1.00. With β = 0.5 the rejected answer moved only −10.3 nats instead of −81.2, exactly the "stay closer" effect, and the example output keeps all four words (wrong order, but well-formed). Perplexity barely moved from 32.05 in either case (32.35 and 32.14), so on this proxy neither run forgot much. Exact match is 0.20-0.23 on 40 prompts; Day 110 shows that such differences are within noise.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the sweep (about 2.5 minutes).</li>
+<li>Add β = 0.02 and β = 2.0. Predict Δ rejected before you run.</li>
+<li>Run β = 0.1 at lr 5e-4 and lr 1e-4 for the <em>same</em> 60 steps to separate the two effects.</li>
+<li>Add a second forgetting probe: the 16-question multiple-choice set from Week 15.</li>
+<li>Write a three-sentence recommendation for choosing β on a new task.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why does larger β make the loss saturate sooner?</li>
+<li>Day 109 β = 0.5: margin 11.32 with Δ chosen +12.3 and Δ rejected −10.3. Check the arithmetic.</li>
+<li>Why is perplexity on Shakespeare only a proxy for forgetting?</li>
+<li>Which setting would you pick from the table, and what would you need to be sure?</li>
+</ol>
+<p><strong>Answers.</strong> (1) The margin is β times the log-ratio difference; the same log-prob change gives a β-times larger margin. (2) 0.5 × (12.3 − (−10.3)) = 0.5 × 22.6 = 11.3, matching 11.32. (3) It measures one text domain and only likelihood, not instruction following, safety or reasoning. (4) None of the exact-match differences is reliable on n = 40; β = 0.5 moves least and keeps outputs well-formed, so prefer it unless a larger test set shows otherwise.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can predict the direction of the effect of β on Δ rejected.
+- [ ] I can explain why learning rate changes the solution, not just the speed.
+- [ ] I can measure forgetting with a held-out perplexity and say what it misses.
+- [ ] I can fill in and interpret the Day 109 table.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Changing β and lr together is a common confounder (Week 15's LoRA vs full fine-tune comparison had the same problem). Change one thing at a time when you want to attribute an effect. Real runs also tune the number of epochs: DPO on a fixed dataset over-fits quickly, which in practice often shows as falling chosen log-probs.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Search for analyses of "DPO chosen log-probability decrease" to see this effect discussed in the literature, and check whether the paper's setting matches yours.</li>
+<li>Read the IPO paper ("A General Theoretical Paradigm to Understand Learning from Human Preferences") for a loss that does not saturate in the same way.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your DPO run has 100% preference accuracy after 50 steps but the model got worse in human evals. What do you check?" Points: Δlog-probs of chosen (falling?), output samples, length change, general benchmarks or perplexity for forgetting, β and lr, number of epochs, the quality and diversity of the rejected answers, and the held-out set size.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Tuning β while also changing the learning rate and steps.</li>
+<li>Comparing exact-match numbers that differ by 1-2 items out of 40.</li>
+<li>Not measuring anything outside the preference task.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: a day on how evaluations mislead, measured on the Day 108 model.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-108.html">← Day 108</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-110.html">Day 110 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 130 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="130">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-129.html">← Day 129</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-131.html">Day 131 →</a></nav>
+<h1>Day 130: Exploration: bandits, UCB, Thompson sampling and a LinUCB recommendation tie-in</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day130_bandits.py"><code>code/week-19/day130_bandits.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 129 (+1), Day 127 (+3), Day 123 (+7), Day 109 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Bandits are RL with one state.</strong> You repeatedly choose one of K arms; arm k pays a reward drawn from an unknown distribution with mean μ_k. There are no states to plan over, so the only difficulty is the <strong>exploration-exploitation</strong> trade-off. Performance is measured by <strong>regret</strong>: Σ_t (μ* − μ_{a_t}), the reward lost compared with always pulling the best arm.</p>
+<p><strong>Strategies.</strong>
+- <em>Greedy:</em> pull the arm with the highest sample mean. It can lock onto a mediocre arm forever after a lucky start.
+- <em>ε-greedy:</em> with probability ε pull a random arm. Simple, but it keeps exploring at a fixed rate forever, so regret grows linearly.
+- <em>Optimistic initial values:</em> start every estimate at the maximum possible reward (Q0 = 1 for Bernoulli). Each pull disappoints, so the agent tries everything early, then settles.
+- <em>UCB1:</em> pull argmax_k Q_k + c·sqrt(2 ln t / N_k). The bonus shrinks as an arm is tried; this is "optimism in the face of uncertainty" with a guarantee of logarithmic regret.
+- <em>Thompson sampling:</em> keep a Beta(α_k, β_k) posterior per arm, sample one value from each, pull the arm with the highest sample, update with the observed 0/1 reward. It explores exactly as much as the posterior is uncertain.</p>
+<p><strong>Contextual bandits and recommendation.</strong> In a recommender, each round you see a context x (user features), choose an item, and observe a click. A contextual bandit learns a model of reward given context and item. <strong>LinUCB</strong> assumes reward ≈ θ_k·x for each item k, fits θ_k by ridge regression, and adds an uncertainty bonus α·sqrt(xᵀ A_k⁻¹ x). This is the same optimism idea as UCB1, with the count replaced by a covariance. Without context, a single "best item for everyone" policy cannot exploit the fact that different users like different things.</p>
+<p><strong>Why this belongs in an RL week.</strong> Every exploration idea in deep RL (entropy bonuses, optimism, posterior sampling, count-based bonuses) has its cleanest form here. And at LLM scale, sampling G answers per prompt and reinforcing the better ones (Day 132) is a bandit-like structure per prompt.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day130_bandits.py</code>. Part 1: a 10-armed Bernoulli bandit, 2,000 pulls, 200 independent runs; regret ± standard error, and the fraction of the last 500 pulls that chose the optimal arm. Part 2: a simulated recommender with 20 items, 5-dimensional user context, 5,000 rounds, 20 runs.</p>
+<p><strong>Verified (out/day130_bandits.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Policy</th>
+<th>Regret (± s.e.)</th>
+<th>% optimal, last 500</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>greedy</td>
+<td>558.8 ± 36.0</td>
+<td>16%</td>
+</tr>
+<tr>
+<td>ε-greedy 0.1</td>
+<td>112.7 ± 2.6</td>
+<td>79%</td>
+</tr>
+<tr>
+<td>optimistic (Q0 = 1)</td>
+<td>38.5 ± 5.6</td>
+<td>77%</td>
+</tr>
+<tr>
+<td>UCB1</td>
+<td>183.3 ± 1.9</td>
+<td>63%</td>
+</tr>
+<tr>
+<td>Thompson</td>
+<td>30.5 ± 1.1</td>
+<td>88%</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Recommender policy</th>
+<th>CTR</th>
+<th>Regret</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>random</td>
+<td>0.382</td>
+<td>2832</td>
+</tr>
+<tr>
+<td>ε-greedy, no context</td>
+<td>0.399</td>
+<td>2738</td>
+</tr>
+<tr>
+<td>LinUCB (α 1)</td>
+<td>0.876</td>
+<td>342</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reading it.</strong> Thompson sampling had the lowest regret and the highest share of optimal pulls. Greedy was worst by far and has large run-to-run spread (± 36.0), the signature of lock-in on a wrong arm. A surprise worth keeping: <strong>UCB1 did worse than ε-greedy at this horizon</strong>. UCB1's bonus is conservative; it keeps sampling arms that are probably bad, and its logarithmic-regret advantage only pays off over longer horizons. Asymptotic guarantees do not rank methods at a finite budget. In the recommender, ignoring context barely beat random (0.399 vs 0.382 CTR), while LinUCB more than doubled CTR: here the context, not the exploration rule, is what matters.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Extend the horizon to 20,000 pulls (fewer runs, e.g. 50, to stay within a few minutes). Does UCB1 overtake ε-greedy?</li>
+<li>Try UCB1 with a smaller exploration constant; report regret.</li>
+<li>Make the bandit non-stationary (means drift slowly). Which method suffers most? Add a constant step size to ε-greedy.</li>
+<li>In the recommender, vary α in LinUCB (0.1, 1, 3).</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Define regret.</li>
+<li>Why does ε-greedy have linear regret?</li>
+<li>What replaces the count N_k in LinUCB?</li>
+<li>Why can optimistic initialisation fail in a non-stationary bandit?</li>
+<li>Explain the UCB1 result above in one sentence.</li>
+</ol>
+<p><strong>Answers.</strong> 1) Σ (μ* − μ_{a_t}). 2) It explores at rate ε forever, each time losing on average a fixed amount. 3) The ridge covariance A_k (via xᵀA⁻¹x). 4) Its exploration happens only at the start. 5) Its bonus over-explores at a 2,000-pull horizon, where its log-regret guarantee has not yet paid off.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days. Flashcards: regret; UCB1 formula; Thompson for Bernoulli; LinUCB bonus; "asymptotic ≠ finite-horizon ranking".</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Off-policy evaluation (estimating a new recommender's CTR from logs of an old one) is the practical bottleneck in real systems; it uses the same importance ratios as PPO.</li>
+<li>Real recommenders face delayed and biased feedback (people only click what they see).</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read the bandit chapter of Sutton &amp; Barto (cited on Day 127) and reproduce its 10-armed testbed figure with <code>day130_bandits.py</code>.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"You A/B test a new recommender and it wins slightly. Why might a bandit be better than a fixed 50/50 test, and when would you still use the A/B test?" Bandits shift traffic to the winner and cut regret; a fixed test gives cleaner, unbiased effect estimates and is easier to analyse.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Comparing methods on one run (greedy's ± 36.0 shows why).</li>
+<li>Tuning ε or c on the same runs you report.</li>
+<li>Ignoring context when it is available.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: what goes wrong when you change the reward to make learning easier.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-129.html">← Day 129</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-131.html">Day 131 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

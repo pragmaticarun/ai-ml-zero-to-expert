@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 39 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="39">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-038.html">← Day 38</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-040.html">Day 40 →</a></nav>
+<h1>Day 39: Decision trees: entropy, Gini, splitting</h1>
+<p class="meta">Week 6 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-06.md">source: weeks/week-06.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-06/day39_trees.py"><code>code/week-06/day39_trees.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 38 (+1), Day 36 (+3), Day 32 (+7), Day 18 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A tree is a game of 20 questions. "Is worst perimeter ≤ 106?" If yes, ask another question, and so on until a leaf says "benign". Each question splits the data on one feature at one threshold. The algorithm (CART) chooses, greedily, the split that makes the children <strong>purest</strong>.</p>
+<p><strong>Impurity measures</strong> for a node with class proportions pₖ:
+- <strong>Gini</strong> = 1 − Σ pₖ². The chance two random draws disagree.
+- <strong>Entropy</strong> = −Σ pₖ log₂ pₖ. Bits needed to name the class.
+- A split's quality is the parent impurity minus the size-weighted child impurity. With entropy, that difference is the <strong>information gain</strong>.</p>
+<p><strong>Greedy search.</strong> For every feature, sort its values. Every midpoint between consecutive distinct values is a candidate threshold. Evaluating all of them costs O(n·m log m) per node. Recurse until nodes are pure or a stopping rule fires (<code>max_depth</code>, <code>min_samples_leaf</code>).</p>
+<p><strong>Properties.</strong>
+- No scaling needed, because only the order of values matters.
+- Handles mixed feature types and interactions naturally.
+- Easy to explain.
+- <strong>High variance:</strong> a fully grown tree memorises its training data, and a small change to the data can change the whole tree. Tomorrow's forests fix this.</p>
+<p><strong>Regression trees</strong> use variance (MSE) as impurity and predict the leaf mean.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><strong>By hand.</strong> A parent node has 6 positives and 4 negatives. Gini = 1 − (0.6² + 0.4²) = 0.48, entropy = 0.971 bits. Split it into L = [5 pos, 1 neg] and R = [1 pos, 3 neg]:
+- Weighted Gini = 0.6·(1 − (5/6)² − (1/6)²) + 0.4·(1 − 0.25² − 0.75²) = <strong>0.3167</strong>.
+- Information gain = <strong>0.2564</strong> bits.</p>
+<p><strong>Code.</strong> <code>code/week-06/day39_trees.py</code> on breast cancer. Verified:
+- Scratch CART matches scikit-learn exactly. At depth 1 both reach test accuracy <strong>0.8881</strong>. At depth 3 both reach <strong>0.9161</strong>. Both choose the same root split: feature 22 (<em>worst perimeter</em>) ≤ 106.10.
+- The printed depth-2 tree asks about <em>worst concave points</em> next. Notice that both right-hand leaves say class 0: a split can improve purity without changing the majority label.
+- <strong>Depth sweep:</strong></p>
+<table>
+<thead>
+<tr>
+<th>depth</th>
+<th>train</th>
+<th>test</th>
+<th>leaves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.9296</td>
+<td>0.8881</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.9319</td>
+<td>0.8881</td>
+<td>4</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.9765</td>
+<td>0.9161</td>
+<td>8</td>
+</tr>
+<tr>
+<td>5 / 8 / None</td>
+<td>1.0000</td>
+<td>0.9021</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<p>From depth 5 the tree is pure (train accuracy 1.0, 18 leaves), and test accuracy <em>drops</em> from 0.9161 to 0.9021. That is the overfitting signature from Day 32 in a new model family.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Write <code>gini(y)</code>, <code>entropy(y)</code> and <code>best_split(X, y)</code> (loop over features, then sorted unique midpoints) and test them on the hand example.</li>
+<li>Build the recursive <code>fit(X, y, depth)</code> that returns nested dicts, and <code>predict_one(node, x)</code>. Match scikit-learn at depth 1 and 3.</li>
+<li>Speed it up: use cumulative class counts over sorted values so each feature's scan is O(m), not O(m²). Time both versions.</li>
+<li>Prune with <code>ccp_alpha</code>: plot the <code>cost_complexity_pruning_path</code>, then pick α by 5-fold CV. How many leaves remain?</li>
+<li>Stretch: implement a regression tree (MSE impurity) and fit y = sin(x) + noise at depths 1, 3 and 8. Plot the staircase predictions.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Gini of [10 pos, 0 neg]? Of [5, 5]? <em>(0 and 0.5.)</em></li>
+<li>Entropy of a fair 4-class node? <em>(2 bits.)</em></li>
+<li>Why don't trees need feature scaling? <em>(Splits depend only on the order of values.)</em></li>
+<li>How many candidate thresholds does a feature with 7 distinct values have? <em>(6.)</em></li>
+<li>A tree with depth limit d has at most how many leaves? <em>(2^d.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Define Gini and entropy.
+  2. Compute the weighted Gini of a split.
+  3. Why is a fully grown tree high variance?
+  4. What was our root split?
+  5. At what depth did test accuracy peak?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Finding the globally optimal tree is NP-hard, which is why CART is greedy. Greedy trees can miss an XOR pattern: neither feature alone reduces impurity, so the first split looks useless even though two splits would solve it. Modern libraries handle categorical features by sorting categories by target mean (an optimal trick for binary targets). HistGradientBoosting bins features into at most 255 bins so split search costs O(bins).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reading the top split as "the most important feature". Use Day 43's permutation importance instead.</li>
+<li>One-hot encoding a 500-level category for a single tree, which makes deep sparse splits. Consider native categorical support.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: average hundreds of high-variance trees to get a low-variance forest.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-038.html">← Day 38</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-040.html">Day 40 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 3 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="3">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-002.html">← Day 2</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-004.html">Day 4 →</a></nav>
+<h1>Day 3: Vectorisation and the performance mindset</h1>
+<p class="meta">Week 1 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-01.md">source: weeks/week-01.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-01/day03_vectorisation_benchmark.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-01/day03_vectorisation_benchmark.py"><code>code/week-01/day03_vectorisation_benchmark.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 2 (+1).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> In C++, a loop over a million floats costs about 1 ns per element and the compiler can use SIMD. In CPython, each iteration boxes Python objects, dispatches <code>*</code> dynamically, and touches reference counts, which costs tens of nanoseconds. <strong>Vectorisation</strong> means expressing the work as whole-array operations so the inner loop runs in compiled C/Fortran (and, for matrix products, in a tuned BLAS that uses SIMD, caches and multiple cores). You don't make Python faster. You make Python <em>do less</em>: it hands big chunks of work to native code.</p>
+<p><strong>Concrete example (verified on this box, so run it yourself because your numbers will differ):</strong>
+- Dot product of two 1,000,000-element vectors: Python loop <strong>24.4 ms</strong>, <code>np.dot</code> <strong>0.037 ms</strong>, roughly <strong>656×</strong> faster, with the same answer.
+- Pairwise squared distances, 400×300 points in 8-D: Python loops <strong>97.4 ms</strong>, broadcasting <strong>6.0 ms</strong>, the "matmul trick" <strong>0.28 ms</strong>.</p>
+<p><strong>Plain-language maths of the matmul trick.</strong> ‖p − q‖² = ‖p‖² + ‖q‖² − 2 p·q. The first two terms are cheap per-row norms. The third, for all pairs at once, is a single matrix product P Qᵀ. So an O(n·m·d) loop turns into one BLAS call, which is the fastest kind of code on any CPU or GPU. The same identity shows up later in k-means (Month 2) and in attention (Month 4: attention scores <em>are</em> Q Kᵀ).</p>
+<p><strong>Memory layout matters (it's your C++ intuition again).</strong> Arrays are row-major (C order) by default. <code>A.sum(axis=1)</code> on a C-ordered 3000×3000 array took 2.88 ms. Converting to Fortran order first and then summing took 62.5 ms, and most of that was the conversion copy. Contiguity, cache lines and avoiding copies all apply in NumPy just as they do in media pipelines.</p>
+<p><strong>Is broadcasting always better?</strong> Broadcasting <code>P[:, None, :] - Q[None, :, :]</code> materialises a 400×300×8 temporary (about 7.7 MB). For big inputs that temporary blows the cache or your RAM. The matmul formulation avoids it. <strong>Vectorised ≠ free:</strong> watch the size of temporaries.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Check the trick on p = (1, 2), q = (3, 5).
+- Direct: (1−3)² + (2−5)² = 4 + 9 = <strong>13</strong>.
+- Trick: ‖p‖² = 5, ‖q‖² = 34, p·q = 3 + 10 = 13, so 5 + 34 − 26 = <strong>13</strong>. ✓</p>
+<p>Floating point: the trick subtracts large numbers, so for nearly identical points it can return tiny <em>negative</em> distances. The lab's maximum difference between the methods is 3.4e-15. When you need it, clip with <code>np.maximum(d, 0)</code> before <code>sqrt</code>.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-01day03_vectorisation_benchmarkpy">Block 3: Coding lab (2h): <code>code/week-01/day03_vectorisation_benchmark.py</code></h3>
+<p>Run it three times and record the minimum times in your log. Tasks:
+1. Vectorise this loop: <code>out[i] = x[i] if x[i] &gt; 0 else 0.1*x[i]</code> (leaky ReLU). <em>Hint:</em> <code>np.where</code>.
+2. Vectorise a moving average of window 5 with <code>np.convolve</code> (an audio-filter reflex) and compare it with a loop.
+3. Use <code>time.perf_counter</code> to time <code>A @ B</code> for n = 256, 512, 1024, then compute GFLOP/s = 2n³ / t. (Day 9 compares this with Rust.)
+4. Profile with <code>python -m cProfile -s cumtime day03_vectorisation_benchmark.py | head -20</code> to see where the time goes.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why is <code>sum(a*b for a, b in zip(x, y))</code> slow even though Python's <code>sum</code> is implemented in C? <em>Answer:</em> the generator runs Python bytecode for every element, and that per-element interpreter overhead dominates.</li>
+<li>How many bytes does a 1000×1000×3 float64 temporary use? <em>Answer:</em> 24 MB.</li>
+<li>Rewrite <code>[[np.dot(a, b) for b in B] for a in A]</code> vectorised. <em>Answer:</em> <code>A @ B.T</code>.</li>
+<li>When might a loop in NumPy be acceptable? <em>Answer:</em> over a small number of large chunks (for example epochs or batches), never over individual elements.</li>
+<li>True or false: vectorised code is always more memory-efficient. <em>Answer:</em> false (temporaries).</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 2 (+1):</strong> predict the shapes of (3,1)+(1,4), (2,3)*(3,), and <code>X.mean(1)</code> for X (5, 7).</li>
+<li><strong>Self-check:</strong>
+  1. What is the source of Python loop overhead?
+  2. Write the identity behind the matmul distance trick.
+  3. What is a risk of broadcasting with large arrays?
+  4. Why might C-order vs F-order change speed?
+  5. What is the formula for GFLOP/s of an n×n matmul? (2n³/t/1e9)</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><strong>Timing the first call</strong> includes warm-up and allocation. Take the min over repetitions.</li>
+<li><strong>Comparing against the wrong baseline:</strong> always check that the results match (<code>np.allclose</code>) before you celebrate a speed-up.</li>
+<li><strong>Negative squared distances</strong> from the trick: clip them.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Whenever you write <code>for i in range(n)</code> over data, stop and ask: "Is this a reduction, a map, or a matmul?" Almost everything in ML is one of the three.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-002.html">← Day 2</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-004.html">Day 4 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

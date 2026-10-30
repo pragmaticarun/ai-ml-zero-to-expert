@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 103 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="103">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-102.html">← Day 102</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-104.html">Day 104 →</a></nav>
+<h1>Day 103: Instruction tuning and chat templates</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day103_instruction_tuning.py"><code>code/week-15/day103_instruction_tuning.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 102 (+1), Day 100 (+3), Day 96 (+7), Day 82 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Base vs instruct models.</strong> A base model continues text. Ask it a question and it may continue with more questions, as Day 99's greedy loop showed. An <em>instruct</em> (chat) model has been further trained to answer. Instruction tuning is the first step of that post-training.</p>
+<p><strong>Supervised fine-tuning (SFT).</strong> Collect (instruction, response) pairs and fine-tune with the next-token loss on the formatted conversation. Wei et al. (2022), "Finetuned Language Models Are Zero-Shot Learners" (FLAN), and Ouyang et al. (2022), "Training language models to follow instructions with human feedback" (InstructGPT), established the recipe: SFT on demonstrations, then preference optimisation (Day 106).</p>
+<p><strong>Chat templates.</strong> Conversations are serialised with special tokens. SmolLM2-Instruct uses the ChatML style: <code>&lt;|im_start|&gt;system … &lt;|im_end|&gt;</code>, <code>&lt;|im_start|&gt;user … &lt;|im_end|&gt;</code>, <code>&lt;|im_start|&gt;assistant</code>. The template lives in the tokenizer (<code>tokenizer.apply_chat_template</code>). Use the <em>exact</em> template the model was trained with; a mismatch silently degrades quality. <code>add_generation_prompt=True</code> appends the assistant header so the model starts answering.</p>
+<p><strong>Prompt-loss masking.</strong> Usually only the response tokens are trained: set the labels of system and user tokens to −100. Arguments for it: the model should learn to answer, not to generate user questions; and long prompts would otherwise dominate the loss. Arguments against: for short prompts it may matter little, and some work finds that training on prompts also helps. We test it.</p>
+<p><strong>Stop tokens.</strong> The response must end with <code>&lt;|im_end|&gt;</code> in training, and generation must stop on that token. Our first run forgot to pass it as an EOS token to <code>generate</code>: the model produced the right words and then rambled ("window tiger coffeeaidaidaid"), scoring 0.07. A one-line fix (<code>eos_token_id=[…, im_end]</code>) is the difference between a broken and a working evaluation.</p>
+<p><strong>Our task.</strong> Reversing the order of 3-5 words from a 40-word list ("Reverse the order of these words: red fish blue" → "blue fish red"). It is synthetic, automatically checkable, and something a 135M base model cannot do zero-shot.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day103_instruction_tuning.py</code> (about 6 minutes). 2,000 training examples; 40 held-out prompts not in the training set; LoRA r = 16 on all linear layers, lr 1e-3, 250 steps of 8 examples. <strong>Verified:</strong>
+- The rendered template contains a default system prompt ("You are a helpful AI assistant named SmolLM, trained by Hugging Face"), then the user turn, then <code>&lt;|im_start|&gt;assistant</code>.
+- One example is <strong>48</strong> tokens, of which only <strong>6</strong> (the answer plus <code>&lt;|im_end|&gt;</code>) count in the masked loss.
+- Zero-shot exact match on the 40 held-out prompts: base <strong>0.00</strong>, SmolLM2-135M-Instruct <strong>0.00</strong>.
+- After SFT with prompt masking: exact match <strong>1.00</strong> (135 s). Sample: "coffee tiger window" → <strong>"window tiger coffee"</strong>.
+- After SFT <em>without</em> masking: also <strong>1.00</strong> (132 s).</p>
+<p>So on this task the masking choice made no difference: the prompt is highly regular, and 250 steps were enough either way. Report it as a null result for this setting, not as evidence that masking never matters. Harder tasks with varied, long prompts are where masking is usually argued to matter.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Cut training to 50 and 100 steps and compare masked vs unmasked again: does a gap appear early?</li>
+<li>(45 min) Make the test harder: 6-8 words, including words not in the training list. What breaks?</li>
+<li>(30 min) Render a multi-turn conversation with <code>apply_chat_template</code> and build labels that train <em>only the last</em> assistant turn.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>What fraction of tokens is trained with masking in our example? <em>Answer: 6/48 = 12.5%.</em></li>
+<li>Why did the instruct model score 0 zero-shot? <em>Answer: a 135M model cannot reliably follow this instruction; it was never trained on it.</em></li>
+<li>What is the effect of forgetting the stop token in evaluation? <em>Answer: correct answers followed by junk fail exact match.</em></li>
+<li>Why use a synthetic task? <em>Answer: unlimited data, exact automatic grading, no licence issues.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can render a chat template and explain each special token.
+- [ ] I can build masked labels.
+- [ ] I check stop tokens before trusting an evaluation.</p>
+<h3 id="extra-notes-real-sft-data">Extra notes: real SFT data</h3>
+<p>Public instruction datasets range from human-written (such as Databricks' Dolly) to model-generated (such as Alpaca-style data), and modern recipes mix many sources with filtering. Quality and diversity matter more than size: Zhou et al. (2023), "LIMA: Less Is More for Alignment", report strong results from about 1,000 carefully curated examples. Always check the licence, because some datasets generated with commercial models forbid certain uses.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the chat-templating page of the Hugging Face transformers documentation.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your fine-tuned chat model keeps generating the user's next turn after its answer. Why?" Missing <code>&lt;|im_end|&gt;</code> in training targets, or the stop token not set at inference, or a template mismatch.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Training on one template and serving another.</li>
+<li>Masking the end-of-turn token, so the model never learns to stop.</li>
+<li>Test prompts that also occur in the training set (we filter them out).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 104 evaluates this model more broadly, including what it lost.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-102.html">← Day 102</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-104.html">Day 104 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

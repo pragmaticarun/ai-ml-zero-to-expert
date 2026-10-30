@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 61 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="61">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-060.html">← Day 60</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-062.html">Day 62 →</a></nav>
+<h1>Day 61: The perceptron and the logistic neuron</h1>
+<p class="meta">Week 9 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/day61_perceptron.py"><code>code/week-09/day61_perceptron.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 60 (+1), Day 58 (+3), Day 54 (+7), Day 40 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A neuron is a weighted vote: z = w·x + b, followed by a decision. The <strong>perceptron</strong> (Rosenblatt, 1958) outputs 1 if z &gt; 0, and learns by correcting its mistakes. When it gets an example wrong, it nudges w towards the positive examples (w += y·x with labels ±1). If the data are <strong>linearly separable</strong>, this provably stops after a finite number of mistakes (the perceptron convergence theorem). If they are not, it never stops.</p>
+<p><strong>The logistic neuron</strong> replaces the hard step with the sigmoid σ(z) = 1/(1 + e⁻ᶻ), giving a probability and a smooth loss to minimise (log loss). That is exactly logistic regression from Month 1. A neural network is many of these stacked. Its derivative is σ′(z) = σ(z)(1 − σ(z)), which is <strong>at most 0.25</strong> (at z = 0). Remember that number for Day 62's vanishing gradients.</p>
+<p><strong>The XOR limit.</strong> XOR (output 1 when exactly one input is 1) can't be separated by any single line. Minsky and Papert's 1969 analysis of single-layer limits like this one is often credited with slowing neural-network research. There are two fixes:
+1. <strong>Engineer a feature</strong> (x₁·x₂), and the problem becomes linear.
+2. <strong>Add a hidden layer</strong> that <em>learns</em> such features, which is the whole idea of deep learning.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-09/day61_perceptron.py</code>. Verified:
+- <strong>Separable data</strong> (200 points, true boundary 2x₁ − x₂ + 0.5 = 0): mistakes per epoch were [13, 13, 12, 8, 6, 8, 4, 0], so it converged in 8 epochs. The learned direction w/|w| = [0.893, −0.450] against the true [0.894, −0.447]. scikit-learn's <code>Perceptron</code> reaches training accuracy 1.000.
+- <strong>XOR:</strong> the mistakes in epochs 1-5 were [2, 3, 4, 4, 4], and in epochs 96-100 [4, 4, 4, 4, 4]. It <strong>never converges</strong>. Logistic regression on XOR: accuracy <strong>0.5</strong> (chance). Add the product feature x₁x₂ and logistic regression reaches <strong>1.0</strong>.
+- Sigmoid derivative at z = −4…4: [0.018, 0.045, 0.105, 0.197, <strong>0.25</strong>, 0.197, 0.105, 0.045, 0.018].</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Implement the perceptron from scratch (labels ±1, update on mistakes only) and reproduce the mistake trace.</li>
+<li>Plot the decision boundary after epochs 1, 3 and 8.</li>
+<li>Add margin: make the data <em>barely</em> separable (shrink the gap). How do the mistakes and epochs change? (The theorem bounds the mistakes by (R/γ)².)</li>
+<li>Implement a single logistic neuron trained with gradient descent on log loss. Compare it with <code>LogisticRegression</code> on the separable data.</li>
+<li>XOR: show that <em>no</em> (w, b) separates it by plotting the four points and trying a few lines. Then add x₁x₂ and show that a line in 3-D works.</li>
+<li>Stretch: implement the <strong>pocket</strong> perceptron (keep the best weights so far) for non-separable data.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>w = [1, −1], b = 0, x = [2, 3], y = +1. Prediction? Update? <em>(z = −1, so it predicts −1, which is wrong. w becomes [3, 2].)</em></li>
+<li>Why does the perceptron never converge on XOR? <em>(The data are not linearly separable.)</em></li>
+<li>Maximum of σ′? <em>(0.25 at z = 0.)</em></li>
+<li>How does a logistic neuron differ from a perceptron? <em>(Smooth probability output and log-loss gradient descent, vs a hard step and mistake-driven updates.)</em></li>
+<li>Give two ways to solve XOR. <em>(A product feature, or a hidden layer.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Write the perceptron update rule.
+  2. State the convergence theorem's condition.
+  3. Why is XOR not separable?
+  4. Write σ′.
+  5. What did logistic regression score on XOR, with and without x₁x₂?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>The perceptron convergence proof is half a page. Show that w·w* grows linearly with the number of mistakes while |w| grows only like √mistakes. Together these bound the mistakes by (R/γ)². Work through it on paper. It is a good first proof in learning theory.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Is a neural network just many logistic regressions?" Write a careful answer. Each unit is a logistic (or other) neuron, but the hidden units are trained <em>jointly</em> for the final loss, not each against the labels, so they learn intermediate features nobody specified. Use today's XOR result: a single logistic unit scores 0.5, the same unit with the hand-made x₁x₂ feature scores 1.0, and a hidden layer can learn such a feature itself. Finish by noting what changes in training. The loss is no longer convex in the weights, so initialisation and optimisation, the topics of the coming days, start to matter.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Using {0, 1} labels in the ±1 update rule.</li>
+<li>Forgetting the bias.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: stack neurons into layers and run them forward.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-060.html">← Day 60</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-062.html">Day 62 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 110 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="110">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-109.html">← Day 109</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-111.html">Day 111 →</a></nav>
+<h1>Day 110: LLM evaluation pitfalls</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day110_eval_pitfalls.py"><code>code/week-16/day110_eval_pitfalls.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 109 (+1), Day 107 (+3), Day 103 (+7), Day 89 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p>An evaluation number is a measurement with error bars and assumptions. Six pitfalls cause most bad conclusions.</p>
+<p><strong>1. Small samples.</strong> With n test items and accuracy p, the standard error is about √(p(1−p)/n). On 40 items at p = 0.2 that is about 0.06, so differences of 0.03-0.06 are noise. Report a confidence interval; the bootstrap (resample the per-item results with replacement many times) is simple and assumption-light.</p>
+<p><strong>2. Prompt sensitivity.</strong> Small models, and sometimes large ones, change their answers when the instruction is reworded, the casing changes or punctuation is removed. One prompt template is one sample from a distribution of reasonable prompts. Report several, or fix the template and say so.</p>
+<p><strong>3. Metric choice.</strong> Exact match, normalised match (lowercase, strip punctuation) and "contains the answer" can give different numbers for the same outputs. "Contains" can reward a model that outputs many candidates. Choose the metric before looking at results and report how it was computed.</p>
+<p><strong>4. Contamination.</strong> If test items (or close variants) appear in training data, scores measure memorisation. Check exact overlap and n-gram overlap. For public benchmarks and web-trained models you usually <em>cannot</em> fully check, which is why fresh, private or dynamically generated tests matter.</p>
+<p><strong>5. Judge bias.</strong> LLM judges have position, length and self-preference biases. Week 15 measured this: the 135M instruct judge gave 0 of 16 consistent verdicts when the two answers were swapped.</p>
+<p><strong>6. Optimising the metric.</strong> Once a number is a target, models and people tune toward it (Goodhart's law). The Day 107 RM shortcut and the Day 111 reward exploitation are versions of this.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-16/day110_eval_pitfalls.py</code> loads the Day 108 DPO adapter and re-evaluates it on the 40 test prompts (15 s here).</p>
+<p><strong>Verified (out/day110_eval_pitfalls.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Prompt wording</th>
+<th>Exact</th>
+<th>Normalised</th>
+<th>Contains</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Reverse the order of these words: …" (training wording)</td>
+<td>0.17</td>
+<td>0.20</td>
+<td>0.20</td>
+</tr>
+<tr>
+<td>"reverse the order of these words …" (lowercase, no colon)</td>
+<td>0.07</td>
+<td>0.07</td>
+<td>0.07</td>
+</tr>
+<tr>
+<td>"Write these words in reverse order: …" (paraphrase)</td>
+<td>0.12</td>
+<td>0.12</td>
+<td>0.12</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Bootstrap 95% CI for exact match with the training wording, n = 40: [0.07, 0.30] around 0.17.</li>
+<li>Contamination: 0/40 test prompts appear in training; 0/40 test word <em>sets</em> appear in training in another order.</li>
+<li>But 29/40 test answers have every word bigram somewhere in the training answers, so "no exact overlap" does not mean "nothing seen".</li>
+</ul>
+<p>Reading: the same model scores between 0.07 and 0.20 depending on wording and metric, and the CI is wide enough to contain all of the Day 109 exact-match numbers (0.17-0.23). Any claim that one DPO setting is "better" on this test set would be unsupported.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script and compare with the log.</li>
+<li>Raise the test set to 400 prompts (change <code>n_test</code>) and recompute the CI width. It should shrink roughly by √10.</li>
+<li>Add two more wordings; report mean and range across wordings.</li>
+<li>Evaluate the Day 109 β = 0.5 adapter the same way (save it with <code>TAG</code>). Is the difference with β = 0.1 outside the CIs?</li>
+<li>Implement a paired bootstrap: resample <em>items</em> and compute the difference between two models on the same items.</li>
+<li>Write a short "evaluation card" for this test: data, size, metric, prompts, CI, known contamination.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Model A scores 0.23 and model B 0.20 on the same 40 items. What can you conclude?</li>
+<li>Why is a paired comparison more powerful than comparing two separate CIs?</li>
+<li>Give an example where "contains" overstates performance.</li>
+<li>Why might a model trained on one prompt template drop on a paraphrase?</li>
+</ol>
+<p><strong>Answers.</strong> (1) Nothing reliable: the difference is about one item, and Day 110's CI for one model spans [0.07, 0.30]. (2) Item difficulty is shared, so variance from "which items happened to be chosen" cancels. (3) A model that outputs both orders, or a list of guesses, contains the answer without giving it. (4) Fine-tuning on a narrow template teaches template-specific behaviour (measured: 0.17 → 0.07 with lowercase and no colon).</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can compute a bootstrap CI and say what it covers and what it does not.
+- [ ] I can list six evaluation pitfalls with one example each.
+- [ ] I can run an exact and n-gram contamination check.
+- [ ] I can explain why "no exact overlap" is weaker than it sounds (29/40 bigram result).</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>The bootstrap CI covers sampling of <em>items</em> only. It says nothing about prompt choice, decoding settings, random seeds of training, or whether the test measures what you care about. Training-seed variance is its own source of noise: retrain with two seeds before trusting a small gain. Week 15's multiple-choice set gave every model the same score (0.88), which is the opposite pitfall: a test that cannot separate models.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the "Holistic Evaluation of Language Models" (HELM) paper's discussion of prompt and metric choices.</li>
+<li>Search for papers on benchmark contamination detection and note which methods need access to training data.</li>
+<li>Read about Chatbot Arena's pairwise human-preference evaluation and its own biases.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"A new model beats the old one by 2 points on a public benchmark. What do you need before shipping?" Points: size of benchmark and CI or paired test, multiple prompts and seeds, contamination check, task-relevant private evals, failure analysis, safety checks, and whether the metric matches the product goal.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Reporting a single number with no n and no interval.</li>
+<li>Tuning prompts on the test set.</li>
+<li>Treating LLM-judge scores as ground truth.</li>
+<li>Assuming a held-out split is uncontaminated because exact strings do not match.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: improving outputs at inference time by sampling several answers and choosing one, and what happens when the chooser is a bad reward.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-109.html">← Day 109</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-111.html">Day 111 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

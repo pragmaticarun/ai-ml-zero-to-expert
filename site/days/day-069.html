@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 69 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="69">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-068.html">← Day 68</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-070.html">Day 70 →</a></nav>
+<h1>Day 69: Batch norm and layer norm</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day69_batchnorm.py"><code>code/week-10/day69_batchnorm.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 68 (+1), Day 66 (+3), Day 62 (+7), Day 48 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Day 66 showed that the scale of activations drifts layer by layer. Normalisation layers reset it: standardise the activations, then let the network learn a scale γ and shift β.</p>
+<p><strong>Batch norm (BN).</strong> For each feature (channel), compute the mean and variance <strong>over the batch</strong> during training, normalise, then apply γ, β. It also keeps <em>running</em> averages of mean and variance (buffers, not parameters) that are used in <code>eval()</code> mode. Consequences:
+- Training behaviour depends on batch size. With a batch of 1 there is no variance to compute: PyTorch raises an error in train mode.
+- Train and eval modes differ. Forgetting <code>model.eval()</code> changes predictions.
+- It allows larger learning rates and makes training much less sensitive to initialisation.</p>
+<p><strong>Layer norm (LN).</strong> Normalises <strong>over the features of each example</strong>, independently of the batch. Same behaviour in train and eval, works with batch size 1 and with variable-length sequences. That is why Transformers use it (Month 4).</p>
+<p><strong>Where to put them.</strong> Common: Linear/Conv → BN → ReLU. In Transformers, LN is applied before each sub-layer ("pre-norm").</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-10/day69_batchnorm.py</code>: a 10-layer MLP on MNIST-10k, 5 epochs, three learning rates. <strong>Verified test accuracy:</strong></p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>lr 0.01</th>
+<th>lr 0.1</th>
+<th>lr 0.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no normalisation</td>
+<td>~0.10-0.11</td>
+<td>~0.10-0.11</td>
+<td>~0.10-0.11</td>
+</tr>
+<tr>
+<td>batch norm</td>
+<td>0.9469</td>
+<td>0.9500</td>
+<td>0.9417</td>
+</tr>
+<tr>
+<td>layer norm</td>
+<td>0.9456</td>
+<td>0.5529</td>
+<td>0.1028</td>
+</tr>
+</tbody>
+</table>
+<p>With PyTorch's default initialisation and SGD, the 10-layer net without normalisation did not learn at any LR in 5 epochs. BN trained at all three. LN matched BN at lr 0.01 but degraded at large LRs in this setup. The script also triggers the batch-of-1 error in train mode and counts: BatchNorm1d(128) has <strong>256 parameters</strong> (γ, β) plus <strong>257 buffers</strong> (running mean, running var, batch counter); LayerNorm(128) has <strong>256 parameters</strong> and no buffers.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Implement BN for a 2-D input yourself (training mode, plus running stats with momentum 0.1). Compare with <code>nn.BatchNorm1d</code> in train and eval mode.</li>
+<li>(30 min) Train the BN model with batch sizes 8, 64 and 512. What happens to accuracy and speed?</li>
+<li>(30 min) Evaluate the BN model while forgetting <code>model.eval()</code>, with a test batch of 10 images. Compare with proper eval.</li>
+<li>(20 min) Replace BN with LN and repeat the batch-size experiment.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>What statistics does BN use at test time? <em>Answer: running mean and variance accumulated during training.</em></li>
+<li>Why can LN work with batch size 1? <em>Answer: it normalises within each example.</em></li>
+<li>BN after a Linear layer: why can the Linear layer drop its bias? <em>Answer: BN subtracts the mean, cancelling any constant bias; β replaces it.</em></li>
+<li>Count parameters of BatchNorm2d(64). <em>Answer: 128 (γ and β).</em></li>
+<li>Your BN model's val accuracy is much lower than train accuracy right from epoch 1 and fluctuates. One likely cause? <em>Answer: evaluating in train mode, or very small/unrepresentative validation batches.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Make a two-column table BN vs LN: axis of normalisation, train/eval difference, batch-size dependence, typical use. Self-check:
+- [ ] I can explain buffers vs parameters.
+- [ ] I can explain why the no-norm 10-layer net failed and the BN one did not.
+- [ ] I know why Transformers use LN.</p>
+<h3 id="extra-notes-bn-at-inference-step-by-step">Extra notes: BN at inference, step by step</h3>
+<p>During training, BN normalises each channel with the mean and variance of the current batch, then applies the learned scale γ and shift β. It also updates running estimates: running_mean ← (1 − momentum)·running_mean + momentum·batch_mean, with PyTorch's default momentum 0.1. In <code>eval()</code> mode, it uses the running estimates instead, so a single example gets the same output whatever batch it arrives in. Two consequences follow. A model evaluated in train mode gives batch-dependent, usually worse, predictions. And with very small batches (1-4 examples) the batch statistics are noisy, which is why LayerNorm or GroupNorm, which normalise within one example, are preferred there and in sequence models.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the original BN paper and the LN paper (linked in <code>docs/resources.md</code>). Note that the "internal covariate shift" explanation in the BN paper has been disputed; later work points to a smoother loss landscape. Look at GroupNorm for small-batch vision.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"You fine-tune a CNN with batch size 2 and accuracy collapses. Why, and what would you do?" Mention noisy BN statistics, freezing BN (eval mode for BN layers), GroupNorm/LN, or gradient accumulation (which does <em>not</em> fix BN statistics).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting <code>model.eval()</code> at test time.</li>
+<li>Putting BN after the final classification layer.</li>
+<li>Freezing BN weights but leaving it in train mode, so the running statistics still change.</li>
+<li>Comparing BN and no-BN at one learning rate chosen for one of them.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 70 is the weekly project: three MLPs, an experiment log, one test evaluation, and Quiz 10.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-068.html">← Day 68</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-070.html">Day 70 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

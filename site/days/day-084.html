@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 84 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="84">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-083.html">← Day 83</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-085.html">Day 85 →</a></nav>
+<h1>Day 84: PROJECT W12: character-level language model; Quiz 12</h1>
+<p class="meta">Week 12 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-12.md">source: weeks/week-12.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: the project brief (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: the reference project (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: your project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-12/day84_char_lm.py"><code>code/week-12/day84_char_lm.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 83 (+1), Day 81 (+3), Day 77 (+7), Day 63 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-the-project-brief-1h15">Block 1: Concept lesson: the project brief (1h15)</h3>
+<p><strong>Brief.</strong> Train a character-level language model on Tiny Shakespeare. Report validation <strong>bits per character</strong> (cross-entropy in base 2, averaged per character) against count-based baselines, plot the learning curve, and generate samples at two temperatures.</p>
+<p><strong>Why bits per character?</strong> It is comparable across models and has meaning: a uniform model over V characters needs log₂ V bits; better models need fewer. Lower is better. Loss in nats ÷ ln 2 = bits.</p>
+<p><strong>Baselines first.</strong> Unigram, bigram and trigram count models with add-one (Laplace) smoothing. If your network doesn't beat the trigram, something is wrong.</p>
+<p><strong>Sampling.</strong> Divide logits by temperature τ before softmax: τ &lt; 1 makes text more conservative and repetitive, τ &gt; 1 more random.</p>
+<h3 id="block-2-worked-example-the-reference-project-45-min">Block 2: Worked example: the reference project (45 min)</h3>
+<p>Run <code>code/week-12/day84_char_lm.py</code> (about 4 minutes). 90/10 split by position. Model: embedding 64, 2-layer GRU with 256 units, dropout 0.1; sequence length 128, batch 64; AdamW 3e-3 with OneCycle; 1,500 steps. <strong>Verified:</strong>
+- 1,115,394 characters, vocabulary <strong>65</strong>, train 1,003,854, val 111,540.
+- Validation bits/char: uniform <strong>6.022</strong>, unigram <strong>4.829</strong>, bigram <strong>3.581</strong>, trigram <strong>2.984</strong>.
+- GRU LM: <strong>662,913</strong> parameters.</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>1</th>
+<th>250</th>
+<th>500</th>
+<th>750</th>
+<th>1000</th>
+<th>1250</th>
+<th>1500</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>val bits/char</td>
+<td>6.031</td>
+<td>2.841</td>
+<td>2.363</td>
+<td>2.241</td>
+<td>2.192</td>
+<td>2.167</td>
+<td>2.159</td>
+</tr>
+</tbody>
+</table>
+<p>Final train <strong>1.840</strong> bits/char vs val <strong>2.159</strong>: some overfitting is starting. The GRU beat the trigram (2.984) by about 0.8 bits/char after 1,500 steps.
+- Samples (printed by the script) produce speaker names in the right format ("KING RICHARD II:", "FRIAR LAURENCE:") and line structure; at τ = 1.0 they include invented words. The curve is saved to <code>out/day84_curve.csv</code>.</p>
+<h3 id="block-3-coding-lab-your-project-2h">Block 3: Coding lab: your project (2h)</h3>
+<ol>
+<li>(20 min) Count baselines.</li>
+<li>(60 min) Train an LSTM or GRU LM; log val bits/char every 250 steps.</li>
+<li>(20 min) Samples at τ = 0.5 and 1.0.</li>
+<li>(20 min) Write-up: table, curve, samples, one paragraph on overfitting.</li>
+</ol>
+<p><strong>Rubric (self-grade out of 20)</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Correct bits/char computation and baselines</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Model beats trigram; learning curve logged</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Samples at two temperatures, interpreted</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Train vs val gap discussed</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Reproducible (seed, config in write-up)</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>log₂ 65? <em>Answer: 6.022.</em></li>
+<li>A loss of 1.5 nats per char is how many bits? <em>Answer: 2.164.</em></li>
+<li>Why add-one smoothing? <em>Answer: unseen n-grams would get probability 0 and infinite loss.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Take the weekly quiz below.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Andrej Karpathy, "The Unreasonable Effectiveness of Recurrent Neural Networks" (blog, linked in <code>docs/resources.md</code>).</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"How do you evaluate a language model?" Perplexity/bits on held-out data, baselines, downstream tasks, human evaluation of samples; beware of leakage.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Splitting randomly by character windows (leaks overlapping text); split by position.</li>
+<li>Mixing nats and bits.</li>
+<li>Judging a model by its best sample.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 13: the Month-3 capstone, then a cumulative review and the first look at transformers.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-083.html">← Day 83</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-085.html">Day 85 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

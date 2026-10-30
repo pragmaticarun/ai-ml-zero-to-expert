@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 117 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="117">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-116.html">← Day 116</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-118.html">Day 118 →</a></nav>
+<h1>Day 117: GPTQ/AWQ concepts, plus a Rust/PyO3 int8 kernel</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/day117_gptq_awq.py"><code>code/week-17/day117_gptq_awq.py</code></a></li><li><a href="../../code/week-17/rust_qmatmul/"><code>code/week-17/rust_qmatmul/</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 116 (+1), Day 114 (+3), Day 110 (+7), Day 96 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>What we really want.</strong> Not small weight error but small <em>output</em> error: minimise ‖XW − XŴ‖ over real inputs X. A few hundred to a few thousand calibration tokens give X.</p>
+<p><strong>GPTQ (idea).</strong> Quantise the weights of a layer one input-column at a time; after rounding a column, update the <em>remaining, not yet quantised</em> columns to compensate for the error, using the inverse of the Hessian H = XᵀX (+ damping). Weights that correlate with the rounded one absorb its error. It is a fast approximation of the classical Optimal Brain Surgeon idea, applied layer by layer. In the paper the inputs of each layer are taken from the already-quantised previous layers; our version takes them once from the fp32 model (a simplification).</p>
+<p><strong>AWQ (idea).</strong> A small fraction of input channels carry large activations, and errors in the weights that multiply them dominate the output. AWQ scales those weight columns <em>up</em> by s = (mean |x|)^α before quantising, and divides the input by s (mathematically identity, foldable into the previous layer), so important weights get relatively finer rounding. α is chosen per layer by grid search on calibration output error. No weight updates, just scales.</p>
+<p><strong>Kernels.</strong> Low-bit weights only save time if a kernel reads the packed integers and computes with them. On CPU, the key costs are memory traffic and vectorisation; on GPU, dedicated kernels unpack int4 inside the matmul.</p>
+<p><strong>Rust and PyO3.</strong> PyO3 lets Rust functions be called from Python, maturin builds them into a wheel, the <code>numpy</code> crate gives zero-copy access to arrays, and rayon parallelises loops across threads.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/day117_gptq_awq.py</code>: 2,048 calibration tokens from Shakespeare <em>training</em> text (perplexity is on validation text); computing all Hessians took 1.9 s.</p>
+<p><strong>Verified (out/day117_gptq_awq.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>int4 scheme</th>
+<th>Method</th>
+<th>Output error (calib.)</th>
+<th>Perplexity</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>per-channel</td>
+<td>RTN</td>
+<td>0.0223</td>
+<td>64.84</td>
+<td>0.7 s</td>
+</tr>
+<tr>
+<td>per-channel</td>
+<td>AWQ-style (mean α 0.27)</td>
+<td>0.0161</td>
+<td>44.04</td>
+<td>1.9 s</td>
+</tr>
+<tr>
+<td>per-channel</td>
+<td>GPTQ</td>
+<td>0.0048</td>
+<td>44.31</td>
+<td>14.1 s</td>
+</tr>
+<tr>
+<td>group-64</td>
+<td>RTN</td>
+<td>0.0127</td>
+<td>36.89</td>
+<td></td>
+</tr>
+<tr>
+<td>group-64</td>
+<td>AWQ-style (mean α 0.33)</td>
+<td>0.0077</td>
+<td><strong>31.17</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>group-64</td>
+<td>GPTQ</td>
+<td>0.0026</td>
+<td>31.96</td>
+<td>13.7 s</td>
+</tr>
+</tbody>
+</table>
+<p>(fp32 baseline: 26.29.) Reading: both methods recover much of RTN's loss: per-channel 64.84 → about 44. GPTQ reaches by far the lowest output error on calibration data, but its perplexity is not better than AWQ's, which suggests it fits the 2,048 calibration tokens too closely (and our one-shot input collection lets layer errors compound unchecked). AWQ is much cheaper.</p>
+<p><code>code/week-17/rust_qmatmul/</code> (built with <code>maturin develop --release</code> in 8.6 s) and <code>day117b_rust_int8_matmul.py</code>, on one 1,536 → 576 linear layer (576 output rows, one fp32 scale each):</p>
+<p><strong>Verified (out/day117b_rust_int8_matmul.log):</strong> max difference vs torch on the dequantised weights 2.38e-06 (correct); vs the original fp32 weights 5.72e-02 (quantisation error). Weight memory: 3,538,944 B fp32 vs 884,736 B int8 + 2,304 B scales.</p>
+<table>
+<thead>
+<tr>
+<th>Batch</th>
+<th>torch fp32</th>
+<th>torch dequant+matmul</th>
+<th>Rust 1 thread</th>
+<th>Rust rayon 8 threads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>15.9 µs</td>
+<td>982.7 µs</td>
+<td>439.4 µs</td>
+<td>145.2 µs</td>
+</tr>
+<tr>
+<td>64</td>
+<td>122.5 µs</td>
+<td>1,067.5 µs</td>
+<td>26,425.9 µs</td>
+<td>4,056.3 µs</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: our kernel beats "dequantise then matmul" at batch 1 (145 vs 983 µs) but is about 9× slower than torch's optimised fp32 BLAS (15.9 µs), and far slower at batch 64 because it has no blocking or SIMD tuning. The win is 4× less weight memory, not speed. A lesson in measurement: the first single-process benchmark made torch about 400× slower because rayon's idle threads kept spinning and competed with torch's threads; each timing now runs in its own subprocess.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run both scripts (GPTQ about 30 s; build plus benchmark under a minute).</li>
+<li>GPTQ: re-collect each layer's inputs from the partly quantised model and compare perplexity.</li>
+<li>GPTQ: try 512 and 8,192 calibration tokens. Does the overfitting gap change?</li>
+<li>AWQ: plot the chosen α per layer type (q, k, v, o, gate, up, down).</li>
+<li>Rust: process 4 output rows at once to reuse loads of x, and measure. Then try int4 packing (two weights per byte).</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why does GPTQ need the Hessian XᵀX?</li>
+<li>Why is AWQ's scaling "free" at inference?</li>
+<li>Why can lower calibration output error fail to give lower perplexity?</li>
+<li>Why is the Rust kernel slower than torch fp32 at batch 1 despite reading 4× less memory?</li>
+</ol>
+<p><strong>Answers.</strong> (1) The output error of a weight change δ is δᵀ(XᵀX)δ, so H tells which remaining weights can compensate. (2) The 1/s on the input can be folded into the previous layer's weights or norm. (3) Overfitting to a small calibration set, and per-layer errors interact across layers. (4) At this size the matrix (3.5 MB) fits in cache, so memory is not the bottleneck; BLAS uses SIMD and blocking that our naive loop lacks.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain GPTQ's error compensation in two sentences.
+- [ ] I can explain AWQ's activation-aware scaling.
+- [ ] I can build a PyO3 extension with maturin.
+- [ ] I can explain the rayon contention problem and how it was fixed.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Our GPTQ and AWQ are simplified teaching versions (no act-order, no clipping search, inputs from fp32). Production libraries implement the full methods plus packed kernels. Treat our numbers as a comparison of ideas on one tiny model, not of the published tools.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers" (Frantar et al.).</li>
+<li>Read "AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration" (Lin et al.).</li>
+<li>Read the PyO3 user guide and the maturin documentation.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Compare GPTQ and AWQ." Points: both are post-training and use calibration data; GPTQ updates weights to compensate errors using second-order information; AWQ only rescales channels based on activation magnitude; AWQ is cheaper and less prone to overfitting calibration data; both need dedicated kernels to be fast; measure on your own task.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Calibrating and evaluating on the same text.</li>
+<li>Benchmarking two thread pools in one process.</li>
+<li>Comparing a naive kernel with BLAS and calling the difference "quantisation overhead".</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: the serving side: KV cache, batching and speculative decoding with your own Llama forward pass.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-116.html">← Day 116</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-118.html">Day 118 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

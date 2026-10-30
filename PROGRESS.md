@@ -111,7 +111,7 @@ Last updated: 2026-10-29 (Phase 1 complete).
 - **Spaced repetition:** flashcards/month-01.csv … month-06.csv + review-schedule.csv (+1/+3/+7/+21).
 - **Still UNTESTED / out of scope on this box:** Android on-device runs, GPU/Triton/CUDA, Docker/CI execution, g++/llama.cpp builds, legal advice beyond linked overviews. **Not zipped** — verification pass comes next when requested.
 
-## Final QA (2026-10-29, IST) — in progress
+## Final QA (2026-10-29–30, IST) — complete
 ### Consistency
 - Day headings continuous 1–180 across weeks; week-26 has 5 days; SYLLABUS 180 day rows; titles align with week files (0 low-overlap pairs).
 - Leftover stub wording audited: real leftovers in week-25 / PROGRESS / week-17 status softened; Phase-2 status lines on weeks 5–9 cleaned; innocent uses (DEMO stub, @example.com placeholders, ORT Java TODO) left.
@@ -132,9 +132,12 @@ Last updated: 2026-10-29 (Phase 1 complete).
 ### PDF
 - 26 week PDFs in `pdf/week-XX.pdf` via markdown+xhtml2pdf (ASCII-fold unicode). Spot-checked week-01 and week-26 with pdftotext. Pandoc alone lacked LaTeX engine.
 
-### Zip (first cut, 2026-10-29 Asia/Calcutta)
+
+### Zip (final, 2026-10-30 Asia/Calcutta)
 - Path: `/workspace/ai-ml-zero-to-expert.zip`
-- Size: 12135666 bytes (11.6 MiB); **761** files
-- Excludes: `.venv/`, `**/target/**`, `__pycache__`, `data/cache/`, `*.pt`/`*.onnx`/`embeddings.npy`, any file >50MB. Includes `pdf/`, `qa-logs/`, weeks, code (sans caches).
-- 2026-10-30 00:58 IST (Asia/Calcutta): `bash run_all.sh 5` ALL OK EXIT 0 (qa-logs/month5.log). torchao .so load warnings non-fatal.
-- 2026-10-30 01:09 IST (Asia/Calcutta): `bash run_all.sh 6` ALL OK EXIT 0 (qa-logs/month6.log; weeks 22 d151-154 + 23-26).
+- Size: 12178889 bytes (~11.6 MiB); **767** files
+- Same exclusions as first cut. Unzip `/tmp/ai-ml-zipcheck`: `python -m py_compile` on 225 `.py` files → **0 fail**.
+- `docs/check_links.sh` re-run EXIT 0 (qa-logs/check_links_rerun.log); openml.org root + /d/1590 returned curl 000 (transient/network); other OpenML dataset URLs 200.
+
+
+- 2026-10-30 (IST): static site in site/ was built (180 days, 26 weeks, 8 exams, 604 cards). node unit tests 6/6 pass. smoke.sh: 225 pages/assets returned 200, 0 broken links. Not tested in a real browser.

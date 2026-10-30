@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 20 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="20">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-19.html">← Week 19</a><a href="../syllabus.html">Syllabus</a><a href="week-21.html">Week 21 →</a></nav>
+<h1>Week 20 (Days 134-140)</h1><p class="meta"><a href="../../weeks/week-20.md">source: weeks/week-20.md</a> · <a href="../../pdf/week-20.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-134.html">Day 134: The agent loop and tool calling with JSON schemas</a> <span class="st" data-st="134"></span></li><li><a href="../days/day-135.html">Day 135: A ReAct loop, and an honest look at a 135M policy</a> <span class="st" data-st="135"></span></li><li><a href="../days/day-136.html">Day 136: Planning, retries and memory (scripted policies)</a> <span class="st" data-st="136"></span></li><li><a href="../days/day-137.html">Day 137: Retrieval as a tool, and a sandboxed code-execution tool</a> <span class="st" data-st="137"></span></li><li><a href="../days/day-138.html">Day 138: Evaluating agents: success rate, pass^k and a failure taxonomy</a> <span class="st" data-st="138"></span></li><li><a href="../days/day-139.html">Day 139: Prompt injection, safety defences and structured outputs</a> <span class="st" data-st="139"></span></li><li><a href="../days/day-140.html">Day 140: PROJECT W20: an evaluated, defended tool-using agent; Quiz 20</a> <span class="st" data-st="140"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-20"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>In an agent loop, which component executes tool calls, and why does that matter for safety?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The harness, not the model. The model only emits text, so every capability and every risk is decided by what the harness agrees to run (validation, allow-lists, gates).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>On Day 134, SmolLM2 3-shot parsed 17/18 calls but only 6 gave the correct result. Name two logged failure patterns.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Field values used as keys (<code>{"country": "Brindle"}</code>, <code>{"temperature": "Avalon"}</code>), a runaway digit string (<code>{"population": 8000000…}</code>), and a bad field (<code>"field": "city"</code>).</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Why validate arguments against a JSON Schema <em>before</em> executing a tool?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Side effects can't be undone after execution, and a precise validation error ("$.field: 'area' not in [...]") is an observation the model can act on.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>On Day 135, why did ReAct (0/24) score below direct answering (3/24) for SmolLM2?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Each extra step was another chance to fail: it made repeated invalid calls (95 tool errors, 18 step-limit hits) and even garbled the final step after correct lookups (answered 45000 for gold 165000).</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>At p=0.3 tool failure, give the success rates of plan-no-retry, plan-with-2-retries and ReAct (Day 136).</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.401, 0.924 and 0.995.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Why did BM25 top-1 memory score 0.00 on updated facts while the key-value store scored 1.00?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The old and new statements are equally similar to the question, so a single retrieved snippet was often the stale one. The KV store overwrites on update.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Which two sandbox probes on Day 137 succeeded when they should have failed, and what does that imply?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Reading /etc/hostname and writing to /tmp outside the working directory. The rlimit sandbox bounds resources but does not isolate the filesystem, so it is not a security boundary; real isolation needs containers or microVMs.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Why did the sleep probe need the wall-clock timeout rather than the CPU rlimit?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Sleeping uses no CPU time, so the 2 s CPU limit never fires. The 5 s wall-clock timeout killed it at 5.01 s.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Define pass@k and pass^k, and give the noisy policy's values for k=8 on Day 138.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>pass@k: solved in at least one of k trials. pass^k: solved in all k. Noisy policy: pass@8 1.000, pass^8 0.458.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why is a bootstrap CI of [0.000, 0.000] for 0/24 misleading?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>When all outcomes are identical, every resample is too, so the interval collapses. Zero successes in 24 does not prove a zero rate; the rule of three gives a rough upper bound of 3/n.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>On Day 139 / Day 140, why did success stay unchanged under injection, and which defence removed the emails?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The injected email was an extra side effect, and the answer was still right, so outcome metrics missed it (22/24 emails queued on Day 139 at 24/24 success; 1.000 emails/run on Day 140). The per-task allow-list and the confirmation gate both brought emails to 0.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Constrained decoding on Day 139 gave 24/24 valid outputs but only 18/24 fully correct. Explain.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Constraining guarantees syntax and schema validity, but it still chose the wrong <em>valid</em> field for 6 requests (field right 18/24). That is a semantic error no grammar can fix.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> Days 134-140 (Month 5, LLM agents and tool use, built from scratch) are written in full. Every number comes from <code>code/week-20/day134_*.py</code> to <code>day140_*.py</code>, each run on this box (CPU only, 4 threads, offline Hugging Face cache), with logs in <code>code/week-20/out/</code>. Shared helpers: <code>code/week-20/_agent.py</code> (schema validator, tools, agent loop, task suite) and <code>code/week-20/_sandbox.py</code> (subprocess code runner). The MLOps topics that used to sit in Week 20 move to Week 21 and later.</p>
+<p><strong>Honesty note on the policy.</strong> The only local language model used is SmolLM2-135M-Instruct (already in the course cache since Week 15). It is far too small to act as an agent. Day 134 measured 0/18 correct tool calls zero-shot and 6/18 with three examples; Day 135 measured 0/24 on the ReAct task suite. So from Day 136 on, the "policy" (the part that chooses the next action) is usually a <strong>scripted or mock policy</strong>, and every place that happens is labelled. Those days test the <em>harness</em>: the loop, validation, retries, memory, the sandbox, evaluation and the defences. They do not show what a real LLM would do.</p>
+<p><strong>Compute note.</strong> The agent machinery is CPU-trivial: Day 140's 12 conditions × 192 runs took 0.0 s of wall time with scripted policies. The cost is all in the model. SmolLM2 took 0.59-0.99 s per tool call request on Day 134 and 3.96 s per ReAct task on Day 135. A GPU would make a 7B-70B instruction-tuned model practical. Models of that size are trained for function calling, so the Day 134-135 rows would change, and the injection tests on Day 139 would become meaningful: a model that follows instructions well also tends to follow <em>injected</em> ones. None of that is run here, so no number in this file describes a large model.</p>
+<p><strong>Sources (opened and checked):</strong> Model Context Protocol architecture overview, https://modelcontextprotocol.io/docs/learn/architecture; ReAct paper, https://arxiv.org/abs/2210.03629.</p>
+<hr />
+<h2 id="weekly-quiz-week-20-12-questions-40-minutes-covers-days-134-140">Weekly quiz: Week 20 (12 questions; 40 minutes; covers Days 134-140)</h2>
+<ol>
+<li>In an agent loop, which component executes tool calls, and why does that matter for safety?</li>
+<li>On Day 134, SmolLM2 3-shot parsed 17/18 calls but only 6 gave the correct result. Name two logged failure patterns.</li>
+<li>Why validate arguments against a JSON Schema <em>before</em> executing a tool?</li>
+<li>On Day 135, why did ReAct (0/24) score below direct answering (3/24) for SmolLM2?</li>
+<li>At p=0.3 tool failure, give the success rates of plan-no-retry, plan-with-2-retries and ReAct (Day 136).</li>
+<li>Why did BM25 top-1 memory score 0.00 on updated facts while the key-value store scored 1.00?</li>
+<li>Which two sandbox probes on Day 137 succeeded when they should have failed, and what does that imply?</li>
+<li>Why did the sleep probe need the wall-clock timeout rather than the CPU rlimit?</li>
+<li>Define pass@k and pass^k, and give the noisy policy's values for k=8 on Day 138.</li>
+<li>Why is a bootstrap CI of [0.000, 0.000] for 0/24 misleading?</li>
+<li>On Day 139 / Day 140, why did success stay unchanged under injection, and which defence removed the emails?</li>
+<li>Constrained decoding on Day 139 gave 24/24 valid outputs but only 18/24 fully correct. Explain.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>The harness, not the model. The model only emits text, so every capability and every risk is decided by what the harness agrees to run (validation, allow-lists, gates).</li>
+<li>Field values used as keys (<code>{"country": "Brindle"}</code>, <code>{"temperature": "Avalon"}</code>), a runaway digit string (<code>{"population": 8000000…}</code>), and a bad field (<code>"field": "city"</code>).</li>
+<li>Side effects can't be undone after execution, and a precise validation error ("$.field: 'area' not in [...]") is an observation the model can act on.</li>
+<li>Each extra step was another chance to fail: it made repeated invalid calls (95 tool errors, 18 step-limit hits) and even garbled the final step after correct lookups (answered 45000 for gold 165000).</li>
+<li>0.401, 0.924 and 0.995.</li>
+<li>The old and new statements are equally similar to the question, so a single retrieved snippet was often the stale one. The KV store overwrites on update.</li>
+<li>Reading /etc/hostname and writing to /tmp outside the working directory. The rlimit sandbox bounds resources but does not isolate the filesystem, so it is not a security boundary; real isolation needs containers or microVMs.</li>
+<li>Sleeping uses no CPU time, so the 2 s CPU limit never fires. The 5 s wall-clock timeout killed it at 5.01 s.</li>
+<li>pass@k: solved in at least one of k trials. pass^k: solved in all k. Noisy policy: pass@8 1.000, pass^8 0.458.</li>
+<li>When all outcomes are identical, every resample is too, so the interval collapses. Zero successes in 24 does not prove a zero rate; the rule of three gives a rough upper bound of 3/n.</li>
+<li>The injected email was an extra side effect, and the answer was still right, so outcome metrics missed it (22/24 emails queued on Day 139 at 24/24 success; 1.000 emails/run on Day 140). The per-task allow-list and the confirmation gate both brought emails to 0.</li>
+<li>Constraining guarantees syntax and schema validity, but it still chose the wrong <em>valid</em> field for 6 requests (field right 18/24). That is a semantic error no grammar can fix.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

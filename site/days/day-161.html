@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 161 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="161">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-160.html">← Day 160</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-162.html">Day 162 →</a></nav>
+<h1>Day 161: PROJECT W23: an on-device-style inference pipeline under a latency/memory/accuracy/size budget; Quiz 23</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: The brief (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Build and measure (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Decide, and say what the table cannot tell you (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (15 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Write-up and extension (40 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 160 (+1), Day 158 (+3), Day 154 (+7), Day 140 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-the-brief-20-min">Block 1: The brief (20 min)</h3>
+<p>Ship a digit classifier that a phone app calls once per input: batch 1, one intra-op thread (so it does not fight the UI for cores). The budget is fixed <em>before</em> measuring, as it would be in a product spec:
+- test accuracy ≥ 0.97;
+- p95 latency ≤ 20 µs on this box;
+- model file ≤ 400 kB;
+- memory growth from loading ≤ 30 MiB.</p>
+<p>The p95 figure, not the median, is what users feel as jank. The budget values are this project's choices for this box, not phone benchmarks. On a device you would rescale them after measuring the baseline there.</p>
+<h3 id="block-2-build-and-measure-45-min">Block 2: Build and measure (45 min)</h3>
+<p><code>python day161_project.py</code> rebuilds the artefacts it needs: the structured-pruned 128-unit model from Day 157 (5-epoch fine-tune), its ONNX export, and dynamic int8 versions of both models. It then measures nine variants. Each variant runs <strong>in a fresh subprocess</strong>, so the RSS growth of its load (runtime import plus model) is not polluted by the others. In each one it scores all 540 test rows one at a time, warms up with 50 calls, and times 1,000 single-row calls.</p>
+<p><strong>Verified (out/day161_project.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>variant</th>
+<th>file kB</th>
+<th>acc</th>
+<th>p50 µs</th>
+<th>p95 µs</th>
+<th>load RSS MiB</th>
+<th>verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>torch eager fp32</td>
+<td>1207</td>
+<td>0.9741</td>
+<td>38.6</td>
+<td>51.7</td>
+<td>3.3</td>
+<td>FAIL: p95, size</td>
+</tr>
+<tr>
+<td>ORT fp32</td>
+<td>1205</td>
+<td>0.9741</td>
+<td>15.1</td>
+<td>15.4</td>
+<td>9.9</td>
+<td>FAIL: size</td>
+</tr>
+<tr>
+<td>ORT dynamic int8</td>
+<td>307</td>
+<td>0.9741</td>
+<td>10.9</td>
+<td>11.4</td>
+<td>7.7</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>ORT static QDQ int8</td>
+<td>308</td>
+<td>0.9741</td>
+<td>10.6</td>
+<td>12.9</td>
+<td>8.1</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>ORT-format .ort int8</td>
+<td>312</td>
+<td>0.9741</td>
+<td>11.1</td>
+<td>12.7</td>
+<td>7.8</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>ExecuTorch XNNPACK fp32</td>
+<td>1208</td>
+<td>0.9741</td>
+<td>12.1</td>
+<td>14.9</td>
+<td>134.9</td>
+<td>FAIL: size, rss</td>
+</tr>
+<tr>
+<td>Rust int8 (tiny_infer)</td>
+<td>308</td>
+<td>0.9741</td>
+<td>31.2</td>
+<td>35.8</td>
+<td>3.1</td>
+<td>FAIL: p95</td>
+</tr>
+<tr>
+<td>pruned-128 ORT fp32</td>
+<td>105</td>
+<td>0.9759</td>
+<td>5.2</td>
+<td>6.5</td>
+<td>7.2</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>pruned-128 ORT dyn int8</td>
+<td>30</td>
+<td>0.9759</td>
+<td>7.5</td>
+<td>9.4</td>
+<td>7.4</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<p>The Rust row's "file" size is the in-memory int8 weights plus scales and biases (308 kB, from <code>MlpInt8.nbytes()</code>). It loads the fp32 <code>.pt</code> and quantizes at start-up.</p>
+<h3 id="block-3-decide-and-say-what-the-table-cannot-tell-you-40-min">Block 3: Decide, and say what the table cannot tell you (40 min)</h3>
+<p><strong>Pick: pruned-128 + ORT, in ORT format.</strong> It passes everything by a wide margin. The fp32 version is 105 kB with p95 6.5 µs, the fastest variant measured. Its int8 version is only 30 kB with p95 9.4 µs. Both scored 0.9759, two rows better than the full model, which is within noise. If size matters most (an over-the-air model update, say), ship pruned int8. If latency matters most, ship pruned fp32. Notice that int8 made the <em>pruned</em> model slower (7.5 vs 5.2 µs p50). At 26k parameters, the per-call cost of quantizing the activations outweighs the cheaper GEMMs. Day 156's speed-up was for a 300k-parameter model at batch 256. Quantization is not a universal speed-up; it depends on the model size and the batch.</p>
+<p><strong>The three full-size int8 ORT variants also pass</strong> (p95 11.4-12.9 µs, about 307-312 kB). They are the fallback when you cannot retrain, since pruning needs a fine-tune and quantization does not.</p>
+<p><strong>Why the others fail, and what each failure teaches.</strong>
+- <em>Torch eager</em> fails on p95 (51.7 µs): framework overhead per call. It also fails on size.
+- <em>ORT fp32</em> is fast (p95 15.4 µs), but its fp32 file is 1,205 kB.
+- <em>ExecuTorch XNNPACK</em> is fast too (p95 14.9 µs), but it is fp32 (we did not quantize the <code>.pte</code>), and its "load" added 134.9 MiB. That figure measures <em>importing the ExecuTorch Python package</em> in a process that already had torch, not what the ~MB-scale Android runtime would cost. It is an honest measurement of the wrong thing for a phone. The table must say so, rather than quietly drop the row. Quantizing for ExecuTorch (its XNNPACK quantizer flow) is the next experiment, and it is <strong>UNTESTED</strong> here.
+- <em>Rust int8</em> fails on p95 (35.8 µs): Day 160's naive kernel. It does have the smallest load footprint (3.1 MiB), which is the thing a hand-written engine really does well.</p>
+<p><strong>Limits of this table.</strong>
+- It runs on a server CPU, not a phone. Re-measure on real devices, and include a low-end one.
+- RSS deltas include importing each runtime's Python package, not the size of the Android native library.
+- p95 over 1,000 calls in a quiet process does not capture thermal throttling or contention with an app's UI.
+- Accuracy is on 540 easy test rows, where one row is 0.19 points.
+- There is no battery measurement.</p>
+<p>Each of these is a line in the device-test plan, not a reason to skip the table.</p>
+<h3 id="block-4-self-check-15-min">Block 4: Self-check (15 min)</h3>
+<ol>
+<li>Why measure each variant in a fresh process? <em>So that one variant's imports and allocations don't count towards another's memory, and caches start in the same state for all.</em></li>
+<li>Why does the budget use p95 instead of the median? <em>Users notice the slow calls. The p50 can look good while p95 misses the frame budget.</em></li>
+<li>Why was int8 slower than fp32 for the pruned model? <em>At 26k parameters, the fixed cost of quantizing activations per call is larger than the arithmetic saved.</em></li>
+<li>The ExecuTorch row's 134.9 MiB: bug, or real? <em>A real measurement of importing the Python package, not of the Android runtime. Report it with that label.</em></li>
+</ol>
+<h3 id="block-5-write-up-and-extension-40-min">Block 5: Write-up and extension (40 min)</h3>
+<p>Write a one-page "model card for deployment": the chosen variant; the budget table; the test conditions (CPU, threads, batch, number of calls); the known limits listed above; and the device-test plan. Then, if you have a phone: run <code>OrtDigits.kt</code> (Day 159) with <code>w23_pruned128.onnx</code> converted to <code>.ort</code>, and add a column of real device p50/p95 values with the phone model named.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Choose the budget before measuring. Choosing it afterwards makes any result look like a pass.</li>
+<li>Day 161's p50 for ORT dynamic int8 (10.9 µs) matches Day 156's median (11.0 µs) and Day 159's <code>.ort</code> value (10.8 µs). Consistency across scripts and days is a cheap check that the bench is stable.</li>
+<li>Keep the artefacts reproducible. Day 161 rebuilds the pruned model with fixed seeds, and <code>run_all.sh 6</code> re-runs the whole week.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Add two columns: start-up time (session creation in ms) and first-call latency. On a phone, cold start often matters more than steady-state p95.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Present this table to a product manager in two minutes." Example: "We can ship a 30-105 kB model with 97.6% accuracy at under 10 µs per input on our test CPU, with about 7 MiB of memory to load. It is the pruned model running on ONNX Runtime. Next we need numbers from three real phones, including a low-end one, plus a battery check, before we commit."</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Dropping failing rows instead of explaining them.</li>
+<li>Mixing batch sizes or thread counts between rows.</li>
+<li>Calling server-CPU numbers phone numbers.</li>
+<li>Choosing a budget after seeing the results.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Take the weekly quiz below. Week 24 continues Month 6: quantization-aware training and llama.cpp on edge devices (SYLLABUS Days 162-163). Day 158's KV arithmetic and Day 160's kernel lessons are the starting points.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-160.html">← Day 160</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-162.html">Day 162 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

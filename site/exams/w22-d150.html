@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 150: Month-5 checkpoint exam (15 questions; 60 minutes; covers Days 121-150) · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="exam" data-root="../" >
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><h1>Day 150: Month-5 checkpoint exam (15 questions; 60 minutes; covers Days 121-150)</h1><p class="meta">Day 150 · 15 questions parsed from <a href="../../weeks/week-22.md"><code>weeks/week-22.md</code></a> · <a href="../days/day-150.html">Day 150 page</a></p>
+<section class="quiz card" data-quiz="exam-w22-d150"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Write the Bellman expectation equation for V^π and say what changes in the optimality equation.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>V^π(s) = Σ_a π(a|s) Σ_{s'} P(s'|s,a)[r + γV^π(s')]. The optimality equation replaces the average over π with a max over actions.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Why does value iteration converge for γ &lt; 1?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The Bellman optimality operator is a γ-contraction in the max norm, so repeated application converges to its unique fixed point.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Q-learning vs SARSA: which is off-policy, and why does SARSA learn a safer path on a cliff?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Q-learning is off-policy (its target uses max over next actions); SARSA uses the action actually taken, including exploratory ones, so it values cliff-edge states lower under ε-greedy and learns the safer path.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>What two tricks stabilise DQN, and what failure does each address?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>A replay buffer (breaks correlation between consecutive samples) and a target network (stops the target moving with every update).</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>In REINFORCE, why does subtracting a baseline not bias the gradient?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The expected score-function gradient of a baseline that does not depend on the action is zero, since Σ_a ∇π(a|s) = 0.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What does PPO's clipped objective prevent?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Policy updates that move the probability ratio far from 1 in one step, which destabilises training.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Give one example of reward hacking and one defence.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>E.g. an agent looping to collect a shaping bonus instead of finishing; defence: potential-based shaping, or reward only the true goal and audit behaviour.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>In RLHF with PPO, what is the KL penalty against, and why is it there? How does DPO avoid a reward model?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Against the reference (SFT) policy, to stop the policy drifting into reward-model exploits and losing fluency. DPO optimises a closed-form loss on preference pairs that implicitly defines the reward via the policy/reference log-ratio.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>UCB vs Thompson sampling: how does each balance exploration?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>UCB adds an optimism bonus that shrinks with visit count; Thompson samples from the posterior and acts greedily on the sample.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why validate an agent's tool call against a JSON schema before executing it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Model outputs are untrusted; validation catches malformed or out-of-range arguments before any side effect.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Define pass^k for agents and why it is stricter than pass@k.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>pass^k: the task succeeds in all k independent trials; it measures reliability, while pass@k (any of k) measures capability.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>What is indirect prompt injection, and which defence does not depend on detecting it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Instructions hidden in retrieved or tool content that the model follows. An allow-list plus human approval for side-effect actions works without detection.</p></div></div><div class="q" data-q="13"><div class="qtext"><strong>Q13.</strong> <p>Name three things that can cause training/serving skew.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Different preprocessing code, feature staleness or leakage, different library versions or dtypes (any three).</p></div></div><div class="q" data-q="14"><div class="qtext"><strong>Q14.</strong> <p>What does PSI measure, and why choose its alert threshold from resampled reference windows?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Shift between binned distributions; resampling in-domain windows gives the natural PSI spread for that window size, so the threshold has a known false-alarm rate (Day 150: 99th percentile, 1.027).</p></div></div><div class="q" data-q="15"><div class="qtext"><strong>Q15.</strong> <p>A prompt change raises the pass rate but fails the regression gate. What do you do?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Read the per-case diff; decide whether the regressions matter; fix the prompt or explicitly accept and document; grow the eval set; never just ship on the aggregate.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 10 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="10">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-09.html">← Week 9</a><a href="../syllabus.html">Syllabus</a><a href="week-11.html">Week 11 →</a></nav>
+<h1>Week 10 (Days 64-70): Training deep networks in PyTorch</h1><p class="meta"><a href="../../weeks/week-10.md">source: weeks/week-10.md</a> · <a href="../../pdf/week-10.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-064.html">Day 64: PyTorch tensors, autograd, nn.Module, training loop</a> <span class="st" data-st="64"></span></li><li><a href="../days/day-065.html">Day 65: Datasets, DataLoaders, batching, devices</a> <span class="st" data-st="65"></span></li><li><a href="../days/day-066.html">Day 66: Initialisation; vanishing and exploding gradients</a> <span class="st" data-st="66"></span></li><li><a href="../days/day-067.html">Day 67: Optimisers: SGD, momentum, RMSProp, Adam; LR schedules</a> <span class="st" data-st="67"></span></li><li><a href="../days/day-068.html">Day 68: Regularisation: L2, dropout, early stopping, augmentation</a> <span class="st" data-st="68"></span></li><li><a href="../days/day-069.html">Day 69: Batch norm and layer norm</a> <span class="st" data-st="69"></span></li><li><a href="../days/day-070.html">Day 70: PROJECT W10: MNIST MLP in PyTorch with experiment log; Quiz 10</a> <span class="st" data-st="70"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-10"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>What did the second <code>backward()</code> do to df/dx in the Day-64 script, and why?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It doubled to 20.0: gradients accumulate into <code>.grad</code>.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What was the largest difference between autograd and hand-derived gradients?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>About 2.8e-17 (W2), i.e. round-off.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Give the MNIST train mean and std used for normalisation, and which split they came from.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.1307 and 0.3081, from the training split.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Rank the four loading methods on Day 65 by time per epoch.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Manual slicing 0.01 s &lt; TensorDataset 0.21 s &lt; per-item with 2 workers 0.60 s &lt; per-item 0.63 s.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Sigmoid + Xavier at depth 12: give the first- and last-layer gradient norms.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>2.80e-06 and 1.57.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>He init: what accuracy at lr 0.05 vs lr 0.01, and what does it teach?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.2916 vs 0.7679: good init still needs a suitable learning rate.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Why did SGD at lr 0.085 diverge on the quadratic?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The LR exceeded 2/h for the steep direction.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Which optimiser had the best and which the worst MNIST accuracy on Day 67?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Best: SGD + momentum 0.9559. Worst: Adam at lr 0.1, 0.5647.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>In the Day-68 baseline, what happened to validation loss after epoch 6?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It rose from 0.501 to 1.063 while train accuracy hit 1.0.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>What did early stopping restore, and with what val loss and accuracy?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Epoch 10 weights: val loss 0.546, acc 0.8196.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>BatchNorm1d(128): parameters and buffers?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>256 parameters, 257 buffers.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Which Day-70 config won, with what test accuracy and how many errors?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>C (BN + one-cycle): test acc 0.9859, 141 errors.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 3). Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Move from the NumPy MLP of Week 9 to PyTorch: tensors, autograd, <code>nn.Module</code> and a training loop you could write from memory.</li>
+<li>Feed data efficiently (Dataset, DataLoader, batching) and understand what a "device" is, even though this box has <strong>no GPU</strong>.</li>
+<li>Explain, and show in a run, why initialisation decides whether a deep net trains at all.</li>
+<li>Compare SGD, momentum, RMSProp, Adam and AdamW, and use learning-rate schedules and an LR range test.</li>
+<li>Use regularisation (weight decay, dropout, augmentation, early stopping) and normalisation (batch norm, layer norm) on purpose, not by habit.</li>
+<li>Ship a small, logged MNIST experiment as the weekly project.</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 64 autograd + loop] --&gt; B[Day 65 data pipeline]
+  B --&gt; C[Day 66 init + gradients]
+  C --&gt; D[Day 67 optimisers + schedules]
+  D --&gt; E[Day 68 regularisation]
+  E --&gt; F[Day 69 BN / LN]
+  F --&gt; G[Day 70 project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note (honest).</strong> Every run in this week was done on an 8-thread CPU with PyTorch 2.15 (CPU build). There is no CUDA device here. The code is written device-agnostic (<code>device = "cuda" if torch.cuda.is_available() else "cpu"</code> where it matters), but the timings you read below are CPU timings and will differ on your machine.</p>
+<p><strong>Datasets:</strong> MNIST and Fashion-MNIST, downloaded by <code>torchvision</code> (source mirror <code>https://ossci-datasets.s3.amazonaws.com/mnist/</code>, and the Fashion-MNIST mirror listed in <code>data/README.md</code>). Loaded through <code>load_mnist()</code> in <code>code/common.py</code> and cached in <code>data/cache/</code>. Shared helpers for this week live in <code>code/week-10/_mnist.py</code> (<code>tensors</code>, <code>evaluate</code>, <code>train</code>).</p>
+<hr />
+<h2 id="weekly-quiz-week-10">Weekly quiz: Week 10</h2>
+<ol>
+<li>What did the second <code>backward()</code> do to df/dx in the Day-64 script, and why?</li>
+<li>What was the largest difference between autograd and hand-derived gradients?</li>
+<li>Give the MNIST train mean and std used for normalisation, and which split they came from.</li>
+<li>Rank the four loading methods on Day 65 by time per epoch.</li>
+<li>Sigmoid + Xavier at depth 12: give the first- and last-layer gradient norms.</li>
+<li>He init: what accuracy at lr 0.05 vs lr 0.01, and what does it teach?</li>
+<li>Why did SGD at lr 0.085 diverge on the quadratic?</li>
+<li>Which optimiser had the best and which the worst MNIST accuracy on Day 67?</li>
+<li>In the Day-68 baseline, what happened to validation loss after epoch 6?</li>
+<li>What did early stopping restore, and with what val loss and accuracy?</li>
+<li>BatchNorm1d(128): parameters and buffers?</li>
+<li>Which Day-70 config won, with what test accuracy and how many errors?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>It doubled to 20.0: gradients accumulate into <code>.grad</code>.</li>
+<li>About 2.8e-17 (W2), i.e. round-off.</li>
+<li>0.1307 and 0.3081, from the training split.</li>
+<li>Manual slicing 0.01 s &lt; TensorDataset 0.21 s &lt; per-item with 2 workers 0.60 s &lt; per-item 0.63 s.</li>
+<li>2.80e-06 and 1.57.</li>
+<li>0.2916 vs 0.7679: good init still needs a suitable learning rate.</li>
+<li>The LR exceeded 2/h for the steep direction.</li>
+<li>Best: SGD + momentum 0.9559. Worst: Adam at lr 0.1, 0.5647.</li>
+<li>It rose from 0.501 to 1.063 while train accuracy hit 1.0.</li>
+<li>Epoch 10 weights: val loss 0.546, acc 0.8196.</li>
+<li>256 parameters, 257 buffers.</li>
+<li>C (BN + one-cycle): test acc 0.9859, 141 errors.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

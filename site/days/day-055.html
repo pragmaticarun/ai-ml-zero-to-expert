@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 55 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="55">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-054.html">← Day 54</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-056.html">Day 56 →</a></nav>
+<h1>Day 55: Systematic ML strategy: learning curves, error analysis, what to try next</h1>
+<p class="meta">Week 8 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-08.md">source: weeks/week-08.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-08/day55_ml_strategy.py"><code>code/week-08/day55_ml_strategy.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 54 (+1), Day 52 (+3), Day 48 (+7), Day 34 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The problem.</strong> Your model is at 87% and you have two weeks. Options include more data, more features, a bigger model, more regularisation, a different algorithm, better labels and hyperparameter search. Trying them at random wastes months. Ng's practical teaching here is to <strong>diagnose first, then act</strong>. In outline:</p>
+<ol>
+<li><strong>Set a single number to optimise</strong> (plus satisficing constraints such as latency &lt; 50 ms), and a dev set that represents the data you care about.</li>
+<li><strong>Know the reference levels:</strong> a baseline, and human-level or best-known performance if you have one. Then:
+   - <strong>avoidable bias</strong> ≈ training error − reference error,
+   - <strong>variance</strong> ≈ validation error − training error.</li>
+<li><strong>Act on the bigger gap:</strong>
+   - High bias: a bigger or more flexible model, better features, less regularisation, training longer.
+   - High variance: more data, regularisation, a simpler model, data augmentation.
+   - A dev/test mismatch: get data that matches.</li>
+<li><strong>Learning curves:</strong> plot train and validation error against training-set size.
+   - Converging curves with a high plateau mean bias, and more data won't help.
+   - A large gap that is still closing means variance, and more data will help.</li>
+<li><strong>Error analysis:</strong> look at 100 misclassified dev examples and tally them by category or slice. Fix the categories that hold the most errors. A slice with a high error rate but few rows may matter less than a large slice with a moderate rate, unless it matters for fairness or the business.</li>
+</ol>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-08/day55_ml_strategy.py</code> on adult (learning curves with 5-fold CV). Verified error rates (majority-class reference: 0.2393):</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>n=781 train/val</th>
+<th>n=11,721</th>
+<th>n=39,073 train/val (gap)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logreg, 6 numeric columns</td>
+<td>0.1915 / 0.1868</td>
+<td>0.1871 / 0.1852</td>
+<td>0.1851 / 0.1852 (0.0001)</td>
+</tr>
+<tr>
+<td>unpruned tree</td>
+<td>0.0000 / 0.2113</td>
+<td>0.0000 / 0.1927</td>
+<td>0.0001 / 0.1892 (0.1891)</td>
+</tr>
+<tr>
+<td>HistGB</td>
+<td>0.0000 / 0.1706</td>
+<td>0.1071 / 0.1322</td>
+<td>0.1158 / 0.1265 (0.0107)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Diagnosis.</strong>
+- <strong>Logreg on numerics only:</strong> train ≈ val ≈ 0.185 at every size. <strong>High bias.</strong> More data is useless, as the curve has been flat since n=4k. Act by adding the categorical features or a flexible model.
+- <strong>Unpruned tree:</strong> train 0 and val 0.19 with a 0.19 gap. <strong>High variance.</strong> More data helps slowly (0.211 → 0.189). Act by regularising (depth, min leaf) or averaging (a forest).
+- <strong>HistGB:</strong> the gap shrinks from 0.17 to 0.011 as data grows, and val keeps falling. It is close to balanced. Further gains need better features or more data, not a different algorithm.</p>
+<p><strong>Error analysis</strong> (HistGB, out-of-fold predictions on train):
+- By <strong>marital status</strong>: Married-civ-spouse has an error rate of 0.2304 and <strong>82.5% of all errors</strong>. Never-married has 0.0292. The hard cases are married people, whose positive rate (0.4462) is closest to 50/50.
+- By <strong>sex</strong>: men have 0.1601 error and 83.7% of errors. Women have 0.0632. That is largely because women's positive rate in this 1994 data is 0.1089, so most are easy negatives.
+- By <strong>education</strong>: HS-grad holds the most errors (29.7%) despite a low error rate (0.1177), because it is the largest group.</p>
+<p><strong>What to do next, concretely:</strong> features that separate high and low earners <em>among married people</em> (occupation × hours, capital gains). Day 58 builds on this.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Reproduce the learning curves with <code>sklearn.model_selection.learning_curve</code>, and plot all three.</li>
+<li>For the tree, add <code>max_depth</code> ∈ {4, 8, 12} curves. Which one closes the gap best?</li>
+<li>Do manual error analysis: print 30 misclassified married rows and invent 3 categories (e.g. "high hours but low-paying occupation"). Tally them.</li>
+<li>Write a one-page "what to try next" memo with a table of options, expected effect, cost, and the evidence from your curves.</li>
+<li>Stretch: plot <em>validation</em> error against the number of features added in Day 42's order. Is there a plateau?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Human error 2%, train 8%, dev 10%. Bias or variance? <em>(Avoidable bias 6% &gt; variance 2%. Work on bias.)</em></li>
+<li>Train 1%, dev 15%. Two actions? <em>(More data; regularisation or a simpler model.)</em></li>
+<li>Learning curves converge at 18% error and are flat. Is more data worth buying? <em>(No.)</em></li>
+<li>Dev from US users, production in India. What risk? <em>(Dev/test mismatch: build a dev set from the target distribution.)</em></li>
+<li>Slice A: 5% of rows, 40% error. Slice B: 60% of rows, 12% error. Which one has more errors in total? <em>(B: 7.2% vs 2%.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Define avoidable bias and variance.
+  2. Describe high-bias and high-variance learning curves.
+  3. What did logreg on numerics show?
+  4. Which slice held most errors?
+  5. What is the purpose of a single-number metric?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look up "ceiling analysis" for multi-stage pipelines: replace one stage at a time with perfect (ground-truth) output, and see how much the final metric improves. The stage with the biggest ceiling deserves your effort. You will use this in Month 4 for retrieval-augmented systems (is the retriever or the generator the bottleneck?).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Tuning hyperparameters for weeks on a high-bias model.</li>
+<li>Error analysis on the test set (use dev or out-of-fold).</li>
+<li>Ignoring small slices that matter for fairness.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: a systems project. Write k-means' hot loop in Rust, and measure whether it was worth it.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-054.html">← Day 54</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-056.html">Day 56 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 114 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="114">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-113.html">← Day 113</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-115.html">Day 115 →</a></nav>
+<h1>Day 114: Hybrid retrieval, reranking and retrieval evaluation</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/day114_hybrid_rerank.py"><code>code/week-17/day114_hybrid_rerank.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 113 (+1), Day 111 (+3), Day 107 (+7), Day 93 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Lexical retrieval: BM25.</strong> BM25 scores a document by the query terms it contains, weighted by inverse document frequency (rare words count more), with term frequency saturating (parameter k1) and a length normalisation (parameter b). It needs no training, is fast, and is very good at exact names, numbers, code identifiers and rare terms, which dense models can blur.</p>
+<p><strong>Dense retrieval</strong> (Day 113) is good at paraphrase and meaning, worse at exact rare tokens. The two make <em>different</em> errors, which is why combining them helps.</p>
+<p><strong>Hybrid by reciprocal rank fusion (RRF).</strong> Score each document by Σ over retrievers of 1/(k + rank), with k ≈ 60. RRF uses only ranks, so you do not need to calibrate BM25 scores against cosine similarities.</p>
+<p><strong>Reranking.</strong> A <em>bi-encoder</em> embeds query and document separately, so documents can be pre-computed. A <em>cross-encoder</em> reads query and document <em>together</em> through one transformer and outputs a relevance score. It is much more accurate, because every query token can attend to every document token, but it must run once per (query, candidate) pair, so it is only used on the top 20-100 candidates from a cheaper first stage. This two-stage pattern (recall-oriented retrieval, then precision-oriented reranking) is standard.</p>
+<p><strong>Evaluation discipline.</strong> Keep the query set fixed, report recall@k and MRR at the k you will actually put in the prompt, report latency per query, and look at failures by hand.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/day114_hybrid_rerank.py</code> uses the 128/32 index from Day 113 (1,037 chunks).</p>
+<p><strong>Verified (out/day114_hybrid_rerank.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Retriever</th>
+<th>recall@1</th>
+<th>recall@5</th>
+<th>MRR</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dense (MiniLM)</td>
+<td>0.40</td>
+<td>0.64</td>
+<td>0.51</td>
+<td></td>
+</tr>
+<tr>
+<td>BM25</td>
+<td>0.41</td>
+<td>0.67</td>
+<td>0.51</td>
+<td>index + scoring all 58 queries 0.1 s</td>
+</tr>
+<tr>
+<td>Hybrid RRF</td>
+<td>0.41</td>
+<td>0.76</td>
+<td>0.56</td>
+<td></td>
+</tr>
+<tr>
+<td>Dense top-20 + cross-encoder</td>
+<td><strong>0.50</strong></td>
+<td><strong>0.81</strong></td>
+<td><strong>0.63</strong></td>
+<td>200 ms/query</td>
+</tr>
+<tr>
+<td>Hybrid top-20 + cross-encoder</td>
+<td>0.48</td>
+<td>0.79</td>
+<td>0.62</td>
+<td>213 ms/query</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: on these notes, simple BM25 was as good as dense retrieval (0.67 vs 0.64 recall@5). Fusion raised recall@5 to 0.76 because the two retrievers miss different queries. The cross-encoder added the most: recall@1 0.40 → 0.50. After reranking, dense and hybrid first stages ended within one or two queries of each other (0.81 vs 0.79), which is noise at n = 58. The price is latency: about 200 ms per query on this CPU for 20 pairs.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about 30 seconds).</li>
+<li>Tune BM25's k1 ∈ {0.9, 1.5, 2.0} and b ∈ {0.4, 0.75, 1.0}. Keep a separate tuning subset of queries to avoid tuning on the test set.</li>
+<li>Rerank the top 50 instead of the top 20. Does recall@5 improve, and what happens to latency?</li>
+<li>Replace RRF with a weighted sum of min-max-normalised scores. Compare.</li>
+<li>Find two queries where BM25 wins and dense loses, and explain why from the words involved.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why does RRF not need score calibration?</li>
+<li>Why can't a cross-encoder be used to search all 1,037 chunks for every query in a large system?</li>
+<li>Compute the RRF score (k = 60) of a chunk ranked 1st by BM25 and 10th by dense.</li>
+<li>Why might BM25 do well on these particular notes?</li>
+</ol>
+<p><strong>Answers.</strong> (1) It uses only ranks, which are comparable across retrievers. (2) It needs one forward pass per (query, chunk) pair; at about 10 ms per pair here (200 ms for 20), 1,037 chunks would take about 10 s per query. (3) 1/61 + 1/70 ≈ 0.0164 + 0.0143 = 0.0307. (4) Questions and notes share technical vocabulary (DPO, LoRA, perplexity), and rare technical terms are what BM25 rewards.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain BM25's idf, k1 and b.
+- [ ] I can implement RRF.
+- [ ] I can explain bi-encoder vs cross-encoder and why reranking is two-stage.
+- [ ] I can read the Day 114 table and name the biggest and the insignificant gains.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>The same reranker model was trained on web search data (MS MARCO), not course notes; it still transferred well here. Retrieval quality is usually the main limit on RAG quality: tomorrow shows a 135M generator failing even when the right text is retrieved, which is the other limit.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the BM25 chapter of "Introduction to Information Retrieval" (Manning, Raghavan, Schütze), freely available from the authors' site.</li>
+<li>Read the RRF paper (Cormack, Clarke, Büttcher, 2009).</li>
+<li>Look up ColBERT for a "late interaction" design between bi- and cross-encoders.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your RAG system misses answers that contain product codes like 'XK-4402'. What would you change?" Points: dense embeddings blur rare identifiers; add BM25 or keyword search and fuse; check tokenisation and normalisation of codes; add metadata filters; evaluate on a query set containing such codes.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Tuning retrieval hyper-parameters on the test queries.</li>
+<li>Reporting recall@20 when the prompt only gets the top 3.</li>
+<li>Ignoring reranker latency in the serving budget.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: put the retrieved chunks in a prompt and see whether a 135M model can use them.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-113.html">← Day 113</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-115.html">Day 115 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

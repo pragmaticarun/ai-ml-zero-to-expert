@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 53 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="53">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-052.html">← Day 52</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-054.html">Day 54 →</a></nav>
+<h1>Day 53: Time-series basics: lag features, leakage-safe validation</h1>
+<p class="meta">Week 8 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-08.md">source: weeks/week-08.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-08/day53_timeseries.py"><code>code/week-08/day53_timeseries.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 52 (+1), Day 50 (+3), Day 46 (+7), Day 32 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Tomorrow's bike demand depends on today's. Time series have <strong>autocorrelation</strong> (values near in time are similar), <strong>seasonality</strong> (daily and weekly cycles) and <strong>trend</strong>. This breaks the usual assumption that rows are independent. A random split puts the "future" in training, and its neighbours in validation become near-copies.</p>
+<p><strong>Supervised framing.</strong> Predict yₜ from features available <em>at prediction time</em>:
+- calendar (hour, weekday),
+- exogenous inputs known in advance (the weather forecast),
+- <strong>lags</strong> yₜ₋₁, yₜ₋₂₄ (same hour yesterday), yₜ₋₁₆₈ (same hour last week),
+- <strong>rolling statistics of the past</strong>, such as the mean of yₜ₋₂₄…yₜ₋₁.</p>
+<p>Never use a window that includes t or later.</p>
+<p><strong>Validation.</strong> <code>TimeSeriesSplit</code> trains on an expanding past and tests on the next block. Always compare with <strong>naive baselines</strong>: "same as an hour ago" and "same as last week". If you can't beat them, your model isn't learning anything useful.</p>
+<p><strong>The forecast horizon decides your features.</strong> Predicting 24 hours ahead means lag 1 is not available. Use lags ≥ 24.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-08/day53_timeseries.py</code> on hourly bike demand (HistGB regressor, <code>TimeSeriesSplit(5)</code> with 1500-hour test blocks, vs shuffled <code>KFold(5)</code>). Verified MAE (rentals per hour):</p>
+<table>
+<thead>
+<tr>
+<th>features</th>
+<th>TimeSeriesSplit</th>
+<th>shuffled KFold</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>naive "same as 1 hour ago"</td>
+<td>65.3</td>
+<td>–</td>
+</tr>
+<tr>
+<td>naive "same hour last week"</td>
+<td>64.7</td>
+<td>–</td>
+</tr>
+<tr>
+<td>calendar + weather only</td>
+<td>48.7</td>
+<td>26.5</td>
+</tr>
+<tr>
+<td>+ lags (1, 2, 24, 168) and past 24-h mean</td>
+<td><strong>33.8</strong></td>
+<td>22.3</td>
+</tr>
+<tr>
+<td>+ LEAKY centred rolling mean (includes t+1)</td>
+<td>18.3</td>
+<td>11.7</td>
+</tr>
+</tbody>
+</table>
+<p>Three lessons:
+1. <strong>Shuffled CV is wildly optimistic:</strong> 26.5 vs 48.7 for the same model. Random folds let the model interpolate between neighbouring hours it already saw.
+2. <strong>Lags genuinely help</strong> under honest validation (48.7 → 33.8), and clearly beat both naive baselines.
+3. <strong>The leaky feature looks like a breakthrough</strong> (18.3), but it uses yₜ₊₁, which you will never have at prediction time. A sudden big improvement from one feature is a red flag. Check its timestamp.</p>
+<p>The fold boundaries are printed (for example train up to row 9709 → test 9710–11209). Read them to confirm that the test always lies after the training data.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Build lag and rolling features with <code>shift</code> and <code>rolling</code> (always <code>shift(1)</code> <em>before</em> <code>rolling</code>). Assert there are no NaNs after the warm-up rows are dropped.</li>
+<li>Reproduce the table. Then build a <strong>24-hour-ahead</strong> feature set (only lags ≥ 24) and report its honest MAE.</li>
+<li>Add a <code>gap=24</code> to <code>TimeSeriesSplit</code> and explain when a gap is needed.</li>
+<li>Plot one test week: actual demand vs prediction vs the naive baselines.</li>
+<li>Stretch: fit a simple seasonal model (hour × weekday means from training only) as a third baseline. How close does it get to HistGB?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Which feature leaks: <code>y.rolling(24).mean()</code> or <code>y.shift(1).rolling(24).mean()</code>? <em>(The first includes yₜ.)</em></li>
+<li>Why can't you use lag 1 for a 6-hours-ahead forecast? <em>(It isn't known 6 hours in advance.)</em></li>
+<li>What does an expanding window mean in TimeSeriesSplit? <em>(Each fold's training set includes all earlier data.)</em></li>
+<li>Shuffled CV MAE 22 vs time-split MAE 34. Which do you report? <em>(34.)</em></li>
+<li>Why compare with "same hour last week"? <em>(It captures seasonality at no cost; your model must beat it.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Define autocorrelation and seasonality.
+  2. What makes a feature legal at prediction time?
+  3. What gap did shuffled CV create?
+  4. What did the leaky feature score?
+  5. How does the forecast horizon constrain the lags?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Classical models (ARIMA, exponential smoothing) model the series directly and give prediction intervals. Gradient boosting with lags is a strong practical default for many related series. Sequence models (Month 3's RNNs and transformers) learn the lags themselves. In every case the validation discipline stays the same.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Our demand forecast had MAE 22 in testing but 34 live. Why?" Write a short answer referring to today's table. The gap matches shuffled CV against time-ordered evaluation: shuffled folds let the model interpolate between neighbouring hours. Propose three checks:
+1. Re-run the validation with <code>TimeSeriesSplit</code> and the production horizon.
+2. Audit every rolling and lag feature for <code>center=True</code> or a missing <code>shift</code>.
+3. Confirm that the exogenous inputs used in training (observed weather) match what is available live (forecast weather).</p>
+<p>State what you would report to stakeholders from now on: the time-split number and the naive baselines beside it.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Using <code>rolling(..., center=True)</code>.</li>
+<li>Normalising with statistics from the whole series.</li>
+<li>Forgetting that holidays shift weekly patterns.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: are the model's probabilities honest, and how does a feature move the prediction?</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-052.html">← Day 52</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-054.html">Day 54 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

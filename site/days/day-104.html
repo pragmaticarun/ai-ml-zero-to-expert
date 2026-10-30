@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 104 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="104">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-103.html">← Day 103</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-105.html">Day 105 →</a></nav>
+<h1>Day 104: Evaluating LLMs and the fine-tuned model</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day104_eval_finetuned.py"><code>code/week-15/day104_eval_finetuned.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 103 (+1), Day 101 (+3), Day 97 (+7), Day 83 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Evaluate on several axes.</strong> A fine-tune is a trade. Measure:
+1. <strong>The target task</strong>, with an exact metric where possible (exact match, unit tests, F1).
+2. <strong>Retention:</strong> perplexity or tasks from the original domain, to detect forgetting.
+3. <strong>General ability:</strong> standard benchmarks.</p>
+<p><strong>Perplexity</strong> is cheap and sensitive but only comparable with the same tokenizer and text, and it does not measure helpfulness.</p>
+<p><strong>Multiple-choice benchmarks</strong> (MMLU, HellaSwag, ARC and others) are often scored by <strong>log-likelihood</strong>: compute log P(option | question) for each option and pick the highest. Choices matter: summing token log-probs penalises long options; length normalisation (mean per token) or per-character normalisation counteracts that. Different harnesses make different choices, so the same model can get different scores. Always report how it was scored.</p>
+<p><strong>Generative evaluation</strong> checks free-form answers by exact match, by execution (code), or by a judge.</p>
+<p><strong>LLM-as-a-judge</strong> (Zheng et al., 2023, "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena") uses a strong model to grade or compare answers. It scales, but it has known biases: <strong>position bias</strong> (preferring the first or second answer), <strong>verbosity bias</strong>, and <strong>self-preference</strong>. Mitigation: evaluate both orders and count only consistent verdicts, use rubrics, and check agreement with humans on a sample.</p>
+<p><strong>Contamination.</strong> Benchmark questions leak into web-scale pretraining data, which inflates scores. Prefer held-out or freshly written tests for decisions that matter.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day104_eval_finetuned.py</code> (<strong>35 s</strong>; needs the Day 103 adapter). Models: base, SmolLM2-135M-Instruct, and base + the Day 103 SFT adapter (loaded with 0 unexpected keys). <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>base</th>
+<th>instruct</th>
+<th>base + SFT LoRA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>reverse-words exact match (40)</td>
+<td>0.00</td>
+<td>0.00</td>
+<td><strong>1.00</strong></td>
+</tr>
+<tr>
+<td>Shakespeare val perplexity</td>
+<td>26.29</td>
+<td>32.05</td>
+<td><strong>57.90</strong></td>
+</tr>
+<tr>
+<td>16-question MC, sum log-prob</td>
+<td>0.88</td>
+<td>0.88</td>
+<td>0.88</td>
+</tr>
+<tr>
+<td>16-question MC, length-normalised</td>
+<td>0.81</td>
+<td>0.81</td>
+<td>0.81</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Forgetting is real:</strong> the SFT adapter more than doubled Shakespeare perplexity (26.29 → 57.90) while learning the task perfectly. The instruct model is also worse than the base at plain text continuation (32.05), a common side-effect of chat post-training.</li>
+<li><strong>The small MC set did not separate the models.</strong> All three got the same scores. With 16 questions, one question is 6 percentage points, so this set is too small to detect anything but huge differences. Length normalisation <em>lowered</em> accuracy here (0.81 vs 0.88), so it is not automatically better. The questions were written for this course (basic facts, 4 options), not taken from a benchmark.</li>
+<li><strong>Position bias, demonstrated.</strong> Using the instruct model as a judge ("Which statement is true? A … B …"), on 16 pairs in both orders: it chose A in <strong>10 of 32</strong> cases, gave the <em>same</em> verdict after swapping in <strong>0 of 16</strong> pairs (always the same letter regardless of content), and was correct <strong>16 of 32</strong> times, exactly chance. A 135M model is far too weak to judge, and this is the failure mode the swap test exists to catch.</li>
+</ul>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Write 50 more MC questions and report accuracy with a 95% binomial confidence interval. Are the models now separable?</li>
+<li>(45 min) Re-run the judge with the order instruction "Answer: B" style suffix changed; does the bias flip?</li>
+<li>(30 min) Add per-character normalisation to the MC scorer and compare.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Standard error of accuracy 0.88 on 16 questions? <em>Answer: sqrt(0.88·0.12/16) ≈ 0.081.</em></li>
+<li>What does a judge consistency of 0/16 mean? <em>Answer: its verdicts depend only on position.</em></li>
+<li>Why might length normalisation hurt? <em>Answer: it can favour long options whose later tokens are easy to predict.</em></li>
+<li>Name two ways to reduce the forgetting seen here. <em>Answer: mix general text into SFT data; lower lr / fewer steps / smaller rank; keep adapters separate and switch them off when not needed.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I measure task, retention and general ability.
+- [ ] I can score multiple choice by log-likelihood and state the normalisation.
+- [ ] I run the swap test before trusting a judge.</p>
+<h3 id="extra-notes-evaluation-harnesses">Extra notes: evaluation harnesses</h3>
+<p>EleutherAI's lm-evaluation-harness and Hugging Face's lighteval implement many benchmarks with fixed prompts and scoring rules, which makes numbers comparable <em>within</em> a harness. When a model card reports a benchmark, look for the harness, the number of shots, and the normalisation.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Zheng et al. (2023), section 3 on judge biases.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"How would you evaluate a fine-tuned support chatbot?" Task metric on held-out real tickets, retention checks, safety tests, judge with swap test and human spot checks, and online A/B metrics.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reporting one tiny test set without error bars.</li>
+<li>Using an LLM judge without checking position bias.</li>
+<li>Comparing perplexities across tokenizers.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 105: compare full fine-tuning and LoRA variants on one budget.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-103.html">← Day 103</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-105.html">Day 105 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

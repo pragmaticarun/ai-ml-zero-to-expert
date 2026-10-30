@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 10 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="10">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-009.html">← Day 9</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-011.html">Day 11 →</a></nav>
+<h1>Day 10: Linear systems, conditioning, least squares</h1>
+<p class="meta">Week 2 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-02.md">source: weeks/week-02.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-02/day10_linear_systems.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-02/day10_linear_systems.py"><code>code/week-02/day10_linear_systems.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 9 (+1), Day 7 (+3), Day 3 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> "Find x such that Ax = b" means: what weights combine A's columns to produce b? With as many independent equations as unknowns there is exactly one answer. In ML we nearly always have <strong>more equations than unknowns</strong>. Seven flats and two parameters (w, b) give seven equations that can't all hold, because the data has noise. So we ask for the x that makes Ax <strong>as close as possible</strong> to b. That is <strong>least squares</strong>, and it is the same as minimising MSE from Day 1.</p>
+<p><strong>Concrete example (verified).</strong> Put the Day-1 flats into a design matrix X_d = [size, 1] (7 × 2). Least squares gives <strong>w = 4.6814, b = 3.3363</strong>. The grid search on Day 1 found 4.7 and 3.1 (limited by its 0.1 grid). The exact optimum has MSE ≈ 0.435, and Day 17 confirms that value with autograd.</p>
+<p><strong>Plain-language maths.</strong>
+- <strong>Normal equation:</strong> at the best x, the residual b − Ax is perpendicular to every column of A. Otherwise you could move along a column and do better. So Aᵀ(b − Ax) = 0, which gives <strong>AᵀA x = Aᵀb</strong>. The lab solves this and gets the same 4.6814 and 3.3363.
+- <strong>Don't invert.</strong> <code>np.linalg.solve</code> (an LU factorisation) or <code>lstsq</code> (QR/SVD) are faster and more accurate than <code>inv(A) @ b</code>.
+- <strong>Conditioning.</strong> The condition number κ(A) measures how much input errors get amplified. A rule of thumb: you lose about log₁₀ κ digits of accuracy. Verified: a 12 × 12 Hilbert matrix has κ ≈ <strong>1.6e16</strong>, the limit of float64. <code>solve</code> gets an error of 0.28 in a true solution of all-ones, and <code>inv(A) @ b</code> gets <strong>5.7</strong>. Nearly collinear features (for example area in sq ft <em>and</em> area in m²) cause the same ill-conditioning. This is one reason ridge regression exists (Day 31).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Solve [[2, 1], [1, 3]] x = [5, 10] by elimination. Row 2 minus ½ row 1 gives 2.5 x₂ = 7.5, so x₂ = 3. Then 2x₁ + 3 = 5, so x₁ = 1. The lab prints [1, 3] ✓.</p>
+<p>Least squares by hand on (1,1), (2,2), (3,2) with the model y = wx + b:
+AᵀA = [[Σx², Σx], [Σx, m]] = [[14, 6], [6, 3]], and Aᵀy = [Σxy, Σy] = [1 + 4 + 6, 5] = [11, 5].
+Solve: the determinant is 14·3 − 36 = 6. w = (3·11 − 6·5)/6 = 3/6 = 0.5, and b = (14·5 − 6·11)/6 = 4/6 = 0.667.
+Check with <code>np.polyfit([1,2,3],[1,2,2],1)</code>, which gives [0.5, 0.667].</p>
+<h3 id="block-3-coding-lab-2h-codeweek-02day10_linear_systemspy">Block 3: Coding lab (2h): <code>code/week-02/day10_linear_systems.py</code></h3>
+<p>Tasks:
+1. Add a duplicated feature (size and 2·size) to the design matrix and try <code>np.linalg.solve(AᵀA, Aᵀy)</code>. It is singular. What does <code>lstsq</code> return instead? (The minimum-norm solution.)
+2. Add tiny noise (1e-8) to the duplicate column and print κ(AᵀA). Explain why the result is now unstable.
+3. Use the Week-1 housing CSV: build X = [area, bedrooms, age, city one-hot, 1] and solve least squares. How close are the coefficients to the generator (0.05, 4, −0.4, city premiums)? Watch the one-hot collinearity with the intercept (drop one city).
+4. Time <code>solve</code> vs <code>inv @ b</code> for n = 2000.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>When does Ax = b have no exact solution? <em>Answer:</em> when b is not in the span of A's columns, which is typical with noisy data.</li>
+<li>Derive the normal equation in two lines. <em>Hint:</em> the residual is orthogonal to the column space.</li>
+<li>κ = 1e10 and float64 has about 16 digits. How many trustworthy digits remain? <em>Answer:</em> about 6.</li>
+<li>Why can one-hot plus intercept make AᵀA singular? <em>Answer:</em> the one-hot columns sum to the intercept column.</li>
+<li>Name two numerically stable least-squares solvers. <em>Answer:</em> QR and SVD.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 9 (+1):</strong> compute AB for A = [[1, 0], [2, 1]] and B = [[3], [4]]. <em>Answer:</em> [[3], [10]].</li>
+<li><strong>Day 7 (+3):</strong> what does the noise floor tell you about how much improvement is possible?</li>
+<li><strong>Day 3 (+7):</strong> why can broadcasting blow up memory?</li>
+<li><strong>Self-check:</strong>
+  1. Write the normal equation.
+  2. Why avoid matrix inversion?
+  3. What does the condition number measure?
+  4. Give a feature-engineering cause of ill-conditioning.
+  5. What did least squares give for (w, b) on the Day-1 flats?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting the column of ones for the intercept.</li>
+<li><code>LinAlgError: Singular matrix</code> means duplicate or collinear features. Inspect <code>np.linalg.matrix_rank(X)</code>.</li>
+<li>Huge, oppositely signed coefficients on correlated features are a conditioning symptom.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Least squares is linear regression's closed form. In Week 4 you'll reach the same answer with gradient descent, which, unlike the closed form, scales to neural networks.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-009.html">← Day 9</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-011.html">Day 11 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

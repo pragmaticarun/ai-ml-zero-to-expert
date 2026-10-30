@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 99 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="99">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-098.html">← Day 98</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-100.html">Day 100 →</a></nav>
+<h1>Day 99: Hugging Face transformers and datasets</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day99_hf_basics.py"><code>code/week-15/day99_hf_basics.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 98 (+1), Day 96 (+3), Day 92 (+7), Day 78 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The Hub.</strong> The Hugging Face Hub hosts model repositories: a <code>config.json</code> (architecture), weights (<code>model.safetensors</code>), tokenizer files, and a model card (license, training data, intended use, limitations). Always read the card and the license before use.</p>
+<p><strong>The three objects.</strong>
+- <code>AutoTokenizer.from_pretrained(name)</code>: text ↔ token ids, plus special tokens and the chat template.
+- <code>AutoModelForCausalLM.from_pretrained(name)</code>: picks the right class from <code>config.json</code> (SmolLM2 is a Llama-architecture model, so you get <code>LlamaForCausalLM</code>).
+- <code>model.generate(...)</code>: the decoding loop (greedy, sampling, beam search), with the KV cache handled for you.
+<code>from_pretrained</code> downloads into the cache (<code>HF_HOME</code>) once; later loads are local. Setting <code>HF_HUB_OFFLINE=1</code> guarantees no network access, which makes runs reproducible.</p>
+<p><strong>What is inside SmolLM2-135M.</strong> It is the Week 14 GPT grown up: pre-norm blocks (RMSNorm), RoPE positions (Day 93), SwiGLU MLPs, tied embeddings, and <strong>grouped-query attention</strong> (GQA): 9 query heads share 3 key/value heads, which shrinks the KV cache 3× (Day 111).</p>
+<p><strong>Forward pass and loss.</strong> <code>model(input_ids=x, labels=x)</code> returns <code>.loss</code>, the mean next-token cross-entropy. The library shifts labels internally, so you pass the <em>same</em> tensor as input and labels. Positions with label −100 are ignored (Day 103 uses this to mask prompts).</p>
+<p><strong><code>datasets</code>.</strong> The <code>datasets</code> library loads Hub datasets as memory-mapped Arrow tables with <code>.map</code>, <code>.filter</code> and streaming. This week our data is small and local, so we tokenise plain tensors; the concepts transfer.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day99_hf_basics.py</code> (<strong>9 s</strong> with a warm cache). <strong>Verified:</strong>
+- <strong>134,515,008</strong> parameters; 30 layers, d_model 576, 9 heads, 3 KV heads, vocabulary 49,152, max positions 8,192, <code>rope_theta</code> 100,000; tied embeddings <strong>True</strong>; BOS and EOS are both <code>&lt;|endoftext|&gt;</code>.
+- "The quick brown fox jumps over the lazy dog." → <strong>10</strong> tokens: <code>The</code>, <code>Ġquick</code>, <code>Ġbrown</code>, … (<code>Ġ</code> marks a leading space in byte-level BPE).
+- Next-token distribution after "The capital of France is": ' the' <strong>0.262</strong>, ' Paris' <strong>0.094</strong>, ' located' 0.073, ' called' 0.044, ' a' 0.039. The correct fact is in the top 2, but not the top 1.
+- Greedy decoding of 30 tokens (<strong>0.38 s</strong>) loops: "the capital of the country. The capital of France is the capital of the …". Sampling (temperature 0.8, top-k 50, seed 0) gives "the city of Paris, and the name derives from the Latin word for city …", fluent but with an invented etymology. A 135M model is fluent before it is reliable.
+- Shakespeare validation perplexity (16 windows of 256): <strong>24.42</strong> (3.196 nats/token). Our Week 14 BPE model scored 3.470 nats/token, but on a different tokenizer, so compare in bits per character, not per token (practice problem 3).</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(30 min) Print the config and the module tree (<code>print(model)</code>). Find the GQA projection shapes: q_proj 576→576, k_proj and v_proj 576→192.</li>
+<li>(45 min) Write your own greedy decoding loop with <code>model(...).logits</code> and <code>past_key_values</code>, and check it matches <code>generate(do_sample=False)</code> token for token.</li>
+<li>(45 min) Compute bits per character of SmolLM2 on Shakespeare validation and compare with Week 14's 2.192.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why do k_proj/v_proj have 192 outputs? <em>Answer: 3 KV heads × 64 dims per head (576/9 = 64).</em></li>
+<li>Why pass <code>labels=input_ids</code> without shifting? <em>Answer: the model shifts internally.</em></li>
+<li>Convert 3.196 nats/token to bpc given ~3.10 characters per SmolLM token (Day 96). <em>Answer: 3.196 / 0.693 / 3.10 ≈ 1.49 bpc, far better than our 2.19.</em></li>
+<li>Why did greedy decoding loop? <em>Answer: once a phrase is likely, repeating it stays likely; greedy has no randomness to escape.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can load a model and tokenizer, generate, and compute a loss.
+- [ ] I can read a config and recognise RoPE, GQA, tied embeddings.
+- [ ] I know why offline mode and model cards matter.</p>
+<h3 id="extra-notes-precision-and-memory">Extra notes: precision and memory</h3>
+<p>At fp32, 134.5M parameters take 538 MB; bf16 halves that. Inference needs the weights plus the KV cache; training needs far more (Day 100). On CPU, fp32 is the safe default; bf16 on CPU works in recent PyTorch but is not always faster.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the SmolLM2 model card on the Hub (huggingface.co/HuggingFaceTB/SmolLM2-135M) and note its training data and stated limitations.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"What happens when you call <code>AutoModelForCausalLM.from_pretrained</code>?" Resolve the repo, download or read cached config and weights, instantiate the class named in the config, load the safetensors weights, tie embeddings if configured.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Mixing a tokenizer from one model with weights from another.</li>
+<li>Forgetting <code>model.eval()</code> / <code>torch.no_grad()</code> for inference.</li>
+<li>Reading a perplexity without checking context length and window count.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 100: update all 134.5M weights.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-098.html">← Day 98</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-100.html">Day 100 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

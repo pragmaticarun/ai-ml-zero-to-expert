@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 118 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="118">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-117.html">← Day 117</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-119.html">Day 119 →</a></nav>
+<h1>Day 118: Inference serving: KV cache, batching, speculative decoding, vLLM/llama.cpp overview</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/_tinyllama.py"><code>code/week-17/_tinyllama.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 117 (+1), Day 115 (+3), Day 111 (+7), Day 97 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Prefill and decode.</strong> Generation has two phases: <em>prefill</em> processes the whole prompt in parallel (compute-bound), and <em>decode</em> produces one token per step (memory-bound at small batch, because each step reads all weights for little compute).</p>
+<p><strong>KV cache.</strong> In causal attention, the keys and values of past tokens never change. Store them per layer; each decode step then computes Q, K, V only for the new token and attends to the cache, instead of re-running the whole sequence. Cost per step drops from O(t) full forwards' worth to one token's worth. The price is memory: 2 (K and V) × layers × KV heads × head dim × tokens × bytes. Grouped-query attention (GQA, used by SmolLM2) shrinks it by sharing K/V heads across query heads.</p>
+<p><strong>Batching.</strong> Decoding several sequences together reuses each weight read for several tokens, so total throughput rises until compute becomes the limit; per-sequence speed falls a little. <em>Continuous batching</em> lets sequences join and leave the batch at every step instead of waiting for the slowest one. <em>PagedAttention</em> (vLLM) stores the KV cache in fixed-size blocks, like virtual-memory pages, to avoid fragmentation and allow sharing prefixes.</p>
+<p><strong>Speculative decoding.</strong> A cheap <em>draft</em> model proposes γ tokens; the <em>target</em> model checks all of them in one forward pass and keeps the longest prefix it agrees with (for greedy: matching argmax), plus one token of its own. Output is identical to the target's; the speed-up depends on the acceptance rate and on how cheap the draft is. A bad draft makes it slower.</p>
+<p><strong>Engines (from their READMEs, not run here).</strong>
+- <strong>vLLM</strong> (<code>out/docs_vllm_README.md</code>): lists PagedAttention, continuous batching, chunked prefill, prefix caching, quantisation (FP8, INT8, INT4, GPTQ/AWQ, GGUF and others), speculative decoding (n-gram, suffix, EAGLE, DFlash) and an OpenAI-compatible API server; the paper is "Efficient Memory Management for Large Language Model Serving with PagedAttention". It is GPU-oriented and was not installed.
+- <strong>llama.cpp</strong> (<code>out/docs_llama_cpp_README.md</code>): "Plain C/C++ implementation without any dependencies", 1.5- to 8-bit integer quantisation, Apple silicon (Metal) and CUDA support, GGUF models (loadable with <code>-hf</code>), and an OpenAI-compatible server (<code>llama-server</code>). <strong>Not built here</strong>: the box has no <code>g++</code>, <code>cmake</code> or <code>make</code>. On a machine with a C++ toolchain, follow its README's build instructions.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/_tinyllama.py</code> implements SmolLM2's forward pass from scratch (RMSNorm, RoPE, GQA, SwiGLU) with a KV cache class; <code>day118_kv_cache.py</code> benchmarks it.</p>
+<p><strong>Verified (out/day118_kv_cache.log):</strong>
+- Correctness: our logits vs Hugging Face's: max difference <strong>0.00e+00</strong>.
+- Greedy decoding of 64 tokens: no cache 27.3 tok/s (2.35 s); <strong>our KV cache 67.8 tok/s</strong> (0.94 s), identical tokens; HF <code>generate</code> 61.7 tok/s, same tokens. Speed-up from the cache: 2.5×.
+- KV cache per sequence: 5.9 MB at 128 tokens, 23.6 MB at 512, 94.4 MB at 2,048 (linear in length).</p>
+<table>
+<thead>
+<tr>
+<th>Batch</th>
+<th>Total tok/s</th>
+<th>Per-sequence tok/s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>63.6</td>
+<td>63.6</td>
+</tr>
+<tr>
+<td>4</td>
+<td>186.3</td>
+<td>46.6</td>
+</tr>
+<tr>
+<td>16</td>
+<td>559.8</td>
+<td>35.0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Self-speculative decoding (draft = first k layers of the same model with its lm_head, γ = 4): k = 10 → acceptance 0.03, 58 target forwards, 24.0 tok/s; k = 20 → acceptance 0.06, 51 target forwards, 20.1 tok/s. Output equals greedy in both cases.</li>
+</ul>
+<p>Reading: the cache gives 2.5× at only 64 tokens; the gain grows with length. Batch 16 gives 8.8× the throughput of batch 1 while each sequence slows to 35.0 tok/s, the classic latency/throughput trade-off. Speculative decoding was <em>slower</em> than plain decoding: an early-exit draft of this model almost never predicts the next token (acceptance ≤ 0.06), so we paid for draft steps and saved few target steps. A trained small draft model or an EAGLE-style head would be needed.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about a minute).</li>
+<li>Measure tok/s with and without the cache at 32, 128 and 256 generated tokens and plot the ratio.</li>
+<li>Compute the KV cache size from the config formula and check it against the logged 5.9 MB at 128 tokens.</li>
+<li>Add a simple continuous-batching loop: start a new prompt when one sequence finishes.</li>
+<li>Speculative decoding: use an n-gram draft (copy the continuation of the last matching bigram in the prompt) on a repetitive prompt, and measure acceptance.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why is decoding memory-bound at batch 1?</li>
+<li>If acceptance is 0.06 with γ = 4, roughly how many tokens does each target forward produce?</li>
+<li>Why does total throughput rise with batch but per-sequence speed fall?</li>
+<li>Why couldn't llama.cpp be built on this box?</li>
+</ol>
+<p><strong>Answers.</strong> (1) Each step reads all weights to produce one token; arithmetic per byte read is tiny. (2) Barely more than 1: on average 0.06 × 4 ≈ 0.24 draft tokens are accepted plus the target's own token, consistent with 58 target forwards for 64 tokens at k = 10 (acceptance 0.03). (3) One weight read serves more tokens, but each step does more compute, so it takes longer. (4) It needs a C++ compiler and CMake; only gcc (C) is installed.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain prefill vs decode and why the KV cache helps.
+- [ ] I can compute KV cache memory.
+- [ ] I can explain continuous batching and PagedAttention.
+- [ ] I can explain when speculative decoding speeds things up and when it does not.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>On a GPU every effect is bigger: batching scales much further before compute saturates, which is why serving engines batch aggressively, and KV cache memory, not weights, often limits how many users fit. On this CPU, all measurements are a few seconds and somewhat noisy; repeat them before trusting small differences.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the vLLM PagedAttention paper named above and the blog post linked in the vLLM README.</li>
+<li>Read "Fast Inference from Transformers via Speculative Decoding" (Leviathan et al.).</li>
+<li>Read the llama.cpp README for GGUF and its quantisation types.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your LLM service has high latency under load. What do you look at?" Points: prefill vs decode time; batch size and continuous batching; KV cache memory and paging; quantisation of weights (and KV cache); prompt length and prefix caching; speculative decoding if acceptance is high; measure p50/p99 latency and throughput separately.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Forgetting RoPE positions when appending to the cache.</li>
+<li>Comparing tok/s across different numbers of generated tokens.</li>
+<li>Assuming speculative decoding always helps.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: the weekly project ties retrieval, quantisation and generation together.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-117.html">← Day 117</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-119.html">Day 119 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 129 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="129">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-128.html">← Day 128</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-130.html">Day 130 →</a></nav>
+<h1>Day 129: PPO from scratch</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day129_ppo.py"><code>code/week-19/day129_ppo.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 128 (+1), Day 126 (+3), Day 122 (+7), Day 108 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The problem PPO solves.</strong> A2C takes one gradient step per batch and throws the batch away. Taking many steps on the same batch would be more sample-efficient, but the policy-gradient estimate is only valid near the policy that collected the data. Push too far and the update is computed from data that no longer describes your policy, which is how runs collapse.</p>
+<p><strong>Importance ratio.</strong> Let π_old be the policy that collected the batch and r_t(θ) = π_θ(a_t|s_t) / π_old(a_t|s_t). At θ = θ_old the gradient of E[r_t·A_t] equals the ordinary policy gradient, so r_t·A_t is a surrogate objective we can optimise for several epochs.</p>
+<p><strong>Clipping.</strong> PPO (Schulman et al. 2017, https://arxiv.org/abs/1707.06347) maximises</p>
+<p>L^CLIP = E[ min( r_t A_t, clip(r_t, 1−ε, 1+ε) A_t ) ].</p>
+<p>Read the two cases. If A_t &gt; 0, the objective stops increasing once r_t &gt; 1+ε: no incentive to make a good action much more likely than before in one update. If A_t &lt; 0, it stops once r_t &lt; 1−ε. The min makes this a pessimistic bound: clipping can only remove incentive, never add it. It is a cheap stand-in for a trust region (a KL constraint between old and new policy), and you can monitor that KL directly.</p>
+<p><strong>GAE.</strong> PPO usually computes advantages with generalised advantage estimation: A_t = Σ_k (γλ)^k δ_{t+k}, where δ is the TD error from Day 128. λ = 0 is the one-step TD advantage; λ = 1 is the Monte Carlo advantage minus V. We use γ 0.99, λ 0.95, and the recursion runs backwards over the rollout, resetting at true terminations.</p>
+<p><strong>The full loop.</strong> Collect T = 1024 steps with π_old; compute GAE and value targets (A + V); normalise advantages; for 10 epochs, shuffle into minibatches of 64 and step on policy loss + 0.5·value loss − 0.01·entropy, with gradient-norm clipping at 0.5 and Adam 3e-4; repeat until 50k steps. Diagnostics after each update: approximate KL between old and new policy, and the fraction of samples whose ratio left [0.8, 1.2].</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day129_ppo.py</code> (about 30 s per seed). It trains with ε = 0.2 and then an ablation with no clipping (ε = 10^9: the same 10 epochs of plain importance-weighted policy gradient on each batch).</p>
+<p><strong>Verified (out/day129_ppo.log):</strong>
+- <strong>Clip 0.2:</strong> seed 0 had 326 episodes and its greedy eval was 500 from update 30 onward; seed 1, 276 episodes, first 500 at update 16 and 500 from about update 29 onward; seed 2, 317 episodes, 500 from about update 32 onward. Approximate KL per update: max 0.017-0.019, mean 0.006-0.007. About 0.06 of ratios were outside [0.8, 1.2]. 29-30 s per seed.
+- <strong>No clip:</strong> 619, 456 and 624 episodes. KL max 2.432 / 2.790 / 2.352, mean 0.531 / 0.607 / 0.339; clip fraction 0.53 / 0.55 / 0.47; 26 s per seed. Evaluations kept collapsing: seed 0 fell to 10, 10, 10 at updates 44-46 before ending at 500; seed 1 ended at 121; seed 2 hit 39, 10, 14 at updates 45-47 and ended at 476.</p>
+<p><strong>Reading it.</strong> With clipping, the per-update KL stayed below 0.02 and all three seeds held 500 for the last ~17-20 updates: that is the stability A2C lacked on Day 128. Without clipping, the KL per update was about 100 times larger and half the samples had moved outside the clip range; the policy repeatedly jumped to near-random behaviour (10 steps is roughly how long a falling pole lasts). The higher episode count for "no clip" is not a sign of learning more: short failed episodes inflate it. Wall-clock time is higher than A2C because of 10 epochs of minibatch updates, but the samples are used 10 times.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Try ε = 0.1 and ε = 0.3 for one seed; log KL and the update at which eval first holds 500.</li>
+<li>Set epochs to 1 with ε = 0.2. How close is this to A2C with n = 1024?</li>
+<li>Replace clipping by early stopping: break the epoch loop when approx KL &gt; 0.02. Compare stability.</li>
+<li>Remove advantage normalisation and see what happens to the clip fraction.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Write L^CLIP and explain both signs of A.</li>
+<li>What is r_t at the first minibatch of the first epoch?</li>
+<li>What λ makes GAE equal to the TD(0) advantage?</li>
+<li>Why does clipping alone not guarantee a small KL?</li>
+<li>Why is the "no clip" episode count misleading?</li>
+</ol>
+<p><strong>Answers.</strong> 1) See Block 1. 2) Exactly 1, since θ = θ_old. 3) λ = 0. 4) Clipping only removes gradient for samples already outside the range; many epochs and shared parameters can still move other probabilities (the log shows KL, so you can check). 5) Collapsed policies produce many very short episodes.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days. Write the PPO loop as ten lines of pseudocode from memory. Flashcards: importance ratio; clipped objective; GAE λ; approx-KL monitor; why multiple epochs need a safeguard.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>"Approximate KL" here is the mean of (log π_old − log π_new) over the batch. Day 132 meets a different estimator, used by GRPO, that is always non-negative.</li>
+<li>Value-loss clipping, learning-rate annealing and observation normalisation are common extras; we leave them out to keep the core visible.</li>
+<li>Implementations disagree on many small details, and those details can matter as much as the headline algorithm. Always state your settings.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read Sections 3 (clipped surrogate) and 5 (algorithm) of the PPO paper (link above) and map each symbol to a line of <code>day129_ppo.py</code>.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Why does PPO clip the ratio instead of the loss or the gradient?" Because the ratio measures how much the policy changed on that sample; clipping it removes the incentive to change further while keeping the ordinary gradient near the old policy. Mention the KL monitor as the honest check that it worked.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Recomputing log π_old after the first epoch (it must be frozen per batch).</li>
+<li>Forgetting the min (clipping alone can increase the objective for negative advantages).</li>
+<li>Resetting GAE at truncation as if it were termination.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow steps back from deep RL to the simplest exploration problem, the multi-armed bandit, and links it to recommendation.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-128.html">← Day 128</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-130.html">Day 130 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

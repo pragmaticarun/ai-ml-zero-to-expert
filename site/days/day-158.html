@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 158 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="158">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-157.html">← Day 157</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-159.html">Day 159 →</a></nav>
+<h1>Day 158: Memory and KV-cache budgeting on devices</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Where an LLM&#x27;s memory goes (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Interpretation (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 157 (+1), Day 155 (+3), Day 151 (+7), Day 137 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-where-an-llms-memory-goes-30-min">Block 1: Where an LLM's memory goes (30 min)</h3>
+<p>At inference, a decoder-only LLM's memory has four parts. (1) <strong>Weights:</strong> parameters × bytes per parameter. (2) <strong>KV cache:</strong> for every layer, the keys and values of every past token, so the next token does not recompute them. (3) <strong>Activations:</strong> temporary tensors for the current forward pass. They are small during one-token decode, but large during <em>prefill</em> (processing the prompt), especially the vocab-sized logits. (4) <strong>Runtime overhead:</strong> the framework, allocator slack, the tokenizer, and the app itself.</p>
+<p>The KV cache per token is 2 (K and V) × layers × KV heads × head_dim × bytes. Grouped-query attention (GQA) shares each K/V head among several query heads, so the cache shrinks by the ratio of query heads to KV heads. For a phone with a hard memory limit (Android can kill a background app, or a foreground one that grows too large), these numbers decide whether a model ships at all.</p>
+<h3 id="block-2-run-it-30-min">Block 2: Run it (30 min)</h3>
+<p><code>python day158_memory_kv.py</code> reads SmolLM2-135M-Instruct's <code>config.json</code> from the local Hugging Face cache, does the arithmetic, then loads the model in fp32 and measures.</p>
+<p><strong>Verified (out/day158_memory_kv.log):</strong>
+- <strong>Config:</strong> hidden size 576, 30 layers, 9 query heads but only 3 KV heads (head_dim 64), MLP intermediate size 1536, vocabulary 49,152, tied embeddings, maximum 8,192 positions.
+- <strong>Parameter count:</strong> the formula gives 3,540,096 per layer (attention 884,736 and MLP 2,654,208), embeddings 28,311,552 (21% of the total), and a total of 134,515,008. <code>model.parameters()</code> gives 134,515,008, a difference of +0.
+- <strong>Weight memory:</strong> fp32 513 MiB; bf16/fp16 257 MiB; int8 128 MiB; 4-bit with one fp16 scale per 32 weights (4.5 bits/weight, an assumed scheme) 72 MiB.
+- <strong>KV per token:</strong> 23,040 B (22.5 KiB) in fp16 with GQA; a hypothetical 9-head MHA would need 69,120 B (3x); int8 KV would need 11,520 B. In fp16 at batch 1, a context of 512 / 2048 / 8192 tokens needs 11.2 / 45.0 / 180.0 MiB, against 33.8 / 135.0 / 540.0 MiB with MHA.
+- <strong>Measured:</strong> loading fp32 took 1.4 s, and RSS rose from 390 to 1,020 MiB (+630 MiB, against 513 MiB of fp32 weights). Prefill at 256 / 1024 / 2048 tokens produced real <code>past_key_values</code> of 11.2 / 45.0 / 90.0 MiB in fp32. These match the formula exactly, with per-layer K shape (1, 3, ctx, 64). RSS rose by +76 / +302 / +468 MiB, of which the fp32 logits alone were 48 / 192 / 384 MiB.
+- <strong>Budget table</strong> (ASSUMED app budgets; weights plus fp16 KV only): at 256 MiB, bf16 weights (257 MiB) do not fit at all, int8 leaves room for 5,812 tokens, and 4.5-bit fits the full 8,192. At 512 MiB or more, every format fits the full 8,192.</p>
+<h3 id="block-3-interpretation-35-min">Block 3: Interpretation (35 min)</h3>
+<p><strong>The formula is exact, and that is the point.</strong> Parameter count, weight bytes and KV bytes are all predictable from <code>config.json</code>, before you download a single weight. The measured KV tensors matched the formula to the 0.1 MiB, so budget on paper first and verify once.</p>
+<p><strong>GQA is the biggest single KV saving in this model.</strong> Three KV heads instead of nine cut the cache 3x: 180 MiB instead of 540 MiB at 8,192 tokens. That is an architecture choice made at training time, which you inherit when you pick a model. When comparing candidate models for a phone, compare their <code>num_key_value_heads × head_dim × layers</code>, not just their parameter counts.</p>
+<p><strong>Prefill logits are the hidden memory spike.</strong> At 2,048 tokens of prefill, RSS rose by 468 MiB, of which 384 MiB was the fp32 logits tensor (2048 × 49,152 × 4 bytes) for <em>every</em> prompt position. Generation only needs the last position's logits. Production runtimes compute just that one, and they process long prompts in chunks. Day 158's naive <code>m(ids)</code> call shows what happens if you don't. The other ~84 MiB is the KV cache (90 MiB) plus other temporaries, minus allocator effects. RSS deltas are approximate because the allocator reuses freed memory.</p>
+<p><strong>RSS after loading exceeded the weights by about 117 MiB</strong> (630 vs 513 MiB): library code, allocator slack, and the loading path's temporary buffers. On a phone the runtime is smaller than PyTorch, but there is still overhead. Budget a margin, and measure the peak on the device (Android Studio's memory profiler) rather than trusting the arithmetic alone.</p>
+<p><strong>How to read the budget table.</strong> The budgets (256/512/1024 MiB) are <em>assumptions</em> for illustration, not platform limits: real limits depend on the device's RAM and what else is running, so measure on your lowest-end target device. The table's lesson is about ratios. At a tight 256 MiB budget, the weight format decides whether the model ships at all (bf16 cannot; int8 can, with a 5,812-token context). Once weights are 4-bit, the KV cache becomes the main cost, and int8 KV (11,520 B/token) or a capped context is the next lever. llama.cpp's Android doc warns about exactly this: start with a modest context size, or memory can spike.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Compute the fp16 KV per token for a model with 32 layers, 8 KV heads and head_dim 128. <em>2 × 32 × 8 × 128 × 2 = 131,072 B = 128 KiB per token; 4,096 tokens = 512 MiB.</em></li>
+<li>Why were the measured KV tensors 90.0 MiB at 2,048 tokens when the formula said 45.0 for fp16? <em>We loaded in fp32 (4 bytes). The fp32 formula row gives 90.0, an exact match.</em></li>
+<li>What is the cheapest fix for the 384 MiB logits spike? <em>Compute logits only for the last position (or chunk the prefill). It costs no accuracy at all.</em></li>
+<li>With 4.5-bit weights at a 256 MiB budget, which part dominates memory at 8,192 tokens? <em>The KV cache: 180 MiB fp16 against 72 MiB of weights.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Extend the script with an int8-KV column for the budget table. Then pick any other small model config you already have locally and fill in the same table without loading its weights.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Batch size multiplies the KV cache. On-device apps are almost always batch 1, while servers pay for batch × context.</li>
+<li>Tied embeddings (input and output share one matrix) save 28.3 M parameters here, 21% of the model.</li>
+<li>Sliding-window attention, KV quantization and paged KV caches are further levers. Each trades complexity or quality for memory.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Measure decode (one token at a time with <code>past_key_values</code>) RSS growth per token and check it against 23,040 × 2 B per token (fp32). Then try <code>torch.float16</code> or <code>bfloat16</code> loading and see how the RSS after load changes.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Will a 1B-parameter model with 16 layers, 8 KV heads and head_dim 64 fit a 1 GiB budget with a 4k context?" Weights at 4.5 bits ≈ 536 MiB. KV per token in fp16 = 2 × 16 × 8 × 64 × 2 = 32 KiB, so 4,096 tokens = 128 MiB. That is about 664 MiB plus activations and runtime overhead, so it probably fits. But measure the peak during prefill, and keep a margin for the app itself.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Counting weights but not the KV cache.</li>
+<li>Using MHA arithmetic for a GQA model (3x too pessimistic here).</li>
+<li>Forgetting prefill logits.</li>
+<li>Reading the RSS after load as "the model's size".</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 159 takes the model files from this week and puts them through the three Android runtimes' toolchains.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-157.html">← Day 157</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-159.html">Day 159 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

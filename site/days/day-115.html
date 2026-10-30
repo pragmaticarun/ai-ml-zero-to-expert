@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 115 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="115">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-114.html">← Day 114</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-116.html">Day 116 →</a></nav>
+<h1>Day 115: RAG generation and grounding evaluation</h1>
+<p class="meta">Week 17 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-17.md">source: weeks/week-17.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-17/day115_rag_generate.py"><code>code/week-17/day115_rag_generate.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 114 (+1), Day 112 (+3), Day 108 (+7), Day 94 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The RAG prompt.</strong> Retrieve the top k chunks, put them in the prompt with clear separators and an instruction ("Answer using only the context. If the answer is not there, say you don't know."), then ask the question. Design choices: k (more context raises recall but costs tokens and can distract a small model), the order of chunks, whether to cite chunk ids, and the chat template (Week 15).</p>
+<p><strong>Two failure modes.</strong> A wrong RAG answer is either a <em>retrieval</em> failure (the needed text was not in the prompt) or a <em>generation</em> failure (it was there, but the model ignored, misread or contradicted it). Measure them separately:
+- <em>Context recall</em>: fraction of questions whose answer string appears in the retrieved context.
+- <em>Answer accuracy</em>: fraction of answers containing the gold answer.
+- <em>Faithfulness / grounding</em>: whether claims in the answer are supported by the context. With short factual answers, a string check is a crude proxy; LLM judges and human checks are more general (Day 110 warns about judge biases).</p>
+<p><strong>Baselines.</strong> Always compare with <em>closed-book</em> (no context: what does the model already know?) and an <em>oracle</em> (give the passage known to contain the answer: what does perfect retrieval buy?). The gap closed-book → RAG is the value of retrieval; the gap RAG → oracle is retrieval's remaining error; oracle's own score is the generator's ceiling.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-17/day115_rag_generate.py</code> uses the hybrid retriever with reranking, top 3 chunks, SmolLM2-135M-Instruct, greedy decoding, and 12 questions whose answers are numbers or short phrases from Weeks 15-16 (all 12 answer strings were confirmed present in the notes).</p>
+<p><strong>Verified (out/day115_rag_generate.log):</strong>
+- Context recall@3: <strong>0.92</strong> (11 of 12 questions had the answer in the context).
+- Accuracy: closed-book <strong>0.00</strong>, RAG <strong>0.25</strong>, "oracle" passage <strong>0.08</strong>.
+- Mean RAG prompt length: 816 tokens. Whole run: 30 s.
+- Typical failures with the right context present: an answer of "192 perplexity" for a different value, and "2 trainable parameters" for a question whose answer in the context was 2,442,817.</p>
+<p>Reading: retrieval worked (0.92) but the 135M generator could not reliably copy facts from an 816-token prompt. The "oracle" scored <em>below</em> RAG because our oracle is crude: the first chunk containing the answer string, which may mention the number in passing without the question's context. So "the model ignored the context" is the main error here, and a bigger generator is the fix; with this model, better retrieval cannot raise accuracy much above 0.25. Twelve questions is a tiny set: one question is 0.08.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about 30 s). Read all 12 answers next to their contexts.</li>
+<li>Try k = 1 and k = 5. Does a shorter prompt help this small model?</li>
+<li>Change the instruction to "Copy the exact number from the context". Measure again.</li>
+<li>Improve the oracle: choose the chunk that contains the answer and has the highest BM25 score for the question.</li>
+<li>Write a simple grounding check: for numeric answers, is every number in the answer present in the context?</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Context recall is 0.92 but accuracy 0.25. Where is the main error?</li>
+<li>Why is closed-book 0.00 not surprising here?</li>
+<li>Why can a crude oracle score below RAG?</li>
+<li>Name one risk of using an LLM judge for faithfulness.</li>
+</ol>
+<p><strong>Answers.</strong> (1) Generation: the model had the answer in 11 of 12 prompts and got 3 right. (2) The questions are about numbers from our own logs, which no model could have memorised. (3) The oracle chunk contains the answer string but may lack the context that links it to the question, while reranked chunks are relevant to the question. (4) Judges have position, length and self-preference biases (Day 110) and can themselves miss unsupported claims.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can design a RAG prompt and explain the choice of k.
+- [ ] I can separate retrieval failures from generation failures with context recall.
+- [ ] I can explain why closed-book and oracle baselines matter.
+- [ ] I can state what Day 115's numbers do and do not show.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>With a 135M model, RAG is mainly a teaching tool; the pipeline is the same as with larger models, which follow context far better. Keep the metrics honest: a string match counts "2,442,817" vs "2442817" as different unless you normalise.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the original RAG paper (Lewis et al., 2020, "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks").</li>
+<li>Read "Lost in the Middle: How Language Models Use Long Contexts" (Liu et al.) on position effects in long prompts.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your RAG chatbot gives wrong answers. How do you find out why?" Points: build a labelled set; measure context recall to split retrieval vs generation errors; inspect failures; compare closed-book and oracle; then fix retrieval (chunking, hybrid, reranking) or generation (prompt, model size, fewer chunks), and re-measure.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Judging RAG by a few demo questions.</li>
+<li>Blaming the retriever without measuring context recall.</li>
+<li>Not normalising answers before string matching.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: making the generator smaller in memory with int8 and int4 quantisation.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-114.html">← Day 114</a><a href="../weeks/week-17.html">Week 17</a><a rel="next" href="day-116.html">Day 116 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

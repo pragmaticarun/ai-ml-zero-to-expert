@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 106 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="106">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-105.html">← Day 105</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-107.html">Day 107 →</a></nav>
+<h1>Day 106: RLHF overview: preferences, Bradley-Terry and the KL-regularised objective</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day106_rlhf_toy.py"><code>code/week-16/day106_rlhf_toy.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 105 (+1), Day 103 (+3), Day 99 (+7), Day 85 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why preferences?</strong> After pretraining a model predicts text; after supervised fine-tuning (SFT) on demonstrations it follows instructions. But many qualities we want (helpful, harmless, concise, honest) are easier to <em>judge</em> than to <em>demonstrate</em>. A labeller who cannot write the perfect answer can still say which of two answers is better. RLHF (reinforcement learning from human feedback) turns those comparisons into a training signal.</p>
+<p><strong>The classic three-stage pipeline.</strong>
+1. <em>SFT</em>: fine-tune the pretrained model on demonstrations. This is the starting policy and usually also the <em>reference</em> policy π_ref.
+2. <em>Reward model (RM)</em>: collect pairs (prompt x, answer y_w preferred over y_l) and train a model r(x, y) that gives the preferred answer a higher score.
+3. <em>Policy optimisation</em>: sample answers from the policy, score them with the RM, and update the policy to get higher reward, while a KL penalty keeps it close to π_ref. The usual optimiser is PPO (proximal policy optimisation).</p>
+<p><strong>Bradley-Terry.</strong> The standard link between rewards and preferences is P(y_w ≻ y_l | x) = σ(r(x, y_w) − r(x, y_l)), where σ is the logistic sigmoid. Training the RM is then logistic regression on reward <em>differences</em>: loss = −log σ(r_w − r_l). Two consequences: only differences matter, so the reward is defined only up to a constant per prompt; and the scale is set by how confident the labels are.</p>
+<p><strong>The KL-regularised objective.</strong> We maximise E_{y∼π}[r(x, y)] − β·KL(π ‖ π_ref). Without the KL term the policy would collapse onto whatever the RM over-rates, including its mistakes (reward hacking). β trades reward against staying close to a model we trust. For a fixed prompt this objective has a closed-form optimum: π*(y) ∝ π_ref(y)·exp(r(y)/β). Small β gives a nearly greedy policy; large β leaves you at π_ref. Remember this formula: DPO on Day 108 is derived from it.</p>
+<p><strong>PPO intuition.</strong> PPO estimates how much better than expected each sampled answer was (the <em>advantage</em>), raises the log-probability of good samples and lowers bad ones, and clips the update so the new policy does not move too far from the policy that collected the samples in one step. In LLM RLHF the reward is usually given once per full answer, and the KL penalty is added per token. A value network (critic) estimates expected reward to reduce variance. That makes four models in memory at once, which is why simpler methods (DPO, and critic-free methods like REINFORCE-style or group-relative baselines) became popular.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-16/day106_rlhf_toy.py</code> has two parts, both pure torch and done in a few seconds.</p>
+<p><em>Part 1: Bradley-Terry.</em> A hidden linear reward r(x) = w·x with w = [2.0, −1.0, 0.5, 0.0, 1.5] generates 2,000 noisy preferences (sampled with P = σ(r_a − r_b)). Fitting w by logistic loss on x_a − x_b recovers it.</p>
+<p><em>Part 2: KL-regularised bandit.</em> Five arms with rewards [1.0, 0.8, 0.5, 0.2, 0.0] and a reference policy [0.05, 0.1, 0.2, 0.3, 0.35] that prefers the <em>bad</em> arms. We compute π* for several β, then check that REINFORCE with a per-sample KL penalty converges to the same answer.</p>
+<p><strong>Verified:</strong>
+- BT fit: fitted w = [1.92, −1.0, 0.47, 0.05, 1.46]; on 1,000 new pairs it ranks pairs the same way as the true reward in 0.996 of cases; final train loss 0.299.
+- Adding +10 to every reward changes the BT loss by 0.0e+00: the constant is not identifiable.
+- β = 0.05: π* = [0.964, 0.035, 0.0, 0.0, 0.0], expected reward 0.993, KL to ref 2.816.
+- β = 0.2: π* = [0.45, 0.331, 0.148, 0.049, 0.021], reward 0.799, KL 1.193.
+- β = 1.0: π* = [0.097, 0.158, 0.235, 0.261, 0.249], reward 0.393, KL 0.053.
+- β = 5.0: π* = [0.058, 0.111, 0.208, 0.294, 0.33], reward 0.309, KL 0.002.
+- REINFORCE with KL penalty (β 0.2, 3,000 steps × 64 samples) ended at [0.45, 0.331, 0.148, 0.049, 0.021], equal to the closed form to three decimals.</p>
+<p>Read the β table as the whole RLHF trade-off in one place: reward rises from 0.309 to 0.993 as β falls, and the price is KL rising from 0.002 to 2.816.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script and confirm the numbers above.</li>
+<li>Change N from 2,000 to 200 and to 20,000. How close is the fitted w each time? (Expect the error to shrink roughly like 1/√N.)</li>
+<li>Multiply w_true by 0.25 (noisier labels). The fitted w should also shrink: BT learns the reward <em>in units of label confidence</em>.</li>
+<li>In part 2, set the reference to uniform. How does π* change for β = 0.2?</li>
+<li>Remove the KL term from the REINFORCE advantage. Where does the policy end up? Why is that dangerous if r were a learned, imperfect reward model?</li>
+<li>Write down, in your own words, why the KL term is computed against π_ref and not against the previous policy.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Show that σ(a) + σ(−a) = 1, and explain why that means BT treats (y_w, y_l) and (y_l, y_w) consistently.</li>
+<li>Derive π* ∝ π_ref·exp(r/β) by maximising Σ π(y) r(y) − β Σ π(y) log(π(y)/π_ref(y)) subject to Σ π = 1 (use a Lagrange multiplier).</li>
+<li>For β → 0 and β → ∞, what does π* become?</li>
+<li>Why does the BT loss not change when you add a constant to all rewards?</li>
+</ol>
+<p><strong>Answers.</strong> (1) σ(−a) = 1/(1+e^{a}) = 1 − σ(a); swapping the pair flips the sign of the difference, so the probabilities stay complementary. (2) Setting the derivative to zero gives r(y) − β(log(π/π_ref) + 1) − λ = 0, so π ∝ π_ref·exp(r/β). (3) β → 0: all mass on the best arm (argmax r); β → ∞: π_ref. (4) The loss uses only r_w − r_l; the constant cancels (measured 0.0e+00 change).</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can name the three RLHF stages and what each consumes and produces.
+- [ ] I can write the Bradley-Terry likelihood and the RM loss.
+- [ ] I can write the KL-regularised objective and its closed-form optimum.
+- [ ] I can explain the β trade-off using the Day 106 table.
+- [ ] I can explain in two sentences what PPO adds on top of plain policy gradient.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>The bandit is a "one-step" problem: no sequence of tokens, no credit assignment. Real LLM RLHF is the same objective over whole answers, where π(y|x) is a product over tokens, so log π(y|x) is a <em>sum</em> of token log-probs. That sum is what Day 108 computes in <code>logp_batch</code>. The per-sample KL estimate used in part 2 (log π(y)/π_ref(y) for a sampled y) is the same estimator used per token in many LLM RLHF implementations.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the original "Training language models to follow instructions with human feedback" (InstructGPT) paper's method section and match each stage to this day's vocabulary. Find it via a search for the title; check you have the arXiv version.</li>
+<li>Read the PPO paper (Schulman et al., 2017) and find the clipped objective.</li>
+<li>Look up "Constitutional AI" for the idea of using AI-written preference labels (RLAIF).</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Why do RLHF pipelines include a KL penalty to the SFT model? What goes wrong if β is too small or too large?" A good answer covers: the RM is only accurate near the data it was trained on; without the KL the policy finds inputs where the RM is wrong (reward hacking) and drifts in style or fluency; too-large β means nothing changes (Day 106: β = 5.0 moves KL only 0.002); too-small β means near-greedy optimisation of an imperfect reward.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Treating RM scores as absolute. They are only meaningful as differences for the same prompt.</li>
+<li>Thinking the KL is a regulariser on the <em>weights</em>. It is on the output <em>distributions</em>.</li>
+<li>Forgetting that RLHF does not add knowledge; it reshapes which behaviours the model prefers.</li>
+<li>Calling any fine-tune on preference data "RLHF". DPO, for example, has no RL loop.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow you train a reward model on a real (small) language model and test whether it learned the rule you intended or a shortcut.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-105.html">← Day 105</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-107.html">Day 107 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

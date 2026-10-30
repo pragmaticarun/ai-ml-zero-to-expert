@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 98 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="98">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-097.html">← Day 97</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-099.html">Day 99 →</a></nav>
+<h1>Day 98: PROJECT W14: train a tiny GPT on BPE tokens; Quiz 14</h1>
+<p class="meta">Week 14 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-14.md">source: weeks/week-14.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-14/day98_project_gpt_bpe.py"><code>code/week-14/day98_project_gpt_bpe.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 97 (+1), Day 95 (+3), Day 91 (+7), Day 77 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Project goal.</strong> Train the Day 95 GPT on the Day 96 BPE tokens (vocabulary 1,024) and decide, with a fair metric, whether subword tokens beat characters.</p>
+<p><strong>Fair comparison.</strong> Loss per token cannot be compared across tokenizers: a BPE token carries ~2.3 characters, so its loss is naturally higher. Convert to <strong>bits per character</strong>: bpc = (loss per token / ln 2) × (tokens / characters). With the same validation text this is a tokenizer-independent measure.</p>
+<p><strong>What changes with BPE.</strong>
+- The same 128-position context now covers about 292 characters instead of 128, so the model sees more context.
+- The embedding table grows from 65 × 128 to 1,024 × 128.
+- Each token is rarer, so there are fewer training examples per token type and the model can over-fit the training text.</p>
+<p><strong>Deliverables.</strong> A script (<code>day98_project_gpt_bpe.py</code>), a checkpoint (<code>out/day98_gpt_bpe.pt</code>), a short report comparing bpc, and one sample. Then take Quiz 14.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-14/day98_project_gpt_bpe.py</code> (<strong>92 s</strong>). <strong>Verified:</strong>
+- Encoding: train <strong>408,325</strong> tokens, val <strong>48,838</strong> tokens, in 0.7 s; validation <strong>2.284</strong> characters per token.
+- GPT: <strong>938,752</strong> parameters, of which the embedding table is 131,072.
+- Training (1500 steps):</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>500</th>
+<th>1000</th>
+<th>1500</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>train</td>
+<td>3.694</td>
+<td>3.114</td>
+<td>2.944</td>
+</tr>
+<tr>
+<td>val</td>
+<td>3.856</td>
+<td>3.550</td>
+<td>3.470</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Final: <strong>3.470</strong> nats/token = <strong>2.192 bits/char</strong>, against <strong>2.344</strong> for the character model on Day 95 (same steps, batch and width). The BPE model compresses the validation text about 6% better.</li>
+<li>Its context covers 292 characters vs 128.</li>
+<li>The sample has more real words and longer coherent phrases ("But, my lord, gentle uncle", "With sorrow stark") with fewer broken words than Day 95, though it is still not meaningful.</li>
+</ul>
+<p>Note the train/val gap: 2.944 vs 3.470. With 408k training tokens and 1500 × 32 × 128 = 6.1M tokens seen, the model has done about 15 epochs, and it is starting to memorise. The character model had a much smaller gap. For a further gain you would need more data or regularisation (dropout, weight decay), not just more steps.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Reproduce the run, then add dropout 0.1 and compare the gap and the final bpc.</li>
+<li>(45 min) Train with vocabulary 512 (retrain the BPE) and plot bpc against vocabulary size: 65 (characters), 512, 1,024.</li>
+<li>(30 min) Write a 200-word report with the table above and your two additions.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Convert 3.470 nats/token at 2.284 characters/token into bpc. <em>Answer: 3.470 / 0.6931 / 2.284 = 2.192.</em></li>
+<li>Why does the BPE model need fewer steps to see the same amount of text? <em>Answer: each token covers ~2.3 characters.</em></li>
+<li>Why did the BPE model over-fit more? <em>Answer: fewer tokens per epoch, so more epochs; more parameters in the embedding.</em></li>
+<li>If val bpc had come out worse for BPE, name two plausible causes. <em>Answer: too few steps for the larger embedding; over-fitting; context benefit not used.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can compare models with different tokenizers using bpc.
+- [ ] I can read a train/val gap and pick a remedy.
+- [ ] I took Quiz 14 and checked my answers.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>This model (under 1M parameters, 1M characters of text) is about five orders of magnitude smaller than the SmolLM2-135M model used next week in parameters, and far smaller still in data. Week 15 changes strategy: instead of training from scratch, start from a pretrained model and adapt it.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Use your Rust encoder to tokenise a larger public-domain text (for example from Project Gutenberg) and retrain to see whether the train/val gap closes.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"How would you compare two language models with different tokenizers?" Use bits per character (or per byte) on the same text, never per-token perplexity.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Comparing per-token losses across tokenizers.</li>
+<li>Encoding validation text with a tokenizer trained on it (leakage into the vocabulary).</li>
+<li>Forgetting to save the tokenizer alongside the model checkpoint.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 15: Hugging Face models, fine-tuning and LoRA.</p></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-097.html">← Day 97</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-099.html">Day 99 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

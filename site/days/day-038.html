@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 38 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="38">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-037.html">← Day 37</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-039.html">Day 39 →</a></nav>
+<h1>Day 38: Support vector machines and kernels</h1>
+<p class="meta">Week 6 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-06.md">source: weeks/week-06.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-06/day38_svm.py"><code>code/week-06/day38_svm.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 37 (+1), Day 35 (+3), Day 31 (+7), Day 17 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Many lines can separate two classes. The SVM picks the one with the <strong>widest margin</strong>, the widest "street" with no points inside it. A wide street is a confident boundary, and it tends to generalise. Only the points on or inside the street edges, the <strong>support vectors</strong>, define it. Move any other point a little and nothing changes.</p>
+<p><strong>Soft margin and hinge loss.</strong> Real data overlaps, so we allow violations at a price:</p>
+<blockquote>
+<p>minimise ½‖w‖² + C·Σᵢ max(0, 1 − yᵢ(w·xᵢ + b)), with yᵢ ∈ {−1, +1}</p>
+</blockquote>
+<p>The <strong>hinge</strong> max(0, 1 − y·f) is zero for points safely outside the street and grows linearly inside it.
+- Large C means violations are expensive: a narrow street that fits training data closely (more variance).
+- Small C means a wide, tolerant street (more bias).</p>
+<p>Compare logistic loss, log(1 + e^{−yf}): a smooth hinge that never reaches exactly zero.</p>
+<p><strong>Kernels.</strong> Some data is not linearly separable, like two interleaved moons. Map x to features φ(x) where it is separable. The SVM's dual form only uses dot products φ(a)·φ(b), so we can substitute a <strong>kernel</strong> K(a, b) that computes that dot product without ever building φ. The RBF kernel K(a, b) = exp(−γ‖a − b‖²) is a similarity: large γ means each point influences only a tiny neighbourhood (wiggly boundary), and small γ means smooth.</p>
+<p><strong>Cost.</strong> Kernel SVMs scale roughly between m² and m³, so they are great up to around 10⁴–10⁵ rows. Beyond that, linear SVMs or trees win.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-06/day38_svm.py</code>. Verified:
+- <strong>Breast cancer, linear</strong>: scratch subgradient descent on the hinge objective reaches test accuracy <strong>0.9650</strong> with objective 15.80. <code>LinearSVC(loss="hinge")</code> reaches 0.9650 with objective 15.74. The scratch optimiser lands within 0.4% of the exact optimum.
+- 20 of 426 training points are on or inside the margin (y·f ≤ 1), so the boundary is defined by fewer than 5% of the rows.
+- <strong>Moons with an RBF kernel</strong> (train/test accuracy and number of support vectors):</p>
+<table>
+<thead>
+<tr>
+<th>C</th>
+<th>γ</th>
+<th>train</th>
+<th>test</th>
+<th>#SV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1</td>
+<td>0.1</td>
+<td>0.820</td>
+<td>0.860</td>
+<td>158</td>
+</tr>
+<tr>
+<td>0.1</td>
+<td>1</td>
+<td>0.885</td>
+<td>0.915</td>
+<td>120</td>
+</tr>
+<tr>
+<td>0.1</td>
+<td>50</td>
+<td>0.530</td>
+<td>0.470</td>
+<td>195</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0.1</td>
+<td>0.880</td>
+<td>0.910</td>
+<td>73</td>
+</tr>
+<tr>
+<td>10</td>
+<td>1</td>
+<td>0.930</td>
+<td>0.915</td>
+<td>40</td>
+</tr>
+<tr>
+<td>10</td>
+<td>50</td>
+<td>0.980</td>
+<td>0.900</td>
+<td>154</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Linear SVC on moons: 0.880.</li>
+</ul>
+<p>How to read it: <strong>C=10, γ=50</strong> fits training nearly perfectly (0.98) and drops on test, which is variance. <strong>C=0.1, γ=50</strong> collapses (0.47 test), because tiny-radius kernels with a weak penalty leave almost every point a support vector and the boundary is meaningless. <strong>C=10, γ=1</strong> gives the best test accuracy with the fewest SVs (40). A small support-vector count is often a sign of a clean fit. Look at <code>out/day38_rbf_grid.png</code>.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Implement subgradient descent on the hinge objective with labels in {−1, +1}. The subgradient for a margin violator is −C·yᵢxᵢ, plus w from the regulariser. Reproduce an objective within 1% of LinearSVC.</li>
+<li>Plot the hinge, logistic and 0-1 losses against the margin y·f on one chart.</li>
+<li>Run a 5-fold CV grid over C ∈ {0.1, 1, 10, 100} and γ ∈ {0.1, 0.3, 1, 3, 10} on moons and pick the winner. Compare with the table above.</li>
+<li>Check your understanding of kernels: compute the RBF kernel matrix for 5 points by hand in NumPy and compare with <code>sklearn.metrics.pairwise.rbf_kernel</code>.</li>
+<li>Stretch: time <code>SVC(kernel="rbf")</code> at m = 2k, 8k and 32k rows of <code>make_moons</code>, and fit the scaling exponent (time ∝ m^p).</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>A point with y = +1 and f(x) = 0.3. Hinge loss? <em>(0.7.)</em> With f = 1.5? <em>(0.)</em></li>
+<li>Why are SVM scores not probabilities? <em>(Hinge isn't a log-likelihood. You need Platt scaling; see Day 54.)</em></li>
+<li>Feature map for the kernel (a·b)², with 2-D inputs? <em>(φ(x) = (x₁², √2x₁x₂, x₂²).)</em></li>
+<li>Effect of doubling C on the margin width? <em>(It typically narrows.)</em></li>
+<li>Why must you scale features before an RBF SVM? <em>(The kernel uses Euclidean distance, as with k-NN.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Write the soft-margin objective.
+  2. What is a support vector?
+  3. What does γ do in an RBF kernel?
+  4. In our grid, which setting overfit and which collapsed?
+  5. Roughly how do kernel SVMs scale with m?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>The dual and the kernel trick.</strong> Lagrangian duality turns the problem into maximising Σαᵢ − ½ΣΣ αᵢαⱼyᵢyⱼ K(xᵢ, xⱼ) subject to 0 ≤ αᵢ ≤ C and Σαᵢyᵢ = 0. Points with αᵢ &gt; 0 are the support vectors, and the prediction is f(x) = Σ αᵢyᵢ K(xᵢ, x) + b. Kernel ridge regression and Gaussian processes reuse the same Gram-matrix machinery.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Labels in {0, 1} for a hand-written hinge loss. Convert to ±1.</li>
+<li>Searching C and γ on a linear grid. Use logarithmic steps.</li>
+<li>Calling <code>SVC(probability=True)</code> and trusting the probabilities without checking calibration.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: decision trees, a completely different inductive bias made of axis-aligned questions, with no need for scaling.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-037.html">← Day 37</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-039.html">Day 39 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

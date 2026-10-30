@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 45 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="45">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-044.html">← Day 44</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-046.html">Day 46 →</a></nav>
+<h1>Day 45: Imbalanced data: class weights, resampling, threshold tuning</h1>
+<p class="meta">Week 7 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-07.md">source: weeks/week-07.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-07/day45_imbalanced.py"><code>code/week-07/day45_imbalanced.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 44 (+1), Day 42 (+3), Day 38 (+7), Day 24 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The accuracy trap.</strong> With 2% fraud, "never fraud" scores 98% accuracy and catches nothing. On imbalanced problems, look at:
+- <strong>Precision:</strong> of those flagged, how many are real?
+- <strong>Recall:</strong> of the real ones, how many did we flag?
+- <strong>F1:</strong> their harmonic mean.
+- <strong>PR-AUC (average precision):</strong> ranking quality focused on the positive class. Its no-skill baseline is the positive rate, not 0.5.
+- <strong>ROC-AUC:</strong> ranking quality overall. It can look comfortable even when precision is terrible, because the huge negative class makes the false-positive <em>rate</em> small.</p>
+<p><strong>Three levers.</strong>
+1. <strong>Class weights:</strong> multiply the loss of positive rows (<code>class_weight="balanced"</code> uses weights inversely proportional to class frequency). This shifts the probabilities upwards.
+2. <strong>Resampling:</strong> random oversampling of positives, or undersampling of negatives (SMOTE-style synthesis is a variant). Resample <strong>only the training folds</strong>, never validation or test.
+3. <strong>Threshold tuning:</strong> keep the model and move the decision threshold away from 0.5. Choose it on a <strong>validation</strong> set to meet a business target (best F1, recall ≥ 0.8, or a cost ratio).</p>
+<p>For ranking quality (AUC), weights and resampling mostly don't help. They mainly move where 0.5 falls, which threshold tuning does directly and transparently.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-07/day45_imbalanced.py</code> uses a synthetic task (20,000 rows, 20 features, about 2% positive; 60/20/20 train/validation/test split, so 88 positives in test). Verified test results:</p>
+<table>
+<thead>
+<tr>
+<th>approach</th>
+<th>acc</th>
+<th>prec</th>
+<th>rec</th>
+<th>F1</th>
+<th>PR-AUC</th>
+<th>ROC-AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>always negative</td>
+<td>0.9780</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.022</td>
+<td>0.500</td>
+</tr>
+<tr>
+<td>logreg, threshold 0.5</td>
+<td>0.9788</td>
+<td>1.000</td>
+<td>0.034</td>
+<td>0.066</td>
+<td>0.235</td>
+<td>0.715</td>
+</tr>
+<tr>
+<td>logreg, class_weight=balanced</td>
+<td>0.7180</td>
+<td>0.046</td>
+<td>0.602</td>
+<td>0.086</td>
+<td>0.150</td>
+<td>0.725</td>
+</tr>
+<tr>
+<td>logreg, random oversampling</td>
+<td>0.7157</td>
+<td>0.046</td>
+<td>0.602</td>
+<td>0.085</td>
+<td>0.145</td>
+<td>0.723</td>
+</tr>
+<tr>
+<td>logreg, threshold 0.0756 (tuned on validation)</td>
+<td>0.9485</td>
+<td>0.157</td>
+<td>0.307</td>
+<td><strong>0.208</strong></td>
+<td>0.235</td>
+<td>0.715</td>
+</tr>
+</tbody>
+</table>
+<p>How to read it:
+1. Plain logistic regression "beats" the trivial model on accuracy by 0.0008, catching 3 of 88 positives.
+2. Balanced weights and oversampling behave almost identically (they are nearly equivalent for this model). They trade precision for recall, and at their implied 0.5 threshold F1 barely moves.
+3. Picking the threshold on validation data for best F1 (0.0756) gave the best F1 on test, <strong>0.208</strong>, without retraining.
+4. A business rule "recall ≥ 0.8" needs threshold 0.0105, at precision <strong>0.032</strong>: 30 false alarms per true catch. That is a model-quality problem, not a threshold problem. ROC-AUC 0.715 is weak.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Reproduce the table. Plot the precision-recall curve and mark the 0.5, 0.0756 and 0.0105 points.</li>
+<li>Write <code>best_threshold(y_val, p_val, metric)</code> for F1, and for minimum expected cost with cost(FN) = 20·cost(FP).</li>
+<li>Prove the resampling leak: oversample <em>before</em> splitting, and compare validation F1 with the correct version.</li>
+<li>Try <code>HistGradientBoostingClassifier</code> on the same data. Does better ranking (PR-AUC) help more than any rebalancing?</li>
+<li>Stretch: apply all of this to Day 42's adult data, picking a threshold for precision ≥ 0.7. (The capstone on Day 58 does exactly this.)</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>1000 rows, 20 positive. The model flags 50, of which 15 are positive. Precision, recall and F1? <em>(0.30, 0.75, 0.4286.)</em></li>
+<li>What is the no-skill PR-AUC for a 2% positive rate? <em>(About 0.02.)</em></li>
+<li>Why choose the threshold on validation, not test? <em>(Otherwise test stops being an unbiased estimate.)</em></li>
+<li>When is class weighting preferable to threshold moving? <em>(When the training loss itself should focus on positives, e.g. for trees whose splits then change. Also when the model has no probabilistic output.)</em></li>
+<li>Is ROC-AUC 0.715 with PR-AUC 0.235 good or bad at a 2% base rate? <em>(PR-AUC is about 10× baseline, but precision at useful recall is still low.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Why is accuracy misleading here?
+  2. Define precision and recall.
+  3. What does class weighting change?
+  4. Where must resampling happen?
+  5. What threshold and F1 did validation tuning give?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>With costs c_FP and c_FN and calibrated probabilities, the Bayes-optimal threshold is t = c_FP/(c_FP + c_FN). For FN 20× worse than FP, t = 1/21 ≈ 0.048. This only works if the probabilities are calibrated (Day 54), which class weighting breaks. Prefer an unweighted model plus a threshold, or recalibrate.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reporting ROC-AUC alone on rare-event problems.</li>
+<li>Resampling before CV splits.</li>
+<li>A threshold tuned on test data.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: pipelines that make all these leaks structurally impossible.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-044.html">← Day 44</a><a href="../weeks/week-07.html">Week 7</a><a rel="next" href="day-046.html">Day 46 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 144 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="144">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-143.html">← Day 143</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-145.html">Day 145 →</a></nav>
+<h1>Day 144: Packaging and serving: ONNX, onnxruntime, FastAPI and a load test</h1>
+<p class="meta">Week 21 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-21.md">source: weeks/week-21.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 143 (+1), Day 141 (+3), Day 137 (+7), Day 123 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Packaging</strong> turns "weights in a notebook" into a versioned artefact with a fixed interface. The artefact holds:
+- the model;
+- its preprocessing (we keep normalisation <em>inside</em> the model to prevent skew);
+- metadata: model version, data version, threshold, schema.</p>
+<p><strong>ONNX</strong> is an open graph format for models. <code>torch.onnx.export</code> traces the forward pass into a graph of standard operators, with a dynamic batch axis declared. <strong>onnxruntime</strong> then runs that graph without PyTorch: a smaller dependency and often lower per-call overhead, because there is no Python autograd machinery around each op. Always verify an export numerically against the original model. Unsupported ops or dynamic control flow can export wrongly or not at all.</p>
+<p><strong>Serving patterns:</strong>
+- <em>Online</em>: an HTTP request per prediction, latency-sensitive.
+- <em>Batch</em>: score a table offline, throughput-sensitive, and much cheaper (Day 146).
+- <em>Streaming</em>: in between.</p>
+<p>For online serving, FastAPI with pydantic models gives typed request validation, so malformed JSON gets a 422 automatically, and uvicorn runs it.</p>
+<p><strong>Load testing.</strong> Measure <em>tail</em> latency (p95/p99), not just the mean, at realistic concurrency. Also measure throughput (requests/s and rows/s). Little's law ties them together: concurrency ≈ throughput × latency. Once the server saturates, adding concurrency only grows the queue, so latency rises while throughput stays flat. Batching more rows per request raises rows/s but raises per-request latency.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day144_onnx_serving.py</code>:
+- exports the seed-0 MLP with a dynamic batch axis;
+- checks it with <code>onnx.checker</code>;
+- compares logits on all 143 test rows;
+- times torch vs onnxruntime per call at batch 1, 64 and 1024 (one thread each).</p>
+<p>It then starts <code>serve_app.py</code> under uvicorn (1 worker, localhost), once per backend, and drives it with an <code>httpx</code> async client at concurrency 1 and 16.</p>
+<p><strong>Verified (out/day144_onnx_serving.log):</strong>
+- Export is 9622 bytes; checker OK; max |logit difference| on 143 rows is 0.00e+00; predictions identical.
+- Per-call time (1 thread): batch 1, torch 21.5 µs vs ORT 5.1 µs (4.2×); batch 64, 23.8 vs 9.7 µs (2.4×); batch 1024, 80.6 vs 75.1 µs (1.1×). The ONNX advantage is fixed per-call overhead, so it fades when real compute dominates.
+- HTTP, ONNX backend: c1 ×1 row p50 1.4 / p95 2.1 / p99 2.2 ms, 650 req/s; c16 ×1 row p50 17.7 / p95 52.5 / p99 77.9 ms, 705 req/s; c16 ×64 rows 390 req/s = 24,991 rows/s (p95 135.8 ms).
+- HTTP, torch backend: c1 567 req/s; c16 678 req/s (p95 55.1 ms); c16 ×64 rows 402 req/s = 25,697 rows/s (p95 78.2 ms).</p>
+<p>Readings:
+- At the HTTP level the 4× model speed-up nearly vanishes: 650 vs 567 req/s at c1. The model takes about 5-20 µs of a roughly 1.5 ms request, and the rest is HTTP, JSON and Python. <strong>Profile before optimising the model.</strong>
+- Going from c1 to c16 barely raises throughput (650 → 705) but multiplies p50 by about 13×: the server is saturated and requests queue.
+- With 64 rows per request, rows/s rise about 35× while requests/s fall. The two backends are similar (25.7k vs 25.0k rows/s). The ONNX run's higher p95 at that setting is within the noise of a client sharing the CPU, so I would not call it a real difference without repeats.
+- <strong>A flaw found:</strong> a wrong-shape input returned HTTP <strong>200</strong> with an error body, while a wrong type gave a proper 422. Monitoring that counts status codes would miss the shape errors. The Day 147 service fixes this.</p>
+<p>Caveat: the client and server share one machine, and there is no network. Real latency adds network round-trips; real throughput would come from more workers or cores.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Run uvicorn with <code>--workers 2</code> and repeat c16. Does throughput scale? Remember the client also needs CPU.</li>
+<li>Add a <code>/predict_batch</code> that accepts up to 512 rows and find the rows-per-request that maximises rows/s while keeping p95 &lt; 50 ms.</li>
+<li>Set onnxruntime's <code>intra_op_num_threads</code> to 4 and re-time batch 1024.</li>
+<li>Export with a fixed batch size and try to send batch 2. What error do you get?</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why did ORT's 4.2× win shrink to 1.1× at batch 1024? <em>It saves fixed overhead per call, and at large batches arithmetic dominates.</em></li>
+<li>Why was the HTTP gain so small? <em>The model is about 1% of request time; HTTP and JSON dominate.</em></li>
+<li>What does p50 rising 13× with flat throughput mean? <em>Saturation: extra concurrency only queues.</em></li>
+<li>Why put normalisation in the model? <em>So the serving code cannot skip or mismatch it (training/serving skew).</em></li>
+<li>What was wrong with the shape-error response? <em>It returned HTTP 200, so clients and monitors treat it as success. It should be a 4xx.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>For a model you built earlier in the course, what fraction of request latency would be the model itself? Guess, then plan how you'd measure it.</p>
+<p><strong>Extra notes.</strong> For big neural models the picture flips: the model dominates, and GPU batching (dynamic batching servers) is the main lever. For this tiny MLP the framework is the bottleneck.</p>
+<p><strong>Going deeper.</strong> Read the ONNX Runtime docs on graph optimisation levels and execution providers, and FastAPI's docs on request bodies and validation.</p>
+<p><strong>Interview-style question (15 min).</strong> "p99 latency doubled after a deploy, but the model is the same. Where do you look?" Request payload size, serialisation, worker count, CPU contention, garbage-collection pauses, a dependency upgrade, logging added to the hot path, and queueing. Compare the model's own timer against end-to-end latency to split the time.</p>
+<p><strong>Common mistakes.</strong> Reporting mean latency only. Load testing from the same box and calling it production numbers. Not checking export parity. Returning 200 on errors. Assuming a faster runtime speeds up the endpoint.</p>
+<p><strong>What to do next.</strong> Day 145 watches the model after launch: drift tests on the inputs, and a loop to find label errors in the data.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-143.html">← Day 143</a><a href="../weeks/week-21.html">Week 21</a><a rel="next" href="day-145.html">Day 145 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

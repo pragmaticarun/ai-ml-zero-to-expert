@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 105 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="105">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-104.html">← Day 104</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-106.html">Day 106 →</a></nav>
+<h1>Day 105: PROJECT W15: full fine-tune vs LoRA; Quiz 15</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day105_project_lora.py"><code>code/week-15/day105_project_lora.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 104 (+1), Day 102 (+3), Day 98 (+7), Day 84 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Project question.</strong> With the same data and number of steps, how do full fine-tuning and LoRA variants compare in target quality, trainable parameters, time and forgetting?</p>
+<p><strong>Design.</strong> One script (<code>day105_project_lora.py</code>), one seed, Shakespeare as the target domain, and <strong>this course's own notes</strong> (<code>weeks/week-01.md</code>, 12,705 SmolLM tokens) as the forgetting probe: modern technical English, very different from Shakespeare. Same 80 steps of 4 × 128 tokens for every run. Full fine-tuning at lr 5e-5 (Day 100); LoRA at lr 1e-3 (Day 101).</p>
+<p><strong>Confounders to keep in mind.</strong> The learning rates differ (each is a typical value for its method), and there is one seed. So the comparison is "typical settings", not "equal settings". A fair study would tune the learning rate per method and average seeds.</p>
+<p><strong>Deliverables.</strong> The results table, a 300-word report with a recommendation, and Quiz 15.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day105_project_lora.py</code> (<strong>250 s</strong> total). <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>run</th>
+<th>trainable</th>
+<th>Shakespeare val ppl</th>
+<th>notes ppl</th>
+<th>time (80 steps)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no training</td>
+<td>0</td>
+<td>26.29</td>
+<td>24.89</td>
+<td>—</td>
+</tr>
+<tr>
+<td>full fine-tune, lr 5e-5</td>
+<td>134,515,008</td>
+<td><strong>21.34</strong></td>
+<td>26.29</td>
+<td>59 s</td>
+</tr>
+<tr>
+<td>LoRA q,v r = 2</td>
+<td>115,200</td>
+<td>23.23</td>
+<td>27.11</td>
+<td>48 s</td>
+</tr>
+<tr>
+<td>LoRA q,v r = 8</td>
+<td>460,800</td>
+<td>23.02</td>
+<td>28.29</td>
+<td>35 s</td>
+</tr>
+<tr>
+<td>LoRA q,v r = 32</td>
+<td>1,843,200</td>
+<td>22.68</td>
+<td>30.17</td>
+<td>38 s</td>
+</tr>
+<tr>
+<td>LoRA all-linear r = 8</td>
+<td>2,442,240</td>
+<td>21.42</td>
+<td>28.65</td>
+<td>51 s</td>
+</tr>
+</tbody>
+</table>
+<p>Findings:
+- <strong>Target quality:</strong> full fine-tuning was best (21.34), with LoRA on all linear layers nearly equal (21.42) using 1.8% of the trainable parameters. On q,v only, higher rank helped modestly (23.23 → 22.68 from r = 2 to 32). <em>Where</em> you adapt mattered more than rank: all-linear r = 8 beat q,v r = 32 with a similar parameter count.
+- <strong>Forgetting:</strong> every run got worse on the course notes. Here full fine-tuning forgot <em>least</em> (24.89 → 26.29), and LoRA forgetting grew with rank (27.11 → 30.17). That is the opposite of the common intuition that LoRA forgets less; Biderman et al. (2024), "LoRA Learns Less and Forgets Less", report that pattern at much larger scale. The likely cause here is the learning rate: LoRA ran at 1e-3, 20× higher than full fine-tuning. This is why the confounder note above matters.
+- <strong>Time:</strong> LoRA steps were faster (35-51 s vs 59 s) but not dramatically, because the forward and backward passes through the frozen model still dominate on CPU. Timings varied between runs (r = 2 took longer than r = 8), so do not over-read them.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(60 min) Remove the confounder: run LoRA all-linear r = 8 at lr 2e-4 and 5e-4, and full fine-tuning at 2e-5 and 2e-4. Plot val ppl against notes ppl for all runs (a trade-off curve).</li>
+<li>(30 min) Add a second seed to the best two runs.</li>
+<li>(30 min) Write the 300-word report: recommendation, evidence, caveats.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Which run gives the best target ppl per trainable parameter? <em>Answer: LoRA q,v r = 2 (23.23 with 115,200).</em></li>
+<li>Why didn't LoRA give a big speed-up? <em>Answer: compute is dominated by passes through the frozen 134.5M-parameter network; LoRA mainly saves optimiser memory.</em></li>
+<li>What single change would most improve the fairness of the comparison? <em>Answer: tuning the learning rate per method.</em></li>
+<li>When would you still choose LoRA even if full fine-tuning is slightly better? <em>Answer: limited memory, many tasks on one base, small adapter files.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can design a comparison with a forgetting probe.
+- [ ] I can name the confounders in my own experiment.
+- [ ] I took Quiz 15 and checked my answers.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>This week's whole arc ran on a CPU with a 135M-parameter model in minutes per experiment. The same scripts work unchanged on a GPU with a larger model (for example a 1-2B parameter model) by moving tensors to <code>cuda</code> and using bf16, at which point real 4-bit QLoRA via bitsandbytes becomes available and runs of thousands of steps are practical.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Biderman et al. (2024) and compare their learning-rate choices with ours.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Full fine-tuning or LoRA for a new product?" Start with LoRA on all linear layers (cheap, swappable), measure target and retention, and escalate to full fine-tuning only if the target gap matters and you can afford it.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Comparing methods at different learning rates and attributing the difference to the method.</li>
+<li>No retention probe.</li>
+<li>One seed reported as a conclusion.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 16: DPO, embeddings, retrieval and RAG.</p></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-104.html">← Day 104</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-106.html">Day 106 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

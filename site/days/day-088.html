@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 88 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="88">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-087.html">← Day 87</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-089.html">Day 89 →</a></nav>
+<h1>Day 88: Month-3 capstone: error analysis</h1>
+<p class="meta">Week 13 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-13.md">source: weeks/week-13.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-13/day88_capstone_error_analysis.py"><code>code/week-13/day88_capstone_error_analysis.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 87 (+1), Day 85 (+3), Day 81 (+7), Day 67 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why error analysis.</strong> A single accuracy number hides where the model fails, how confidently it fails, and whether some inputs are systematically harder. Error analysis turns "76%" into a list of concrete, fixable problems ranked by how many errors each explains.</p>
+<p><strong>The checklist.</strong>
+1. <strong>Bias/variance view.</strong> Compare training and validation error. A large training error means underfitting (bigger model, longer training). A large gap means overfitting (more data, more regularisation).
+2. <strong>Per-class accuracy</strong> and the <strong>confusion pairs</strong> that account for most errors.
+3. <strong>Semantic structure.</strong> Are errors between similar classes (cat vs dog) or across obviously different groups (animal vs vehicle)? Errors within a group are often ambiguous images; errors across groups suggest a bug or a shortcut.
+4. <strong>Slices.</strong> Accuracy by an input property, here brightness and contrast quartiles. A slice with much lower accuracy is a target for augmentation or data collection.
+5. <strong>Calibration.</strong> Mean confidence on correct and wrong predictions, and the <strong>expected calibration error</strong> (ECE): bin predictions by confidence, then average |accuracy − confidence| over bins, weighted by bin size.
+6. <strong>Selective prediction.</strong> If the model may abstain below a confidence threshold, what coverage and accuracy do you get?
+7. <strong>Look at the errors.</strong> Tag a sample by hand (ambiguous, mislabelled, small object, unusual pose, background shortcut). Counts of tags tell you what to fix.</p>
+<p><strong>The test set.</strong> Everything was frozen on Day 86 (model and recipe) and Day 87 (no changes adopted). Today the test set is used once. Any further tuning after looking at test numbers would make them optimistic.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-13/day88_capstone_error_analysis.py</code> (about 10 s; it loads <code>out/capstone.pt</code>). <strong>Verified:</strong>
+- Train (first 2,500 images, eval mode) acc <strong>0.8272</strong>; val <strong>0.7656</strong>; <strong>TEST 0.7736</strong>; test with flip test-time augmentation (average of the image and its mirror) <strong>0.7816</strong>.
+- Bias/variance: train error <strong>0.1728</strong>, val-train gap <strong>0.0616</strong>. Training error is large, so the model is still underfitting: longer training or more width should help, which agrees with Day 87's width row.
+- Per-class test accuracy: truck <strong>0.927</strong>, automobile <strong>0.870</strong>, ship <strong>0.861</strong>, airplane <strong>0.826</strong>, horse <strong>0.824</strong>, frog <strong>0.815</strong>, deer <strong>0.770</strong>, dog <strong>0.647</strong>, bird <strong>0.628</strong>, cat <strong>0.578</strong>.
+- Errors <strong>566 / 2,500</strong>. Top confused pairs (count, true, predicted): cat→dog <strong>74</strong>, bird→deer <strong>42</strong>, deer→horse <strong>36</strong>, airplane→ship <strong>34</strong>, airplane→bird <strong>34</strong>. These five explain <strong>39%</strong> of errors.
+- Errors crossing the animal/vehicle boundary: <strong>96 of 566</strong>.
+- Slices: darkest brightness quartile <strong>0.7184</strong> vs brightest <strong>0.8096</strong>; lowest contrast quartile <strong>0.7344</strong> vs highest <strong>0.8208</strong>.
+- Calibration: mean confidence <strong>0.830</strong> when correct and <strong>0.574</strong> when wrong; ECE (10 bins) <strong>0.0203</strong>; <strong>28</strong> wrong predictions with confidence above 0.9.
+- Abstention: threshold 0.5 keeps <strong>85.6%</strong> at accuracy <strong>0.8303</strong>; 0.7 keeps <strong>64.1%</strong> at <strong>0.9132</strong>; 0.9 keeps <strong>41.5%</strong> at <strong>0.9730</strong>.
+- Files: <code>out/day88_review_sheet.csv</code> (60 errors to tag by hand) and <code>out/day88_confident_errors.png</code>.</p>
+<p><strong>Reading it.</strong> The weakest classes are the four mammals and birds, and their errors mostly stay inside the animal group. Airplane is confused with ship and bird, which share plain sky or sea backgrounds: a plausible background shortcut to check in the review sheet. Dark and low-contrast images are about 9 points harder; brightness and contrast jitter is a cheap augmentation to try next. Calibration is good (ECE 0.0203), so the confidence scores are usable for abstention, and the 28 confident errors are the first images to inspect: some may be mislabelled.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(60 min) Open the review sheet and the figure. Tag all 60 errors with one of: ambiguous, likely mislabelled, small/occluded object, unusual viewpoint, background shortcut, other. Count the tags and add them to the report.</li>
+<li>(30 min) Draw a reliability diagram (accuracy vs mean confidence per bin) from the script's predictions.</li>
+<li>(30 min) Compute the confusion matrix restricted to {cat, dog, deer, horse, bird} and decide whether you would merge any classes for a product that only needs "animal type".</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Train error 0.1728, val-train gap 0.0616. Underfitting or overfitting? <em>Answer: mainly underfitting; the training error dominates.</em></li>
+<li>Why may flip-TTA be reported but not used to pick the model? <em>Answer: it was evaluated on test; if you want to adopt it, decide on validation first, then report test once.</em></li>
+<li>ECE with bins (n=100, acc 0.9, conf 0.8) and (n=300, acc 0.6, conf 0.6)? <em>Answer: (100·0.1 + 300·0)/400 = 0.025.</em></li>
+<li>At threshold 0.7 the model keeps 64.1% of images. How many of the 2,500 test images go to a human? <em>Answer: about 897.</em></li>
+<li>Five pairs explain 39% of 566 errors. About how many errors is that? <em>Answer: about 221 (the counts sum to 220).</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I used the test set once and wrote the number down before doing anything else.
+- [ ] I can name the three weakest classes and the top confusion.
+- [ ] I can define ECE and compute it for two bins by hand.
+- [ ] I tagged the error sheet and have counts per tag.</p>
+<h3 id="extra-notes-why-the-confident-errors-matter-most">Extra notes: why the confident errors matter most</h3>
+<p>A wrong answer at confidence 0.4 is cheap: any abstention rule catches it. A wrong answer at confidence 0.95 is dangerous because nothing downstream notices. Of 566 test errors, 28 had confidence above 0.9. Look at those first. In practice they usually fall into three groups: label noise (the image really is what the model says), genuine ambiguity (a small animal in a large scene), and shortcuts (the model learned that blue background means ship). The first group means your test accuracy slightly understates the model; report it but do not "fix" the test labels you have peeked at without also auditing the training labels. The third group is the one to act on, with targeted augmentation or data. Also note the asymmetry in the abstention table: going from threshold 0.5 to 0.9 halves coverage (85.6% to 41.5%) for a 14-point accuracy gain. Whether that trade is worth it depends on the cost of a human review against the cost of an error, which is a product decision, not a modelling one.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Guo et al., "On Calibration of Modern Neural Networks" (2017), especially temperature scaling, and try it on the validation logits.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your classifier is 77% accurate. The product team wants 95%. What can you offer without retraining?" Selective prediction: at a threshold of 0.9 the model was 97.3% accurate on the 41.5% of images it kept; send the rest to people. Then use the error analysis to plan retraining (more data, brightness augmentation, width).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Looking at test errors, changing the model, and reporting the same test set again.</li>
+<li>Computing training accuracy in train mode (dropout/BN active), which understates it.</li>
+<li>Reporting only a top-confusions list without its share of total errors.</li>
+<li>Reading ECE without the reliability diagram: a small ECE can hide over- and under-confidence that cancel.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 89 steps back and reviews Months 1-3 before the report is written.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-087.html">← Day 87</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-089.html">Day 89 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

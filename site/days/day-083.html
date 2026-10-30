@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 83 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="83">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-082.html">← Day 82</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-084.html">Day 84 →</a></nav>
+<h1>Day 83: JAX quick tour (optional): jit, grad, vmap</h1>
+<p class="meta">Week 12 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-12.md">source: weeks/week-12.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-12/day83_jax_tour.py"><code>code/week-12/day83_jax_tour.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 82 (+1), Day 80 (+3), Day 76 (+7), Day 62 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why look at JAX?</strong> It shows the ideas behind modern frameworks very cleanly, as function transformations:
+- <code>jax.grad(f)</code> returns a new function computing the gradient of a scalar function.
+- <code>jax.jit(f)</code> traces f once with abstract values, compiles it with XLA, and reuses the compiled version for the same shapes and dtypes.
+- <code>jax.vmap(f)</code> vectorises a function written for one example over a batch axis.
+They compose: <code>jit(vmap(grad(loss)))</code> gives fast per-example gradients.</p>
+<p><strong>Rules that surprise PyTorch users.</strong>
+- Arrays are immutable: <code>x.at[i].set(v)</code> instead of <code>x[i] = v</code>.
+- Functions must be pure: Python side effects (print, appending to a list) run only during tracing.
+- Randomness uses explicit keys: <code>key, sub = jax.random.split(key)</code>.
+- Changing shapes triggers recompilation.</p>
+<p>This day is optional: skip it if you are behind, and use the time for Day 82's lab.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-12/day83_jax_tour.py</code> (jax 0.12.0.1 on CPU, about 3 s). <strong>Verified:</strong>
+- f(x, y) = x²y + 3y: its gradient at (2, 1) is <strong>[4.0, 7.0]</strong> (∂f/∂x = 2xy = 4, ∂f/∂y = x² + 3 = 7).
+- Linear regression by gradient descent: fitted w ≈ <strong>[1.003, 2.005, 3.001, 4.0, 5.002]</strong> (true 1..5), loss 0.0107; <code>grad</code> vs analytic 2Xᵀ(Xw − y)/n: max diff <strong>4.2e-9</strong>.
+- MLP gradient: eager <strong>8-10 ms</strong> vs jit <strong>2.85-3.83 ms</strong> per call; the first call of a fresh jit takes <strong>101 ms</strong> (compilation).
+- <code>vmap</code> per-example gradients have shape <strong>(4, 5)</strong>; their mean equals the batch gradient (<strong>True</strong>).
+- A Python side effect ran <strong>once</strong> across 3 jitted calls.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Port your Day-64 two-layer network to JAX with <code>grad</code> and a manual SGD loop.</li>
+<li>(45 min) <code>jit</code> the training step. Measure compile time and per-step time.</li>
+<li>(30 min) Compute per-example gradient norms with <code>vmap</code> (used in differential privacy).</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Read the script's function and confirm [4.0, 7.0] by hand.</li>
+<li>Why did the print run once? <em>Answer: jit traced once; later calls run compiled code.</em></li>
+<li>What happens if you call a jitted function with a new input shape? <em>Answer: it retraces and recompiles.</em></li>
+<li>Why must the first jit call be excluded from timings? <em>Answer: it includes compilation (101 ms here).</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain grad, jit, vmap in one sentence each.
+- [ ] I know the purity and immutability rules.</p>
+<h3 id="extra-notes-the-same-three-ideas-in-pytorch">Extra notes: the same three ideas in PyTorch</h3>
+<p>Each JAX transformation has a PyTorch counterpart, which helps you move between codebases. <code>jax.grad</code> corresponds to <code>torch.autograd.grad</code> or <code>.backward()</code>, and more directly to <code>torch.func.grad</code>, which is a function transform with the same style. <code>jax.vmap</code> corresponds to <code>torch.func.vmap</code>; per-example gradients are <code>torch.func.vmap(torch.func.grad(loss_fn), in_dims=(None, 0, 0))</code>. <code>jax.jit</code> corresponds most closely to <code>torch.compile</code>, which traces Python into graphs and compiles them (TorchInductor), with the same trade-off: a slow first call, then faster calls, and recompilation when shapes change.</p>
+<p>The difference is the default. PyTorch is eager first and lets you opt into transforms and compilation; JAX is transform first and expects pure functions throughout. That purity is what makes the composition <code>jit(vmap(grad(f)))</code> safe and easy to reason about. The cost is the rules from Block 1. In this course we use PyTorch for the main projects; knowing JAX's model makes you a better reader of research code and of PyTorch's own <code>torch.func</code> API.</p>
+<p>Check your understanding of the measured numbers: per call, jit was about 3 times faster than eager for the MLP gradient, and its 101 ms compilation is repaid after about 15-20 calls. A training run of thousands of steps repays it easily; a one-off computation does not.</p>
+<p>A useful exercise is to rewrite the Day-83 linear regression with <code>torch.func.grad</code> and <code>torch.compile</code> and compare the numbers with JAX on this box. Expect them to be of the same order; small problems are dominated by Python and dispatch overhead in both frameworks, which is exactly what compilation removes. Record your own measurements rather than trusting anyone's benchmark, including this lesson's.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>The JAX documentation pages "Thinking in JAX" and "🔪 JAX - The Sharp Bits 🔪" (Common Gotchas) (linked in <code>docs/resources.md</code>).</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"What does a JIT compiler gain you in ML, and what does it cost?" Fusion, fewer Python overheads; compile time, shape specialisation, debugging difficulty.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Timing without <code>block_until_ready()</code> (JAX is asynchronous).</li>
+<li>Reusing the same random key.</li>
+<li>Using Python control flow on traced values (use <code>jax.lax.cond</code> / <code>scan</code>).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 84: the weekly project, a character-level language model.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-082.html">← Day 82</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-084.html">Day 84 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

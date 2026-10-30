@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 60 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="60">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-059.html">← Day 59</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-061.html">Day 61 →</a></nav>
+<h1>Day 60: MONTH-2 CAPSTONE delivery + checkpoint exam and review</h1>
+<p class="meta">Week 9 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-09.md">source: weeks/week-09.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Capstone delivery checklist (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Checkpoint exam: code (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Checkpoint exam: concepts (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Review session (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-09/day60_checkpoint.py"><code>code/week-09/day60_checkpoint.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 59 (+1), Day 57 (+3), Day 53 (+7), Day 39 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-capstone-delivery-checklist-1h">Block 1: Capstone delivery checklist (1h)</h3>
+<p>Your capstone is done when a stranger could clone the repository and get your numbers. Check each item:
+1. <code>README.md</code> gives the problem, how to run it (one command), and the expected outputs.
+2. Running from scratch regenerates <code>cv_table.csv</code>, the model and <code>report.md</code> with <strong>the same numbers</strong>. Run it twice and <code>diff</code> the outputs.
+3. The model card covers the data hash, config, versions, metrics with CIs, intended use, out-of-scope uses, slice results and limitations.
+4. The test set was used once, and the report says so.
+5. Every number in the report comes from a file the code wrote. Nothing is copied by hand.</p>
+<p><strong>Capstone rubric (self-grade out of 30):</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clean, leak-free pipeline; test touched once</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Baselines and ≥ 4 candidates compared with CV mean ± std</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Threshold chosen on CV for the stated business constraint</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Test metrics with bootstrap CIs; constraint checked</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Calibration assessed (table or plot plus Brier)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Slice analysis with n, CIs and an honest discussion</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Reproducible: one command, same numbers twice, model card</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>24+ is excellent, 18-23 is solid (fix the gaps this week), and below 18 means you should redo the weakest sections before Month 3.</p>
+<h3 id="block-2-checkpoint-exam-code-1h15">Block 2: Checkpoint exam: code (1h15)</h3>
+<p><code>code/week-09/day60_checkpoint.py</code> holds six exercises with automatic checks. Write each function yourself in a fresh file, <strong>without notes</strong>, and then run the checks against your versions. (The reference solutions inside the script are for after you're done.)
+1. Ridge regression closed form, matching <code>sklearn.linear_model.Ridge</code>.
+2. K-fold index generator, matching <code>KFold</code>.
+3. Gini impurity (gini([0, 0, 1, 1]) = 0.5, and a pure node = 0).
+4. One k-means step that does not increase inertia.
+5. Rank-based ROC-AUC, matching <code>roc_auc_score</code>.
+6. PCA via SVD: uncorrelated components with descending variance.</p>
+<p>The reference run passes 6/6. Target: 5/6 within 75 minutes.</p>
+<h3 id="block-3-checkpoint-exam-concepts-1h">Block 3: Checkpoint exam: concepts (1h)</h3>
+<p>Answer in writing, in at most five sentences each:
+1. A colleague reports 0.97 accuracy on a fraud dataset with 1% fraud. What three questions do you ask?
+2. Explain why shuffled CV failed on the bike data (Day 53), with the numbers.
+3. Bias or variance? Train error 0.0, val 0.19, and the curve is still decreasing (Day 55). What next?
+4. Why did Platt scaling leave AUC unchanged but fix the Brier score?
+5. Random forest vs gradient boosting: what does each reduce, and how?
+6. Your clustering silhouette says k = 3 but the domain expert says 4. How do you proceed?
+7. When is anomaly detection preferable to supervised classification?
+8. In the capstone, the tuned model "won" by 0.0003 AUC. Write the sentence you'd put in the report.</p>
+<p><strong>Grading:</strong> compare your answers with the relevant lesson's Block 1 and the quizzes. Give 2 points for each answer that includes the key idea <em>and</em> a number from our runs where one applies.</p>
+<h3 id="block-4-review-session-1h">Block 4: Review session (1h)</h3>
+<p>Do a heavier review today:
+- Shuffle all of <code>flashcards/month-02.csv</code> and go through it once. Mark the cards you miss.
+- Re-take the questions you missed in Quizzes 5-8.
+- Write a one-page "Month 2 in my own words" summary. Supervised learning beyond linear models, evaluation, unsupervised learning, strategy, systems.</p>
+<h3 id="block-5-review-30-min">Block 5: Review (30 min)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. What would make your capstone irreproducible?
+  2. Which checkpoint exercise was hardest, and why?
+  3. Which three Month-2 ideas will you use most?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Publish (privately, or publicly if you like) your capstone as a short write-up: the problem, the approach, the honest results and the slice findings. Explaining it to someone else is the best test of understanding. This is optional and entirely your call.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>Before you close Month 2, write a half-page answer to: "Walk me through your capstone in three minutes." Use this structure:
+- problem and constraint (precision ≥ 0.70),
+- data and its caveats,
+- how you avoided leakage,
+- what CV said and how much the differences meant,
+- the one-shot test result with its interval,
+- the slice finding you would raise with a stakeholder,
+- what you would do next with two more weeks (informed by the Day 55 diagnosis).</p>
+<p>Read it aloud and time yourself. If it runs over, cut detail, not caveats. Keep this script. It becomes your portfolio summary.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Grading the exam generously.</li>
+<li>Skipping the reproducibility re-run because "it worked last time".</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Month 3 starts tomorrow: neural networks, from a single neuron upwards.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-059.html">← Day 59</a><a href="../weeks/week-09.html">Week 9</a><a rel="next" href="day-061.html">Day 61 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

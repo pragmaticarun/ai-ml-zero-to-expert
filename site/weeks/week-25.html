@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 25 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="25">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-24.html">← Week 24</a><a href="../syllabus.html">Syllabus</a><a href="week-26.html">Week 26 →</a></nav>
+<h1>Week 25 (Days 169-175)</h1><p class="meta"><a href="../../weeks/week-25.md">source: weeks/week-25.md</a> · <a href="../../pdf/week-25.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-169.html">Day 169: Capstone proposal, success metrics and budget table</a> <span class="st" data-st="169"></span></li><li><a href="../days/day-170.html">Day 170: Data, corpus index and LoRA baseline</a> <span class="st" data-st="170"></span></li><li><a href="../days/day-171.html">Day 171: RAG retrieval and tool-using agent</a> <span class="st" data-st="171"></span></li><li><a href="../days/day-172.html">Day 172: Int8 scoring, Rust/PyO3 kernel and KV budget</a> <span class="st" data-st="172"></span></li><li><a href="../days/day-173.html">Day 173: Evaluation harness, regression gates and drift</a> <span class="st" data-st="173"></span></li><li><a href="../days/day-174.html">Day 174: Responsible-AI audit and model card</a> <span class="st" data-st="174"></span></li><li><a href="../days/day-175.html">Day 175: Integrate service + Month-6 midpoint exam</a> <span class="st" data-st="175"></span></li></ul><h3>Exams this week</h3><ul><li><a href="../exams/d175-file.html">Month 6 midpoint checkpoint exam (Day 175)</a></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-25"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>How many chunks did Day 169/170 index from <code>weeks/*.md</code>?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1467.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Day 170 recall@3 on 25 QA pairs?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.720 (18/25).</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>LoRA 60-step wall time and loss start→end?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>14.8 s; 3.791 → 0.961.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Day 171 p50 RAG+gen latency?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.78 s.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Injection results on Day 171?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>3/3 blocked; 0/10 false positives.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Rust int8 best speedup vs numpy-int8 (Day 172)?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>50.35× (100k×256 synthetic).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>SmolLM2 KV fp16 bytes per token?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>23040.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Day 173 harness status and p50 RAG?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>PASS; 0.75 s.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Day 174 red-team mitigated count?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>6/6.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Day 175 integration tests?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>10/10 PASS.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Name the three allow-listed tools.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>calc, course_search, get_day_title.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>What release rule fails the build even if the demo looks good?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>recall@3 drops &gt;10% relative vs baseline, or injection block rate &lt; 0.70 (also any budget gate FAIL).</p>
+<hr /></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> Days 169-175 are written in full. This is the start of the expert-level final capstone: a CPU-feasible on-device-style <strong>Course Assistant</strong> that integrates the whole course — corpus indexing, MiniLM retrieval, SmolLM2-135M generation (optional LoRA), a tool-using agent with injection guards, a Rust/PyO3 int8 scoring kernel, an evaluation harness with regression gates and PSI drift, a responsible-AI audit with a model card, and a tested stdlib HTTP service. Every number comes from <code>code/week-25/day169_*.py</code> … <code>day175_*.py</code> and the shared package under <code>code/capstone/</code>, each run on this box, with logs in <code>code/week-25/out/</code>. Shared helpers live in <code>code/week-25/_dep.py</code>.</p>
+<p><strong>Retitled from the original SYLLABUS rows.</strong> Row 169 was "Governance, regulation, careers; reading papers efficiently" (covered in spirit by Week 24 Day 167's NIST/EU overview and model cards). Rows 170-175 were generic FINAL CAPSTONE phase labels. They are retitled to match this week's build milestones: proposal/budget → data/model → RAG+agent → performance → eval harness → safety/audit → integration + Month-6 midpoint exam.</p>
+<p><strong>The system under build.</strong> Corpus = <code>weeks/*.md</code> (26 files → <strong>1467</strong> chunks, <strong>1,075,590</strong> chars). Retriever = <code>sentence-transformers/all-MiniLM-L6-v2</code> (384-d). Generator = <code>HuggingFaceTB/SmolLM2-135M-Instruct</code> (<strong>134,515,008</strong> params). Optional adapter = LoRA r=8 on <code>q_proj</code>/<code>v_proj</code> (<code>code/capstone/adapters/course_lora</code>). Tools = allow-listed <code>calc</code> (AST-safe), <code>course_search</code>, <code>get_day_title</code>. Scoring kernel = <code>code/capstone/rust_score</code> (PyO3 + rayon int8). Service = <code>code/capstone/service.py</code> (stdlib <code>HTTPServer</code> on <code>:8765</code>).</p>
+<p><strong>Compute note.</strong> CPU-only 8-core Xeon, ~15 GB RAM, no GPU. HF weights live under <code>data/cache/hf</code>. A GPU would shrink decode latency but would not change recall, gates, or the RAI artefacts. Numbers below are from this box only; do not treat them as phone or laptop claims.</p>
+<p><strong>Honesty labels.</strong> LoRA-only generations after 60 steps are <strong>nonsense</strong> (logged Day 170) — that is a teaching result that RAG is the quality path on this budget. OpenBLAS fp32 can beat Rust int8 on the tiny 1467×384 corpus; the ≥1.5× gate is measured against a <strong>numpy-int8</strong> baseline and on a <strong>50k×384</strong> synthetic matrix (Day 172). Groundedness uses chunk-id / word-overlap heuristics; some fluent answers still mis-state facts (e.g. k-means) — the gate measures grounding, not perfect factuality.</p>
+<hr />
+<h2 id="week-25-quiz-12-questions">Week 25 quiz (12 questions)</h2>
+<p><strong>Answers follow each question.</strong></p>
+<ol>
+<li>
+<p>How many chunks did Day 169/170 index from <code>weeks/*.md</code>?
+   <strong>Answer:</strong> 1467.</p>
+</li>
+<li>
+<p>Day 170 recall@3 on 25 QA pairs?
+   <strong>Answer:</strong> 0.720 (18/25).</p>
+</li>
+<li>
+<p>LoRA 60-step wall time and loss start→end?
+   <strong>Answer:</strong> 14.8 s; 3.791 → 0.961.</p>
+</li>
+<li>
+<p>Day 171 p50 RAG+gen latency?
+   <strong>Answer:</strong> 0.78 s.</p>
+</li>
+<li>
+<p>Injection results on Day 171?
+   <strong>Answer:</strong> 3/3 blocked; 0/10 false positives.</p>
+</li>
+<li>
+<p>Rust int8 best speedup vs numpy-int8 (Day 172)?
+   <strong>Answer:</strong> 50.35× (100k×256 synthetic).</p>
+</li>
+<li>
+<p>SmolLM2 KV fp16 bytes per token?
+   <strong>Answer:</strong> 23040.</p>
+</li>
+<li>
+<p>Day 173 harness status and p50 RAG?
+   <strong>Answer:</strong> PASS; 0.75 s.</p>
+</li>
+<li>
+<p>Day 174 red-team mitigated count?
+   <strong>Answer:</strong> 6/6.</p>
+</li>
+<li>
+<p>Day 175 integration tests?
+    <strong>Answer:</strong> 10/10 PASS.</p>
+</li>
+<li>
+<p>Name the three allow-listed tools.
+    <strong>Answer:</strong> calc, course_search, get_day_title.</p>
+</li>
+<li>
+<p>What release rule fails the build even if the demo looks good?
+    <strong>Answer:</strong> recall@3 drops &gt;10% relative vs baseline, or injection block rate &lt; 0.70 (also any budget gate FAIL).</p>
+</li>
+</ol>
+<hr />
+<h2 id="week-25-project-checklist">Week 25 project checklist</h2>
+<ul>
+<li>[x] Proposal + budget JSON (<code>day169</code>)</li>
+<li>[x] Index + LoRA baseline (<code>day170</code>)</li>
+<li>[x] RAG + agent + guards (<code>day171</code>)</li>
+<li>[x] Rust int8 + KV budget (<code>day172</code>)</li>
+<li>[x] Eval harness + gates + PSI (<code>day173</code>)</li>
+<li>[x] RAI audit + model card (<code>day174</code>)</li>
+<li>[x] Service tests + 20-Q midpoint exam (<code>day175</code>)</li>
+</ul></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

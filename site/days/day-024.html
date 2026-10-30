@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 24 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="24">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-023.html">← Day 23</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-025.html">Day 25 →</a></nav>
+<h1>Day 24: Multiple linear regression, vectorised</h1>
+<p class="meta">Week 4 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-04.md">source: weeks/week-04.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-04/day24_multivar_linreg.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-04/day24_multivar_linreg.py"><code>code/week-04/day24_multivar_linreg.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 23 (+1), Day 21 (+3), Day 17 (+7), Day 3 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Real prices depend on area, bedrooms, age and location together. The model becomes ŷ = w₁x₁ + w₂x₂ + … + wₙxₙ + b = <strong>w·x + b</strong> (Day 8's dot product). Each weight answers: "holding the other features fixed, how much does price change per unit of this feature?"</p>
+<p><strong>Plain-language maths (all vectorised):</strong>
+- predictions ŷ = Xw + b (X is m × n)
+- errors e = ŷ − y
+- gradients ∇_w J = Xᵀe/m and ∂J/∂b = mean(e)
+- closed form: append a column of ones and solve least squares (Day 10)</p>
+<p>The code is the same three lines as Day 23 with <code>*</code> replaced by <code>@</code>. No loops over features.</p>
+<p><strong>Concrete example (verified, 1000 synthetic homes):</strong></p>
+<table>
+<thead>
+<tr>
+<th>feature</th>
+<th>GD</th>
+<th>lstsq</th>
+<th>sklearn</th>
+<th>true</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>area_sqft</td>
+<td>0.0517</td>
+<td>0.0517</td>
+<td>0.0517</td>
+<td>0.05</td>
+</tr>
+<tr>
+<td>bedrooms</td>
+<td>4.0486</td>
+<td>4.0486</td>
+<td>4.0486</td>
+<td>4.00</td>
+</tr>
+<tr>
+<td>age_years</td>
+<td>−0.3909</td>
+<td>−0.3909</td>
+<td>−0.3909</td>
+<td>−0.40</td>
+</tr>
+<tr>
+<td>dist_km</td>
+<td>−0.7828</td>
+<td>−0.7828</td>
+<td>−0.7828</td>
+<td>−0.80</td>
+</tr>
+<tr>
+<td>intercept</td>
+<td>17.318</td>
+<td>17.318</td>
+<td>17.318</td>
+<td>20.00</td>
+</tr>
+</tbody>
+</table>
+<p>R² (train) = <strong>0.9216</strong>. Three methods agree to 4 decimals, and all are close to the truth. The leftover differences come from the random noise (σ = 6), not from bugs. GD ran on <em>scaled</em> features (Day 25 explains why), and the weights were converted back with w_orig = w/σ and b_orig = b − Σ w_orig·μ.</p>
+<p><strong>Interpretation caution.</strong> The weights' magnitudes depend on units: 0.05 per sq ft isn't "less important" than 4 per bedroom. Compare standardised coefficients, or better, use the permutation importance you'll meet in Month 2. Correlation between features also makes individual weights unstable (Day 10's conditioning).</p>
+<p><strong>R²</strong> = 1 − SS_res/SS_tot = the fraction of variance explained compared with predicting the mean. 0.92 means 92% of the variance is explained. The rest is mostly the irreducible noise.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Vectorised prediction for 2 homes and 2 features. X = [[1000, 2], [1500, 3]], w = [0.05, 4], b = 20:
+Xw = [50 + 8, 75 + 12] = [58, 87], and adding b gives ŷ = [78, 107].
+If y = [80, 100], then e = [−2, 7] and Xᵀe = [1000·(−2) + 1500·7, 2·(−2) + 3·7] = [8500, 17].
+∇_w J = [4250, 8.5] (dividing by m = 2). The area gradient is 500× larger than the bedroom gradient, purely because of units. That is tomorrow's problem.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-04day24_multivar_linregpy">Block 3: Coding lab (2h): <code>code/week-04/day24_multivar_linreg.py</code></h3>
+<p>Tasks:
+1. Run GD on <em>unscaled</em> X with α = 0.1. What happens? (Divergence. Explain it using the worked example.)
+2. Compute R² by hand from SS_res and SS_tot and check it against <code>sk.score</code>.
+3. Add a useless random feature. Does the train R² go up? Does its weight go to about 0? (It can only go up on train, which is why we need validation.)
+4. Write <code>predict(X, w, b)</code> and <code>fit_gd(X, y, alpha, iters)</code> functions for reuse (they become <code>mlscratch.py</code> on Day 29).</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Shapes: X (500 × 8), w? Xw? Xᵀe? <em>Answer:</em> (8,), (500,), (8,).</li>
+<li>A weight of −0.39 for age means? <em>Answer:</em> about −0.39 lakh per extra year, holding the other features fixed.</li>
+<li>Can R² be negative? <em>Answer:</em> yes, on test data, if the model is worse than predicting the mean.</li>
+<li>Why does adding features never lower train R² for least squares? <em>Answer:</em> the old solution is still available (new weight = 0).</li>
+<li>How do you convert scaled weights back? <em>Answer:</em> w_orig = w_scaled/σ, b_orig = b − Σ w_orig μ.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 23 (+1):</strong> do one GD step by hand for a 1-point dataset.</li>
+<li><strong>Day 21 (+3):</strong> what is the coin MLE for 30 heads in 50 flips? (0.6)</li>
+<li><strong>Day 17 (+7):</strong> why do gradients accumulate in backprop?</li>
+<li><strong>Self-check:</strong>
+  1. Vectorised model and gradient?
+  2. What does a single weight mean?
+  3. Define R².
+  4. Why might coefficients be unstable?
+  5. Did the GD, lstsq and sklearn results agree?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Categorical features.</strong> City or neighbourhood must be one-hot encoded before a linear model can use it. With an intercept, drop one level (the "reference") to avoid the collinearity seen on Day 10. Each remaining weight is then "premium vs the reference city". <code>pd.get_dummies(df, drop_first=True)</code> or <code>sklearn.preprocessing.OneHotEncoder(drop="first")</code> do this. With many rare levels, group them into "other", or wait for target encoding with cross-fitting in Month 2.</p>
+<p><strong>Interactions.</strong> A linear model can't express "bedrooms matter more in big homes" unless you add a product feature area × bedrooms. Feature engineering is how linear models get flexibility, and it's what Day 28's hinge does.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>y of shape (m, 1) vs (m,) causes broadcasting havoc in <code>Xw − y</code> (it becomes m × m). Flatten y.</li>
+<li>Forgetting the intercept column in lstsq.</li>
+<li>Interpreting raw coefficients as importance.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Look back at the worked example's gradients (4250 vs 8.5). Tomorrow explains the fix.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-023.html">← Day 23</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-025.html">Day 25 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

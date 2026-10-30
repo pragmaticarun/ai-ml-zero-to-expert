@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 11 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="11">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-010.html">← Day 10</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-012.html">Day 12 →</a></nav>
+<h1>Day 11: Eigenvalues and eigenvectors</h1>
+<p class="meta">Week 2 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-02.md">source: weeks/week-02.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-02/day11_eigen.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-02/day11_eigen.py"><code>code/week-02/day11_eigen.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 10 (+1), Day 8 (+3), Day 4 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Apply a matrix to every arrow in the plane. Most arrows get rotated <em>and</em> stretched. A few special directions only get stretched (or flipped) and are not rotated. Those are the <strong>eigenvectors</strong>, and the stretch factor is the <strong>eigenvalue</strong>: Av = λv. They are the matrix's "natural axes".</p>
+<p>Why ML cares:
+- <strong>PCA:</strong> the eigenvectors of a data covariance matrix are the directions of greatest spread (tomorrow).
+- <strong>Optimisation:</strong> the eigenvalues of the cost's curvature matrix control how fast gradient descent converges and which learning rate diverges (Day 18, Day 25).
+- <strong>RNNs:</strong> repeatedly multiplying by a matrix makes vectors explode if |λ| &gt; 1 and vanish if |λ| &lt; 1. This is the vanishing/exploding gradient problem of Month 3. The lab shows diag(0.9, 1.1) applied 50 times to (1, 1) gives a norm of <strong>117.39</strong>: the 1.1⁵⁰ ≈ 117 part wins and the 0.9⁵⁰ ≈ 0.005 part vanishes.</p>
+<p><strong>Concrete example (verified).</strong> A = [[2, 1], [1, 2]] has eigenvalues <strong>1 and 3</strong> with eigenvectors (−0.707, 0.707) and (0.707, 0.707). Along the diagonal (1, 1) the matrix stretches by 3. Along the anti-diagonal (1, −1) it leaves lengths unchanged (λ = 1).</p>
+<p><strong>Plain-language maths.</strong> Av = λv means (A − λI)v = 0 has a non-zero solution, so det(A − λI) = 0. For a 2 × 2 matrix this is a quadratic. For [[2, 1], [1, 2]]: (2 − λ)² − 1 = 0, so λ = 1 or 3. Symmetric matrices (like covariances) always have real eigenvalues and orthogonal eigenvectors, so use <code>np.linalg.eigh</code> for them.</p>
+<p><strong>Power iteration:</strong> multiply by A and normalise, over and over. The component along the largest-|λ| eigenvector grows fastest and takes over. In the lab, 20 iterations from (1, 0) reach (0.7071, 0.7071) with Rayleigh quotient vᵀAv = <strong>3.0</strong>. Google's original PageRank is power iteration on a giant matrix.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Eigenvectors of [[2, 1], [1, 2]] for λ = 3: solve (A − 3I)v = [[−1, 1], [1, −1]]v = 0, so v₁ = v₂ and v = (1, 1)/√2. For λ = 1: [[1, 1], [1, 1]]v = 0, so v = (1, −1)/√2. Check A(1, 1) = (3, 3) = 3·(1, 1) ✓.</p>
+<p>Now decompose x = (1, 0) = ½(1, 1) + ½(1, −1). Then Aᵏx = ½·3ᵏ(1, 1) + ½·1ᵏ(1, −1). After a few steps the 3ᵏ term dominates, which is why power iteration converges. The speed depends on the ratio |λ₂/λ₁| = 1/3.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-02day11_eigenpy">Block 3: Coding lab (2h): <code>code/week-02/day11_eigen.py</code></h3>
+<p>Verified: the covariance of a stretched and rotated 2-D Gaussian cloud has eigenvalues <strong>0.244 and 9.22</strong>, with top direction (−0.798, −0.603). The generator rotated its long axis by the matrix with first row (0.8, 0.6), so this matches up to sign (eigenvector signs are arbitrary).
+Tasks:
+1. Plot the cloud with both eigenvectors drawn as arrows scaled by √λ.
+2. Implement power iteration for the <em>smallest</em> eigenvalue. <em>Hint:</em> iterate with A⁻¹ by solving instead of inverting.
+3. Count how many iterations power iteration needs to reach 1e-8 accuracy for A = [[2, 1], [1, 2]] vs [[2, 1.9], [1.9, 2]]. Relate the counts to the eigenvalue ratio.
+4. Verify trace = sum of eigenvalues and det = product of eigenvalues.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Eigenvalues of diag(4, −2)? <em>Answer:</em> 4 and −2, with the axis vectors as eigenvectors.</li>
+<li>Eigenvalues of [[0, −1], [1, 0]] (a 90° rotation)? <em>Answer:</em> ±i. Rotations have no real stretch directions.</li>
+<li>If Av = 5v, what is A²v? <em>Answer:</em> 25v.</li>
+<li>Why <code>eigh</code> instead of <code>eig</code> for covariance matrices? <em>Answer:</em> symmetric input gives real, sorted, orthogonal output, and it is faster.</li>
+<li>A recurrent update multiplies by a matrix with largest |λ| = 0.5 at each of 30 steps. What happens to the signal? <em>Answer:</em> it shrinks by about 0.5³⁰ ≈ 1e-9 and vanishes.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 10 (+1):</strong> state the normal equation and solve a 2 × 2 system by hand.</li>
+<li><strong>Day 8 (+3):</strong> compute the projection of (2, 2) onto (1, 0).</li>
+<li><strong>Day 4 (+7):</strong> list the cleaning steps applied to the housing table.</li>
+<li><strong>Self-check:</strong>
+  1. Give the definition of an eigenvector in words.
+  2. Characteristic equation?
+  3. Why does power iteration converge?
+  4. What do covariance eigenvectors represent?
+  5. How do eigenvalues relate to exploding gradients?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Eigenvectors come back as <strong>columns</strong> of <code>vecs</code>, not rows.</li>
+<li>Signs and order are arbitrary (<code>eigh</code> sorts ascending). Never hard-code that "the first one is the biggest".</li>
+<li><code>eig</code> on a nearly symmetric matrix can return tiny imaginary parts. Use <code>eigh</code> when the matrix is mathematically symmetric.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Picture a matrix as "stretch along its eigenvectors". Tomorrow the SVD generalises this to <em>any</em> matrix, including non-square data matrices.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-010.html">← Day 10</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-012.html">Day 12 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

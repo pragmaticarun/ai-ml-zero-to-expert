@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 35 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="35">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-034.html">← Day 34</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-036.html">Day 36 →</a></nav>
+<h1>Day 35: PROJECT W5: California housing model with CV; Quiz 5</h1>
+<p class="meta">Week 5 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-05.md">source: weeks/week-05.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson: a disciplined model-selection workflow (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example: reference results (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab: the project (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice: Quiz 5 (1h), closed book, answers at the end of this file)</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-05/day35_week_project.py"><code>code/week-05/day35_week_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 34 (+1), Day 32 (+3), Day 28 (+7), Day 14 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-a-disciplined-model-selection-workflow-1h15">Block 1: Concept lesson: a disciplined model-selection workflow (1h15)</h3>
+<p><strong>Intuition.</strong> A project is not "try models until the test score looks good". It is a protocol:
+1. Split off a test set and lock it away.
+2. Set baselines.
+3. Compare candidates by CV on the training split only.
+4. Tune the best one or two.
+5. Evaluate the frozen choice once on test.
+6. Look at <em>where</em> it fails.</p>
+<p>Following the protocol is what makes the final number believable to someone else.</p>
+<p><strong>The data.</strong> California housing (20,640 districts from the 1990 census): 8 numeric features such as median income, house age, average rooms and latitude/longitude. The target is median house value in units of $100k. It has a quirk: the target is <strong>capped at 5.0</strong> (4.81% of rows sit at the cap), so the true values above it are unknown.</p>
+<p><strong>Feature engineering ideas from this week.</strong>
+- log1p of heavy-tailed counts (population, occupancy, rooms).
+- The ratio bedrooms/rooms.
+- Polynomial interactions with ridge.</p>
+<p>Tree ensembles (HistGradientBoosting, a preview of Day 41) need none of this, because they are invariant to monotone transforms.</p>
+<h3 id="block-2-worked-example-reference-results-45-min">Block 2: Worked example: reference results (45 min)</h3>
+<p><code>code/week-05/day35_week_project.py</code> (80/20 split, random_state=42; 5-fold CV on the training split). Verified:</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>CV MAE ($100k)</th>
+<th>MAE std</th>
+<th>CV R²</th>
+<th>time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mean baseline</td>
+<td>0.9140</td>
+<td>0.0188</td>
+<td>−0.0005</td>
+<td>0.02 s</td>
+</tr>
+<tr>
+<td>linear (raw)</td>
+<td>0.5289</td>
+<td>0.0104</td>
+<td>0.6118</td>
+<td>0.03 s</td>
+</tr>
+<tr>
+<td>linear + engineered</td>
+<td>0.4842</td>
+<td>0.0113</td>
+<td>0.6630</td>
+<td>0.04 s</td>
+</tr>
+<tr>
+<td>poly2 ridge (α=10)</td>
+<td>0.4561</td>
+<td>0.0105</td>
+<td>0.7017</td>
+<td>0.13 s</td>
+</tr>
+<tr>
+<td>HistGradientBoosting</td>
+<td><strong>0.3155</strong></td>
+<td>0.0049</td>
+<td>0.8338</td>
+<td>1.2 s</td>
+</tr>
+</tbody>
+</table>
+<p>A small grid (learning rate × max_leaf_nodes) picked lr = 0.1 and 63 leaves, with CV MAE 0.3056. <strong>Final test MAE 0.2971, test R² 0.8432</strong>, touched once.</p>
+<p>Error analysis: on the 184 test districts at the cap, MAE is <strong>0.6202</strong>, against 0.2820 elsewhere. The model under-predicts capped districts because their real value is unknown and above 5.0. That is a data limitation, not a modelling bug.</p>
+<h3 id="block-3-coding-lab-the-project-2h">Block 3: Coding lab: the project (2h)</h3>
+<p>Deliverable: <code>notes/week05_report.md</code> plus your own script. Follow this checklist and tick each item.
+1. <strong>Setup (15 min):</strong> load with <code>common.load_california()</code> and make one 80/20 split with a fixed seed. Write the seed in your report.
+2. <strong>Baselines (15 min):</strong> mean and median predictors, giving CV MAE for each.
+3. <strong>Linear family (30 min):</strong> raw linear, then your engineered features. Every transform goes inside a <code>Pipeline</code> (use <code>FunctionTransformer</code> for custom ones).
+4. <strong>Flexible models (30 min):</strong> polynomial ridge, plus HistGradientBoosting. Use CV MAE ± std for all models in one table.
+5. <strong>Tuning (15 min):</strong> one small grid or random search on the best family. Report the search space and the number of fits.
+6. <strong>Test once (5 min):</strong> final MAE and R².
+7. <strong>Error analysis (10 min):</strong> errors by target decile and for capped rows, plus a map (longitude vs latitude coloured by absolute error). Where are the big errors?</p>
+<p><strong>Rubric (self-grade out of 20):</strong></p>
+<table>
+<thead>
+<tr>
+<th>criterion</th>
+<th>points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Test set used exactly once, and the code shows it</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Baselines present and beaten</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Every preprocessing step inside pipelines (no leakage)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>CV table with mean ± std for ≥ 4 models</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Tuning documented (space, fits, best params)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Error analysis with at least one plot and one concrete hypothesis</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Report states limitations (the cap, 1990 data, district-level only)</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>A score of 16 or more means you are ready for Week 6. If you lose points on leakage, redo Day 33's lab 1-2.</p>
+<p><strong>Stretch:</strong> treat capped rows separately. Either drop them from training and report test MAE on non-capped rows only, or model log(target). Explain which you would choose for a real pricing tool, and why.</p>
+<h3 id="block-4-practice-quiz-5-1h-closed-book-answers-at-the-end-of-this-file">Block 4: Practice: Quiz 5 (1h), closed book, answers at the end of this file</h3>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. List the six protocol steps in order.
+  2. Why don't trees need log transforms?
+  3. What was the gap between the CV MAE (0.3056) and the test MAE (0.2971), and is it worrying? <em>(No. The test score is within normal split noise and slightly better.)</em>
+  4. What does the capped-row MAE tell you?
+  5. Which single feature would you expect to matter most? (Check it on Day 43.)</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>Spatial leakage.</strong> Neighbouring districts have similar prices, so a random split lets a model "memorise" location from nearby training rows. Try <code>GroupKFold</code> with groups = rounded (latitude, longitude) cells, and see how much the CV MAE rises. That number is closer to the error you'd get on a brand-new region.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Engineering features with statistics from the full dataset (e.g. dividing by a global mean) outside the pipeline.</li>
+<li>Comparing models on different splits. Pass the same <code>KFold</code> object to every comparison.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 6 opens the classical-ML toolbox: k-NN, naive Bayes, SVMs, trees, forests and boosting, each built from scratch first.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-034.html">← Day 34</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-036.html">Day 36 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

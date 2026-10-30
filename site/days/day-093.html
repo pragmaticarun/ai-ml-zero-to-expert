@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 93 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="93">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-092.html">← Day 92</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-094.html">Day 94 →</a></nav>
+<h1>Day 93: Positional encodings (sinusoidal, RoPE)</h1>
+<p class="meta">Week 14 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-14.md">source: weeks/week-14.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-14/day93_positional.py"><code>code/week-14/day93_positional.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 92 (+1), Day 90 (+3), Day 86 (+7), Day 72 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The problem.</strong> Attention is a weighted average whose weights depend on content only. Permute the input tokens and the outputs are permuted in the same way: "dog bites man" and "man bites dog" contain the same information as far as attention can tell. A language model needs order.</p>
+<p><strong>Learned absolute positions.</strong> Add a trainable vector p_t to the token embedding at position t. This is what GPT-2 does and what our <code>_gpt.py</code> uses. It is simple and works well within the trained context length, but it cannot extrapolate beyond it: position 129 never had a vector.</p>
+<p><strong>Sinusoidal encodings</strong> (Vaswani et al., 2017). A fixed vector with pe[t, 2i] = sin(t / 10000^{2i/d}) and pe[t, 2i+1] = cos(t / 10000^{2i/d}). Each pair of dimensions is a clock running at a different frequency, from fast (period 2π) to very slow. Because of the angle-addition identities, the encoding of t + k is a fixed linear function (a rotation) of the encoding of t, so offsets are easy to represent. A useful consequence: the dot product pe[t]·pe[t+k] depends only on k, not on t.</p>
+<p><strong>RoPE (rotary position embedding)</strong> (Su et al., 2021, "RoFormer"). Instead of adding positions to the input, rotate each pair of dimensions of q and k by an angle proportional to the position: for position m and pair i, rotate by m·θ_i with θ_i = 10000^{−2i/d}. The dot product of a rotated query at m and a rotated key at n equals the dot product of the originals with a rotation by (m − n). So attention scores depend on <em>relative</em> position only, and values are untouched. RoPE is used by most current open LLMs, including the SmolLM2 models used from Day 99 (their config files list rope parameters).</p>
+<p><strong>Other options, briefly.</strong> Relative position biases (T5) add a learned bias per distance bucket to the scores. ALiBi adds a fixed linear penalty proportional to distance. Both aim at better length extrapolation.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-14/day93_positional.py</code> (under a second). <strong>Verified:</strong>
+- Without positions, permuting the inputs just permutes the outputs: <strong>True</strong>.
+- Sinusoidal encoding for 64 positions × 16 dims: values within [−1, 1]: <strong>True</strong>. After adding it, attention is no longer permutation-equivariant: <strong>False</strong>, as intended.
+- Dot products pe[10]·pe[10+k] for k = 0, 1, 2, 4, 8, 16: <strong>8.0, 7.49, 6.37, 5.56, 4.7, 4.21</strong>. They fall with distance (not monotonically in general, but here they do over this range). Same offset, different start: pe[10]·pe[14] = <strong>5.5597</strong> and pe[40]·pe[44] = <strong>5.5597</strong>: identical, as the identity predicts.
+- RoPE: q·k with offset 3 at positions (3, 0), (10, 7), (100, 97), (1000, 997): <strong>−0.36481, −0.36481, −0.36481, −0.36483</strong>. Equal up to float32 rounding, which grows slightly with large angles.
+- RoPE preserves norms (it is a rotation): <strong>True</strong>.
+- For identical all-ones q and k, the RoPE dot product by distance 0, 1, 4, 16, 64, 256: <strong>16.0, 14.97, 11.12, 8.43, 9.82, 6.36</strong>. It tends to decay with distance but not monotonically (64 is higher than 16), so "RoPE decays with distance" is a tendency, not a guarantee.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Implement <code>rope(x, pos)</code> for a tensor of shape (B, h, T, d) and add it to the attention in <code>_gpt.py</code> as an option (<code>pos="rope"</code>), removing the learned position table.</li>
+<li>(45 min) Train the Day-95 GPT (next day's script) for 500 steps with learned positions and with RoPE. Compare val loss. Then evaluate both on contexts of 256 tokens (twice the training length): which degrades less?</li>
+<li>(30 min) Plot pe for 64 positions as an image (positions × dimensions) and explain the stripes.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why can't learned absolute positions handle position 200 if ctx = 128? <em>Answer: there is no trained vector for it.</em></li>
+<li>What is the period of the first sinusoidal pair (i = 0)? <em>Answer: 2π ≈ 6.28 positions.</em></li>
+<li>RoPE rotates q and k. Why not v? <em>Answer: position should influence which tokens attend to which, not the content that is passed on.</em></li>
+<li>Show that rotation preserves dot products of vectors rotated by the same angle. <em>Answer: R is orthogonal, (Ra)·(Rb) = aᵀRᵀRb = a·b.</em></li>
+<li>Why did the offset-3 RoPE products differ in the fifth decimal at position 1000? <em>Answer: float32 rounding of large angles (1000·θ) in cos and sin.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain why attention is permutation-equivariant.
+- [ ] I can write the sinusoidal formula and the RoPE rotation from memory.
+- [ ] I verified that RoPE scores depend only on relative position.</p>
+<h3 id="extra-notes-rope-context-extension">Extra notes: RoPE context extension</h3>
+<p>Because RoPE encodes position as rotation angles, models trained with context 4k see angles up to 4k·θ_i. At 32k, the fast-rotating pairs are fine (they wrapped around many times during training) but the slow pairs reach angles never seen. Position interpolation (Chen et al., 2023) rescales positions so that 32k maps into the trained range, then fine-tunes briefly. Later methods (for example NTK-aware scaling and YaRN) scale the frequencies differently per dimension. You will see these as <code>rope_scaling</code> entries in Hugging Face model configs. The lesson is that positional design determines how far a model can be stretched, which matters for Day 115 (long context).</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Su et al., "RoFormer: Enhanced Transformer with Rotary Position Embedding" (2021), section 3.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Why do many modern LLMs use RoPE rather than learned absolute positions?" Relative-position behaviour built into the score, no extra parameters, works with KV caching (each key is rotated once), and it can be extended to longer contexts by rescaling.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Rotating interleaved pairs (0,1),(2,3) in one place and split halves (0..d/2, d/2..d) in another: both are used in practice, but mixing them breaks loaded weights.</li>
+<li>Applying RoPE after the KV cache instead of before, so cached keys have no rotation.</li>
+<li>Forgetting position offsets during cached generation (the new token is at position t, not 0).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 94 wraps attention into a full transformer block.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-092.html">← Day 92</a><a href="../weeks/week-14.html">Week 14</a><a rel="next" href="day-094.html">Day 94 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

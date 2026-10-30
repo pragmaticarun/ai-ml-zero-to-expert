@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 15 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="15">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-14.html">← Week 14</a><a href="../syllabus.html">Syllabus</a><a href="week-16.html">Week 16 →</a></nav>
+<h1>Week 15 (Days 99-105): Pretrained models, fine-tuning and LoRA</h1><p class="meta"><a href="../../weeks/week-15.md">source: weeks/week-15.md</a> · <a href="../../pdf/week-15.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-099.html">Day 99: Hugging Face transformers and datasets</a> <span class="st" data-st="99"></span></li><li><a href="../days/day-100.html">Day 100: Fine-tuning a small pretrained model</a> <span class="st" data-st="100"></span></li><li><a href="../days/day-101.html">Day 101: LoRA from scratch, then PEFT</a> <span class="st" data-st="101"></span></li><li><a href="../days/day-102.html">Day 102: PEFT configurations and QLoRA concepts</a> <span class="st" data-st="102"></span></li><li><a href="../days/day-103.html">Day 103: Instruction tuning and chat templates</a> <span class="st" data-st="103"></span></li><li><a href="../days/day-104.html">Day 104: Evaluating LLMs and the fine-tuned model</a> <span class="st" data-st="104"></span></li><li><a href="../days/day-105.html">Day 105: PROJECT W15: full fine-tune vs LoRA; Quiz 15</a> <span class="st" data-st="105"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-15"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Why does SmolLM2's k_proj have 192 output features?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>GQA: 3 KV heads × 64 dimensions.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What does <code>labels=-100</code> do?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Excludes that position from the loss.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Estimate fp32 AdamW memory for full fine-tuning of 134.5M parameters.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>16 bytes per parameter ≈ 2.0 GiB, plus activations.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Write the LoRA forward pass and its initialisation.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>y = Wx + (α/r)·B A x, with A random and B zero so the model starts unchanged.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>How many trainable parameters does LoRA r = 8 on q and v add to SmolLM2-135M?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>460,800 (15,360 per layer × 30).</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Why is the merged LoRA output not bitwise identical?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Floating-point rounding (max logit difference 7.4e-05).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Name QLoRA's main ingredients.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>4-bit NF4 base, double quantisation, LoRA on all linear layers, paged optimisers.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What did simulated 4-bit do to base perplexity, and what did LoRA on top achieve?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>26.29 → 36.89; LoRA r = 8 all-linear for 60 steps brought it to 25.46.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Why did our first instruction-tuning evaluation score only 0.07?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Generation did not stop at <code>&lt;|im_end|&gt;</code>, so correct answers were followed by junk.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Did prompt-loss masking matter on our task?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>No: both masked and unmasked reached 1.00 exact match.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>What did the judge swap test show?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0 of 16 verdicts survived swapping; accuracy 16/32, exactly chance: pure position bias.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>In the project, which run forgot least, and what confounder may explain it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Full fine-tuning (notes ppl 24.89 → 26.29); LoRA used a 20× higher learning rate.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 4). Days 102-104 follow the revised plan (peft/QLoRA, instruction tuning, evaluation of the fine-tuned model). <code>SYLLABUS.md</code> now lists these titles; the RLHF overview moved to Day 106 (Week 16). Every number below was printed by a script in <code>code/week-15/</code> on this box (torch 2.15.0+cpu, transformers 5.21.1, peft 0.21.2, 8 CPU threads, no GPU), with logs in <code>code/week-15/out/*.log</code>. Times were measured with the CPU otherwise idle; on a shared CPU they were up to ~100× slower, so treat them as rough.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Load, inspect, run and score a real pretrained LM with Hugging Face <code>transformers</code>.</li>
+<li>Fully fine-tune a 135M-parameter model on CPU and understand its memory cost.</li>
+<li>Implement LoRA from scratch, verify it against <code>peft</code>, and merge adapters.</li>
+<li>Understand QLoRA (4-bit frozen base + LoRA) and simulate it on CPU.</li>
+<li>Instruction-tune a base model with a chat template and prompt-loss masking.</li>
+<li>Evaluate a fine-tuned model honestly: task metric, forgetting, multiple-choice scoring, judge bias.</li>
+<li>Weekly project: compare full fine-tuning with LoRA variants on the same budget.</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 99 HF basics] --&gt; B[Day 100 full fine-tune]
+  B --&gt; C[Day 101 LoRA from scratch + peft]
+  C --&gt; D[Day 102 peft configs + QLoRA]
+  D --&gt; E[Day 103 instruction tuning]
+  E --&gt; F[Day 104 evaluation]
+  F --&gt; G[Day 105 project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note (CPU vs GPU).</strong> A training step of SmolLM2-135M on 4 × 128 tokens took about 0.9 s here (full fine-tune) or 0.5 s (LoRA). That is enough for a hundred steps, which shows the <em>effects</em>, but real fine-tunes run thousands of steps on GPUs with bf16 and larger batches. On a GPU you could also use real 4-bit QLoRA (bitsandbytes kernels are GPU-only; Day 102 simulates the quantisation instead) and models of 1-8B parameters.</p>
+<p><strong>Models and data (all downloads verified on this box, cached in <code>data/cache/hf</code>; scripts run with <code>HF_HUB_OFFLINE=1</code>):</strong>
+- <code>HuggingFaceTB/SmolLM2-135M</code> (base) and <code>HuggingFaceTB/SmolLM2-135M-Instruct</code>, Apache-2.0.
+- Tiny Shakespeare (as Week 14). In SmolLM tokens: 305,111 train, 35,983 val.
+- Synthetic "reverse the words" instructions generated by <code>day103_instruction_tuning.py</code> (no download).</p>
+<p><strong>Shared code:</strong> <code>_hf.py</code> (cache path, loading, Shakespeare token batches, windowed perplexity) and <code>_lora.py</code> (LoRA from scratch).</p>
+<p><strong>A note on perplexity numbers.</strong> <code>_hf.perplexity</code> averages over the first n windows of 256 validation tokens. Day 99 uses 16 windows (24.42); Days 100-105 use 8 windows (26.29 for the same base model). Only compare numbers computed with the same window count.</p>
+<hr />
+<h2 id="weekly-quiz-week-15">Weekly quiz: Week 15</h2>
+<ol>
+<li>Why does SmolLM2's k_proj have 192 output features?</li>
+<li>What does <code>labels=-100</code> do?</li>
+<li>Estimate fp32 AdamW memory for full fine-tuning of 134.5M parameters.</li>
+<li>Write the LoRA forward pass and its initialisation.</li>
+<li>How many trainable parameters does LoRA r = 8 on q and v add to SmolLM2-135M?</li>
+<li>Why is the merged LoRA output not bitwise identical?</li>
+<li>Name QLoRA's main ingredients.</li>
+<li>What did simulated 4-bit do to base perplexity, and what did LoRA on top achieve?</li>
+<li>Why did our first instruction-tuning evaluation score only 0.07?</li>
+<li>Did prompt-loss masking matter on our task?</li>
+<li>What did the judge swap test show?</li>
+<li>In the project, which run forgot least, and what confounder may explain it?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>GQA: 3 KV heads × 64 dimensions.</li>
+<li>Excludes that position from the loss.</li>
+<li>16 bytes per parameter ≈ 2.0 GiB, plus activations.</li>
+<li>y = Wx + (α/r)·B A x, with A random and B zero so the model starts unchanged.</li>
+<li>460,800 (15,360 per layer × 30).</li>
+<li>Floating-point rounding (max logit difference 7.4e-05).</li>
+<li>4-bit NF4 base, double quantisation, LoRA on all linear layers, paged optimisers.</li>
+<li>26.29 → 36.89; LoRA r = 8 all-linear for 60 steps brought it to 25.46.</li>
+<li>Generation did not stop at <code>&lt;|im_end|&gt;</code>, so correct answers were followed by junk.</li>
+<li>No: both masked and unmasked reached 1.00 exact match.</li>
+<li>0 of 16 verdicts survived swapping; accuracy 16/32, exactly chance: pure position bias.</li>
+<li>Full fine-tuning (notes ppl 24.89 → 26.29); LoRA used a 20× higher learning rate.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 54 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="54">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-053.html">← Day 53</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-055.html">Day 55 →</a></nav>
+<h1>Day 54: Interpretability and probability calibration</h1>
+<p class="meta">Week 8 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-08.md">source: weeks/week-08.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-08/day54_calibration.py"><code>code/week-08/day54_calibration.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 53 (+1), Day 51 (+3), Day 47 (+7), Day 33 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Calibration.</strong> A model is calibrated if, among cases where it says 0.8, about 80% are positive. Ranking (AUC) and calibration are different properties: a model can rank perfectly and still say 0.99 for everything positive-ish. Calibration matters whenever the probability <em>itself</em> is used, in expected costs, risk scores, or thresholds chosen by formula (Day 45's c_FP/(c_FP + c_FN)).</p>
+<p><strong>Measuring it.</strong>
+- <strong>Reliability diagram:</strong> bin the predictions, then plot mean predicted vs observed frequency. The diagonal is perfect.
+- <strong>Brier score:</strong> mean (p − y)², where lower is better. It mixes calibration and sharpness.
+- <strong>Log loss:</strong> heavily punishes confident mistakes.</p>
+<p><strong>Fixing it</strong> (on held-out data, via <code>CalibratedClassifierCV</code>):
+- <strong>Platt / sigmoid scaling:</strong> fit a logistic regression on the model's scores. It has 2 parameters, so it suits small data and S-shaped distortions.
+- <strong>Isotonic regression:</strong> a monotone step function. It is more flexible and needs more data.</p>
+<p><strong>Typical behaviour.</strong> Logistic regression is usually well calibrated, because its loss is log loss. Naive Bayes is overconfident (double-counted evidence). SVM margins are not probabilities at all. Boosted trees are usually close.</p>
+<p><strong>Interpretability: partial dependence (PDP).</strong> For feature j, set every row's xⱼ to a value v, average the predictions, and repeat over a grid of v. The curve shows the model's <em>average</em> response to xⱼ. Caveats: it averages away interactions (ICE curves show each row), and with correlated features it creates unrealistic rows.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-08/day54_calibration.py</code> uses a synthetic task (30,000 rows, 20 features with 4 informative and 10 redundant; 70/30 split). Verified on test:</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>Brier</th>
+<th>log loss</th>
+<th>ROC-AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logistic regression</td>
+<td>0.0777</td>
+<td>0.2612</td>
+<td>0.9572</td>
+</tr>
+<tr>
+<td>Gaussian NB</td>
+<td>0.1036</td>
+<td>0.5021</td>
+<td>0.9403</td>
+</tr>
+<tr>
+<td>LinearSVC (sigmoid of raw margin)</td>
+<td>0.1142</td>
+<td>0.3905</td>
+<td>0.9572</td>
+</tr>
+<tr>
+<td>Gaussian NB + isotonic</td>
+<td>0.0929</td>
+<td>0.3106</td>
+<td>0.9402</td>
+</tr>
+<tr>
+<td>LinearSVC + Platt</td>
+<td><strong>0.0777</strong></td>
+<td><strong>0.2611</strong></td>
+<td>0.9572</td>
+</tr>
+</tbody>
+</table>
+<p>How to read it:
+1. LinearSVC and logistic regression have <strong>identical AUC</strong> (0.9572), but the SVM's raw sigmoid-of-margin is badly calibrated (Brier 0.114). After Platt scaling it matches logistic regression exactly. Ranking was never the problem.
+2. NB's log loss of 0.50 shows overconfidence. Isotonic calibration cuts it to 0.31. AUC is unchanged, because calibration is monotone.
+3. Open <code>out/day54_reliability.png</code> and look at the NB curve's S-shape.</p>
+<p><strong>PDP</strong> for HistGB on California, at income grid points: MedInc 1.6 → −0.693, 3.23 → −0.21, 4.86 → +0.257, 6.49 → +1.067, 7.3 → +1.261 (centred, in $100k). That is a strong, roughly monotone income effect that flattens at the top. The 5.0 price cap from Day 35 may contribute to the flattening. Test that by dropping the capped rows.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Write <code>reliability(y, p, bins)</code> yourself (equal-frequency bins) and compare with <code>calibration_curve(strategy="quantile")</code>.</li>
+<li>Reproduce the table. Then calibrate a random forest on the same data and report Brier before and after.</li>
+<li>Show that calibration doesn't change AUC (a monotone map), and explain why Brier still improves.</li>
+<li>Draw the PDP and ICE curves (<code>PartialDependenceDisplay</code>, <code>kind="both"</code>) for MedInc and AveOccup. Where do the ICE lines fan out?</li>
+<li>Stretch: compute the expected calibration error (ECE, the weighted mean |observed − predicted| over bins) for every model.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>100 cases predicted 0.9 and 60 are positive. Calibrated? <em>(No, overconfident.)</em></li>
+<li>Brier score for always predicting the base rate 0.3, when the base rate is 0.3? <em>(0.3·0.7 = 0.21.)</em></li>
+<li>Why calibrate on held-out data? <em>(On training data the model looks more confident and correct than it is.)</em></li>
+<li>Platt or isotonic for 300 validation rows? <em>(Platt.)</em></li>
+<li>A PDP is flat but the feature has high permutation importance. Possible why? <em>(Interactions that cancel on average. Check ICE.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Define calibration.
+  2. Name two calibration methods and when to use each.
+  3. Why did the SVM's AUC equal logistic regression's?
+  4. What does a PDP average over?
+  5. Which model was most overconfident?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>Proper scoring rules</strong> (log loss, Brier) are minimised in expectation by the true probabilities, so they reward honesty. Accuracy and F1 are not proper. That is why we train on log loss and <em>threshold</em> separately. Deep networks (Month 3) are often overconfident. Temperature scaling, a one-parameter Platt variant on logits, is the standard fix.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Calibrating and evaluating on the same data.</li>
+<li>Reading PDPs as causal effects.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: the most practical day of the month, a systematic way to decide what to try next.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-053.html">← Day 53</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-055.html">Day 55 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

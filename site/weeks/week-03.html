@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 3 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="3">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-02.html">← Week 2</a><a href="../syllabus.html">Syllabus</a><a href="week-04.html">Week 4 →</a></nav>
+<h1>Week 3 (Days 15-21): Calculus and probability for ML</h1><p class="meta"><a href="../../weeks/week-03.md">source: weeks/week-03.md</a> · <a href="../../pdf/week-03.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-015.html">Day 15: Derivatives and numerical differentiation</a> <span class="st" data-st="15"></span></li><li><a href="../days/day-016.html">Day 16: Partial derivatives, gradients, gradient checking</a> <span class="st" data-st="16"></span></li><li><a href="../days/day-017.html">Day 17: The chain rule and a tiny autograd</a> <span class="st" data-st="17"></span></li><li><a href="../days/day-018.html">Day 18: Gradient descent and learning rates</a> <span class="st" data-st="18"></span></li><li><a href="../days/day-019.html">Day 19: Probability and Bayes&#x27; rule</a> <span class="st" data-st="19"></span></li><li><a href="../days/day-020.html">Day 20: Distributions, expectation, variance, LLN and CLT</a> <span class="st" data-st="20"></span></li><li><a href="../days/day-021.html">Day 21: Week 3 project: maximum likelihood estimation, plus Quiz 3</a> <span class="st" data-st="21"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-03"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Derivative of J(w) = (4w − 8)² at w = 1?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>2(4w − 8)·4 = 2(−4)(4) = −32.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Why use central differences, and what h works well in float64?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The error is O(h²) instead of O(h). h ≈ 1e-5 to 1e-6.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Write the vectorised gradient of J = (1/2m)‖Xw − y‖².</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>∇J = Xᵀ(Xw − y)/m.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Give the gradient-check relative-error thresholds.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>&lt; 1e-7 good, ~1e-5 suspicious, &gt; 1e-3 a bug.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Backprop: J = (wx + b − y)², with x = 1, y = 3, w = 1, b = 0. What are dJ/dw and dJ/db?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>e = 1·1 + 0 − 3 = −2, so dJ/dw = 2e·x = −4 and dJ/db = 2e = −4.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Why do gradients accumulate when a variable is used twice?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The total derivative sums the contributions over all paths (the multivariable chain rule).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>f = x² + 10y². What is the largest stable α, and why?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>α &lt; 2/λ_max = 2/20 = 0.1. Otherwise the y-direction factor |1 − 20α| exceeds 1.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>P(sick | +) for prevalence 1%, sensitivity 95% and FPR 5%?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>≈ 0.161.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Var of the mean of n i.i.d. samples with variance σ²?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>σ²/n.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>95/100 correct. Roughly what is the std of the accuracy estimate?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>√(0.95·0.05/100) ≈ 0.022 (2.2%).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>MLE of a coin's p from k heads in n flips?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>k/n.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Under what noise assumption is least squares the MLE? What loss do Bernoulli labels give?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Gaussian noise. Bernoulli labels give log-loss (binary cross-entropy).</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Month 1, Foundations.</strong> Time budget: 42 h. Optional reading: <em>Mathematics for Machine Learning</em>, ch. 5 (vector calculus) and ch. 6 (probability) (https://mml-book.github.io/).</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Read a derivative as "the slope: how much the output changes per unit nudge of the input", and compute it analytically and numerically.</li>
+<li>Compute gradients of multivariable functions, including the vectorised MSE gradient Xᵀ(Xw − y)/m, and <strong>gradient-check</strong> them.</li>
+<li>Apply the chain rule on a computational graph. Build a ~40-line reverse-mode autograd and train a line with it.</li>
+<li>Run gradient descent and diagnose learning rates (too small, good, divergent) from the curvature.</li>
+<li>Use probability, Bayes' rule, distributions, expectation and variance, and the CLT, checking each by simulation.</li>
+<li>Derive maximum-likelihood estimates and show that least squares = MLE under Gaussian noise.</li>
+</ol>
+<p><strong>Weekly project (Day 21):</strong> MLE three ways (closed form, grid, gradient ascent), with a write-up that connects MLE to the cost functions of Week 4.</p>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  P[parameters w] --&gt; M[model ŷ = f x;w]
+  M --&gt; L[loss J]
+  L -- dJ/dw via chain rule --&gt; G[gradient]
+  G -- w ← w − α·grad --&gt; P
+</code></pre></div>
+
+<hr />
+<h2 id="weekly-quiz-week-3-answers-below">Weekly quiz: Week 3 (answers below)</h2>
+<ol>
+<li>Derivative of J(w) = (4w − 8)² at w = 1?</li>
+<li>Why use central differences, and what h works well in float64?</li>
+<li>Write the vectorised gradient of J = (1/2m)‖Xw − y‖².</li>
+<li>Give the gradient-check relative-error thresholds.</li>
+<li>Backprop: J = (wx + b − y)², with x = 1, y = 3, w = 1, b = 0. What are dJ/dw and dJ/db?</li>
+<li>Why do gradients accumulate when a variable is used twice?</li>
+<li>f = x² + 10y². What is the largest stable α, and why?</li>
+<li>P(sick | +) for prevalence 1%, sensitivity 95% and FPR 5%?</li>
+<li>Var of the mean of n i.i.d. samples with variance σ²?</li>
+<li>95/100 correct. Roughly what is the std of the accuracy estimate?</li>
+<li>MLE of a coin's p from k heads in n flips?</li>
+<li>Under what noise assumption is least squares the MLE? What loss do Bernoulli labels give?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>2(4w − 8)·4 = 2(−4)(4) = −32.</li>
+<li>The error is O(h²) instead of O(h). h ≈ 1e-5 to 1e-6.</li>
+<li>∇J = Xᵀ(Xw − y)/m.</li>
+<li>&lt; 1e-7 good, ~1e-5 suspicious, &gt; 1e-3 a bug.</li>
+<li>e = 1·1 + 0 − 3 = −2, so dJ/dw = 2e·x = −4 and dJ/db = 2e = −4.</li>
+<li>The total derivative sums the contributions over all paths (the multivariable chain rule).</li>
+<li>α &lt; 2/λ_max = 2/20 = 0.1. Otherwise the y-direction factor |1 − 20α| exceeds 1.</li>
+<li>≈ 0.161.</li>
+<li>σ²/n.</li>
+<li>√(0.95·0.05/100) ≈ 0.022 (2.2%).</li>
+<li>k/n.</li>
+<li>Gaussian noise. Bernoulli labels give log-loss (binary cross-entropy).</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

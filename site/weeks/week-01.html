@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 1 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="1">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><span></span><a href="../syllabus.html">Syllabus</a><a href="week-02.html">Week 2 →</a></nav>
+<h1>Week 1 (Days 1-7): Python for ML: NumPy, pandas, plotting, and good data habits</h1><p class="meta"><a href="../../weeks/week-01.md">source: weeks/week-01.md</a> · <a href="../../pdf/week-01.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-001.html">Day 1: Setup, Python refresher, and what &quot;learning&quot; means</a> <span class="st" data-st="1"></span></li><li><a href="../days/day-002.html">Day 2: NumPy arrays: shapes, dtypes, indexing, broadcasting</a> <span class="st" data-st="2"></span></li><li><a href="../days/day-003.html">Day 3: Vectorisation and the performance mindset</a> <span class="st" data-st="3"></span></li><li><a href="../days/day-004.html">Day 4: pandas for tabular ML data</a> <span class="st" data-st="4"></span></li><li><a href="../days/day-005.html">Day 5: Plotting and exploratory data analysis (EDA)</a> <span class="st" data-st="5"></span></li><li><a href="../days/day-006.html">Day 6: Train/validation/test splits, reproducibility, and leakage</a> <span class="st" data-st="6"></span></li><li><a href="../days/day-007.html">Day 7: Week 1 project: EDA report and baselines, plus Quiz 1</a> <span class="st" data-st="7"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-01"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Name the three ingredients of an ML learning procedure.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Model family, cost function, search/optimisation.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>MSE for predictions [2, 4] against targets [1, 6]?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>((1)² + (−2)²)/2 = 2.5.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Shape of (7, 1) − (7,)?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>(7, 7), an accidental broadcast.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Which is a view: <code>M.T</code>, <code>M[[0, 1]]</code>, <code>M[:, ::2]</code>?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p><code>M.T</code> and <code>M[:, ::2]</code> (basic slicing). Fancy indexing <code>M[[0,1]]</code> copies.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why is a Python loop dot product hundreds of times slower than <code>np.dot</code>?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Per-element interpreter overhead (boxing, dynamic dispatch) vs compiled, SIMD, BLAS loops.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>State the identity used to compute all pairwise squared distances with one matmul.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>‖p−q‖² = ‖p‖² + ‖q‖² − 2p·q, so all pairs are norms plus −2PQᵀ.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Why one-hot encode <code>city</code> rather than using codes 0/1/2?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Integer codes impose a fake order and spacing. One-hot gives each city its own coefficient.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What does a U-shaped residual plot mean, and what is the fix?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The model is too simple (missing non-linearity). Add features such as x², or use a more flexible model.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>What is the validation set for, and what is the test set for?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Validation is for choices and tuning. Test is used once, for an honest final estimate.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>In the leakage demo, why did "select features on all rows" give positive test R² on pure noise?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The selection used chance correlations that included the test rows, so they "held up" on those same rows.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>What MAE did "predict the mean" get in the Day 7 run, and which baseline won?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>16.96 lakh. The line on area won (8.77).</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>int8: what is 100 + 120?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>−36 (wrap-around), with an overflow warning.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Month 1, Foundations.</strong> Time budget: 7 days × 6 h = 42 h.</p>
+<h2 id="week-goals">Week goals</h2>
+<p>By the end of this week you can:
+1. Explain in one sentence what "learning" means in ML: choose parameters that make a cost small on data.
+2. Use NumPy arrays fluently: shapes, dtypes, indexing, views vs copies, broadcasting.
+3. Write vectorised code, and explain <em>why</em> it is about 100-1000× faster than a Python loop (interpreter overhead, SIMD, BLAS), using the same mental model you use for C++/Rust.
+4. Load, clean and summarise a table with pandas, and turn it into a model-ready matrix.
+5. Make the three EDA plots you will use for six months: histogram, scatter, residual plot.
+6. Split data into train/validation/test reproducibly, and recognise data leakage.</p>
+<p><strong>Weekly project (Day 7):</strong> an EDA report on a synthetic housing table plus three baselines, each scored by test MAE.</p>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Raw table] --&gt; B[pandas: clean, encode]
+  B --&gt; C[NumPy matrix X, vector y]
+  C --&gt; D[split: train / val / test]
+  D --&gt; E[baseline model]
+  E --&gt; F[metric on test]
+  F --&gt;|error analysis| B
+</code></pre></div>
+
+<hr />
+<h2 id="weekly-quiz-week-1-answers-below">Weekly quiz: Week 1 (answers below)</h2>
+<ol>
+<li>Name the three ingredients of an ML learning procedure.</li>
+<li>MSE for predictions [2, 4] against targets [1, 6]?</li>
+<li>Shape of (7, 1) − (7,)?</li>
+<li>Which is a view: <code>M.T</code>, <code>M[[0, 1]]</code>, <code>M[:, ::2]</code>?</li>
+<li>Why is a Python loop dot product hundreds of times slower than <code>np.dot</code>?</li>
+<li>State the identity used to compute all pairwise squared distances with one matmul.</li>
+<li>Why one-hot encode <code>city</code> rather than using codes 0/1/2?</li>
+<li>What does a U-shaped residual plot mean, and what is the fix?</li>
+<li>What is the validation set for, and what is the test set for?</li>
+<li>In the leakage demo, why did "select features on all rows" give positive test R² on pure noise?</li>
+<li>What MAE did "predict the mean" get in the Day 7 run, and which baseline won?</li>
+<li>int8: what is 100 + 120?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>Model family, cost function, search/optimisation.</li>
+<li>((1)² + (−2)²)/2 = 2.5.</li>
+<li>(7, 7), an accidental broadcast.</li>
+<li><code>M.T</code> and <code>M[:, ::2]</code> (basic slicing). Fancy indexing <code>M[[0,1]]</code> copies.</li>
+<li>Per-element interpreter overhead (boxing, dynamic dispatch) vs compiled, SIMD, BLAS loops.</li>
+<li>‖p−q‖² = ‖p‖² + ‖q‖² − 2p·q, so all pairs are norms plus −2PQᵀ.</li>
+<li>Integer codes impose a fake order and spacing. One-hot gives each city its own coefficient.</li>
+<li>The model is too simple (missing non-linearity). Add features such as x², or use a more flexible model.</li>
+<li>Validation is for choices and tuning. Test is used once, for an honest final estimate.</li>
+<li>The selection used chance correlations that included the test rows, so they "held up" on those same rows.</li>
+<li>16.96 lakh. The line on area won (8.77).</li>
+<li>−36 (wrap-around), with an overflow warning.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

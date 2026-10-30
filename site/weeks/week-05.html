@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 5 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="5">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-04.html">← Week 4</a><a href="../syllabus.html">Syllabus</a><a href="week-06.html">Week 6 →</a></nav>
+<h1>Week 5 (Days 29-35): Month-1 capstone and checkpoint, then classic supervised learning II</h1><p class="meta"><a href="../../weeks/week-05.md">source: weeks/week-05.md</a> · <a href="../../pdf/week-05.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-029.html">Day 29: MONTH-1 CAPSTONE: scratch models vs scikit-learn (plus a Rust/PyO3 kernel)</a> <span class="st" data-st="29"></span></li><li><a href="../days/day-030.html">Day 30: Month-1 checkpoint exam and review</a> <span class="st" data-st="30"></span></li><li><a href="../days/day-031.html">Day 31: Regularisation deep dive: ridge, lasso, elastic net</a> <span class="st" data-st="31"></span></li><li><a href="../days/day-032.html">Day 32: Polynomial features and the bias-variance trade-off in practice</a> <span class="st" data-st="32"></span></li><li><a href="../days/day-033.html">Day 33: Cross-validation and hyperparameter search</a> <span class="st" data-st="33"></span></li><li><a href="../days/day-034.html">Day 34: Softmax and multiclass classification</a> <span class="st" data-st="34"></span></li><li><a href="../days/day-035.html">Day 35: PROJECT W5: California housing model with CV; Quiz 5</a> <span class="st" data-st="35"></span></li></ul><h3>Exams this week</h3><ul><li><a href="../exams/w05-d30.html">Day 30: Written exam, closed book (1h15)</a></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-05"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Write the ridge closed-form solution.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>w = (XᵀX + λI)⁻¹Xᵀy (centred data, unpenalised intercept).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Which penalty gives exact zeros, and why?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>L1 (lasso). Its constant-magnitude slope at zero (the corner of the diamond) pins weak weights at exactly 0.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>In the twin-feature demo, what did ridge and lasso do?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Ridge split the weight (1.72, 1.308). Lasso kept one (2.931, 0).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>State the bias-variance decomposition.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>E[test MSE] = bias² + variance + σ².</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>In the Day 32 run, what was degree 9's variance without and with ridge α=1e-3?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.1544 → 0.0195.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What does a large train/val gap mean, and what do you try first?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>High variance. Try more data, more regularisation or a simpler model.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Why is <code>best_score_</code> from a grid search optimistic, and what fixes it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It's the max of noisy estimates (a selection effect). Nested CV, or a held-out test set, fixes it.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What caused one CV fold to score R² −0.07 on California with raw polynomial features?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Heavy-tailed features (AveOccup up to about 600) squared by the polynomial expansion. log1p fixed it.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Write the softmax function and its stable form.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>softmax(z)ₖ = e^{zₖ}/Σⱼ e^{zⱼ}. Stable form: subtract max(z) first.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Gradient of softmax cross-entropy with respect to the logits?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>P − Y (divided by m for the mean loss).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Expected loss at initialisation for 10 classes?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>ln 10 ≈ 2.3026.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>What test MAE did the tuned HistGB reach on Day 35, and why are capped rows harder?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.2971 ($100k). Their true values are above the 5.0 cap and unknown, so the model under-predicts them (MAE 0.62).</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full. Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Package your Month-1 code into a small reusable library (<code>code/week-05/mlscratch.py</code>).</li>
+<li>Benchmark your from-scratch learners against scikit-learn on accuracy <em>and</em> wall time, and optionally against a Rust kernel called from Python through PyO3.</li>
+<li>Pass the Month-1 checkpoint: self-graded coding exercises, a written exam, and a review of weak spots.</li>
+<li>(Days 31-35) Control overfitting with ridge, lasso and elastic net, and measure bias and variance directly.</li>
+<li>Select models honestly with cross-validation, grid/random search and nested CV, and extend classification to many classes with softmax.</li>
+<li>Ship a CV-selected California housing model with one honest test number and an error analysis.</li>
+</ol>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  W1[Week 1 tooling] --&gt; L[mlscratch.py]
+  W2[Week 2 linear algebra] --&gt; L
+  W3[Week 3 calculus/probability] --&gt; L
+  W4[Week 4 lin/log regression] --&gt; L
+  L --&gt; B[benchmark vs sklearn + Rust]
+  B --&gt; R[capstone report]
+</code></pre></div>
+
+<hr />
+<h2 id="weekly-quiz-week-5-answers-below">Weekly quiz: Week 5 (answers below)</h2>
+<ol>
+<li>Write the ridge closed-form solution.</li>
+<li>Which penalty gives exact zeros, and why?</li>
+<li>In the twin-feature demo, what did ridge and lasso do?</li>
+<li>State the bias-variance decomposition.</li>
+<li>In the Day 32 run, what was degree 9's variance without and with ridge α=1e-3?</li>
+<li>What does a large train/val gap mean, and what do you try first?</li>
+<li>Why is <code>best_score_</code> from a grid search optimistic, and what fixes it?</li>
+<li>What caused one CV fold to score R² −0.07 on California with raw polynomial features?</li>
+<li>Write the softmax function and its stable form.</li>
+<li>Gradient of softmax cross-entropy with respect to the logits?</li>
+<li>Expected loss at initialisation for 10 classes?</li>
+<li>What test MAE did the tuned HistGB reach on Day 35, and why are capped rows harder?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>w = (XᵀX + λI)⁻¹Xᵀy (centred data, unpenalised intercept).</li>
+<li>L1 (lasso). Its constant-magnitude slope at zero (the corner of the diamond) pins weak weights at exactly 0.</li>
+<li>Ridge split the weight (1.72, 1.308). Lasso kept one (2.931, 0).</li>
+<li>E[test MSE] = bias² + variance + σ².</li>
+<li>0.1544 → 0.0195.</li>
+<li>High variance. Try more data, more regularisation or a simpler model.</li>
+<li>It's the max of noisy estimates (a selection effect). Nested CV, or a held-out test set, fixes it.</li>
+<li>Heavy-tailed features (AveOccup up to about 600) squared by the polynomial expansion. log1p fixed it.</li>
+<li>softmax(z)ₖ = e^{zₖ}/Σⱼ e^{zⱼ}. Stable form: subtract max(z) first.</li>
+<li>P − Y (divided by m for the mean loss).</li>
+<li>ln 10 ≈ 2.3026.</li>
+<li>0.2971 ($100k). Their true values are above the 5.0 cap and unknown, so the model under-predicts them (MAE 0.62).</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

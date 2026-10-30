@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 176 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="176">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-175.html">← Day 175</a><a href="../weeks/week-26.html">Week 26</a><a rel="next" href="day-177.html">Day 177 →</a></nav>
+<h1>Day 176: Capstone polish and freeze snapshot</h1>
+<p class="meta">Week 26 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-26.md">source: weeks/week-26.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Freeze before you polish (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run the polish script (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: What polish is (and is not) (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/capstone/out/freeze/"><code>code/capstone/out/freeze/</code></a></li><li><a href="../../code/week-26/day176_polish.py"><code>code/week-26/day176_polish.py</code></a></li><li><a href="../../code/week-25/out/day173_stats.json"><code>code/week-25/out/day173_stats.json</code></a></li><li><a href="../../code/capstone/out/freeze/day173_stats.json"><code>code/capstone/out/freeze/day173_stats.json</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 175 (+1), Day 172 (+3), Day 168 (+7), Day 155 (+21).</p>
+<h3 id="block-1-freeze-before-you-polish-30-min">Block 1: Freeze before you polish (30 min)</h3>
+<p>Polish without a freeze is how baselines silently move. Copy Day 171–175 stats into <code>code/capstone/out/freeze/</code> and treat that directory as read-only for the rest of the week. Day 178 and Day 179 quote freeze numbers; Day 177 only adds new robustness measurements.</p>
+<h3 id="block-2-run-the-polish-script-40-min">Block 2: Run the polish script (40 min)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>code/week-26/day176_polish.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day176_polish.log</code>, <code>day176_stats.json</code>):</strong>
+- Freeze copied <strong>5</strong> JSON scorecards (day171–day175).
+- Empty/whitespace input: no crash.
+- Overlong (2500 chars): blocked (<code>too long</code>).
+- <code>calc: 2**8</code> deterministic <strong>256</strong>.
+- Benign "What is PCA?": not blocked; answer length <strong>109</strong>.
+- Injection still blocked.
+- Service on <code>:8766</code>: health ok; <code>calc: 9*9</code> → <strong>81</strong>.
+- Polish tests <strong>7/7 PASS</strong>. Freeze recall still <strong>0.72</strong>.</p>
+<h3 id="block-3-what-polish-is-and-is-not-35-min">Block 3: What polish is (and is not) (35 min)</h3>
+<p>Polish is edge cases, determinism, and packaging — not prompt tweaking on the freeze set. If you change chunking or the system prompt today, you invalidate the freeze and must re-run Days 170–173. The empty-input path returning a retrieve trace is acceptable for a study tool; a production API would return HTTP 400 (optional stretch on the service).</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>How many freeze files copied? <strong><em>5.</em></strong></li>
+<li>Overlong guard reason? <strong><em>blocked: too long.</em></strong></li>
+<li>Polish pass count? <strong><em>7/7.</em></strong></li>
+<li>Why freeze before polish? <em>So robustness work cannot quietly rewrite the baseline.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Add an HTTP 400 for empty <code>question</code> in <code>service.py</code> and a test. Do not change retrieval or prompts.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Wire a <code>/ready</code> endpoint that checks embeddings.npy shape == (1467, 384) before accepting /ask.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"We improved the demo after the eval." Reply: show the freeze directory timestamp and ask which JSON changed. If freeze moved, the improvement is untrusted.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Editing <code>corpus_qa.py</code> during polish.</li>
+<li>Claiming new recall numbers without re-running the harness.</li>
+<li>Leaving calc exceptions uncaught (fixed earlier in Week 25; still verify).</li>
+</ul>
+<h3 id="timed-6-hour-schedule-suggested">Timed 6-hour schedule (suggested)</h3>
+<ul>
+<li>0:00–0:30 Review + freeze rationale.</li>
+<li>0:30–1:30 Run polish; read log line by line.</li>
+<li>1:30–3:00 Edge-case practice (empty, long, unicode).</li>
+<li>3:00–4:30 Optional /ready or HTTP 400 stretch.</li>
+<li>4:30–5:30 Interview answer + notes.</li>
+<li>5:30–6:00 Commit freeze/ + day176_stats.json only.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Diff <code>freeze/day173_stats.json</code> against <code>code/week-25/out/day173_stats.json</code> — must be identical.</li>
+<li>Run <code>calc: 2**8</code> five times; assert all equal.</li>
+<li>Document the 7 polish checks in your design doc appendix.</li>
+</ol>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 177 stresses latency percentiles and paraphrase attacks; expect residual evasions and write them down.</p>
+<h3 id="extra-depth-and-systems-notes">Extra depth and systems notes</h3>
+<p>A freeze directory is a contract with your future self. When Day 178 quotes recall 0.720, a grader must be able to open <code>code/capstone/out/freeze/day173_stats.json</code> and see the same number without trusting your slides. That is why Day 176 copies five JSON scorecards before any polish change lands. Polish itself is deliberately boring: empty strings, overlong payloads, deterministic calc, known-pattern injection, and a live HTTP health check on an alternate port. None of those moves the retrieval index. If a teammate "helps" by retuning the system prompt during polish, the freeze is compromised and you must re-baseline under a new folder name with an explanation in the final report.</p>
+<p>The seven polish checks that passed on this box are not a substitute for the Day 173 gate suite. They are a serving-path smoke test. Empty input returning a retrieve trace is a debug-friendly choice for a course assistant; a public API should prefer HTTP 400. Overlong input at 2500 characters is blocked with reason <code>too long</code>, which matches the budget row that caps prompt size before the model ever sees the bytes. Calc of <code>2**8</code> returning 256 five times in a row proves the tool path is deterministic — a flaky tool destroys integration tests and demo trust. Benign PCA questions must not trip the injection regex (0 false positives on the polish slice). The service on port 8766 answered health and <code>calc: 9*9</code> → 81, proving the Week 25 HTTP surface still binds after a freeze.</p>
+<p>Students sometimes ask whether polish includes prompt engineering. The answer is no for Week 26 Days 176–177. Prompt changes belong in a new experiment with a new eval run, not in a freeze window. The same rule applies to chunk boundaries and embedding models. The only code edits allowed during polish are guards, HTTP status codes, logging, and packaging. Day 177 will touch <code>run_calc</code>'s AST allow-list because a robustness failure is a safety defect, not a quality tweak — that distinction matters when you write the honest report.</p>
+<p>Hardware honesty continues: CPU-only Xeon, no GPU numbers, Android path still UNTESTED. RSS is left to Day 177 after a warm RAG path. If you run polish on a laptop with a different BLAS, expect absolute latencies to move; the pass/fail of the seven checks should not. Keep the freeze read-only in git or in your evidence zip when the user asks for verification later. Do not zip yet.</p>
+<p>Interview pressure often pushes people to ship a shinier demo after the eval. The correct reply is to point at the freeze timestamp and ask which JSON changed. If none changed, the improvement is packaging. If freeze moved, the improvement is untrusted until Day 178 is re-run. That cultural habit is worth more than any single recall point.</p>
+<p>Practice beyond the script: add <code>/ready</code> that checks <code>embeddings.npy</code> shape <code>(1467, 384)</code> before accepting <code>/ask</code>. Add HTTP 400 for empty <code>question</code>. Neither change requires regenerating the index. Document both in an appendix of your design doc so the presentation can cite them as polish outcomes rather than as silent behaviour changes.</p>
+<p>Finally, remember Week 26 has <strong>five days only</strong>. There is no Day 181 in the syllabus calendar for content; spaced-repetition rows beyond 180 in tooling are review-only. Plan your 6-hour blocks tightly: freeze rationale, run, edge cases, optional <code>/ready</code>, interview answer, commit. The 800-word lesson density exists so you can study offline without the scripts — but you still must run <code>day176_polish.py</code> yourself and keep the log.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-175.html">← Day 175</a><a href="../weeks/week-26.html">Week 26</a><a rel="next" href="day-177.html">Day 177 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

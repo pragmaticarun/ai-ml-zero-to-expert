@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 85 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="85">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-084.html">← Day 84</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-086.html">Day 86 →</a></nav>
+<h1>Day 85: Hyperparameter tuning and experiment tracking for deep learning</h1>
+<p class="meta">Week 13 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-13.md">source: weeks/week-13.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-13/day85_hparam_search.py"><code>code/week-13/day85_hparam_search.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 84 (+1), Day 82 (+3), Day 78 (+7), Day 64 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A deep-learning result is a sample from a noisy process. Weight initialisation, the order of minibatches, dropout masks and augmentation all depend on a random seed. If you try twenty settings and keep the best, part of what you "found" is luck. Tuning is a small experiment, and it needs the same discipline as any other experiment: a fixed budget, a held-out set that tuning never touches, a record of every trial, and an estimate of the noise.</p>
+<p><strong>What to tune first.</strong> In rough order of impact for the models in this course: learning rate (by far the most important), then the schedule, batch size, weight decay, dropout and width. Search the learning rate on a log scale, because 1e-4 and 1e-3 differ as much as 1e-3 and 1e-2. Weight decay is also a log-scale quantity.</p>
+<p><strong>Grid vs random search.</strong> A grid of 3 × 3 tries only 3 distinct values of each hyperparameter. If only one hyperparameter matters (usually the learning rate), 6 of your 9 trials repeat values you already tried. Random search with the same 9 trials tries 9 distinct learning rates. Bergstra and Bengio (2012, "Random Search for Hyper-Parameter Optimization") made this argument formally. Use random search, sampled log-uniformly, over ranges you have sanity-checked with an LR range test (Day 67).</p>
+<p><strong>The noise floor.</strong> Train one configuration with several seeds and compute the standard deviation of the validation metric. A difference between two configurations smaller than about two of those standard deviations is not evidence. This one measurement prevents most false "improvements".</p>
+<p><strong>Experiment tracking.</strong> At minimum, write one CSV row per trial: method, trial id, every hyperparameter, the metric, and the seed. Keep the code version (a git commit hash) next to it. Tools such as MLflow or Weights &amp; Biases add dashboards, but a CSV you can open in pandas is enough for this course and has no account to lose.</p>
+<p><strong>Leakage through tuning.</strong> If you tune against the test set you no longer have a test set. Tune on validation, then touch test once at the end. With small data, use cross-validation for tuning, as in Month 2.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-13/day85_hparam_search.py</code> (about 10 s). It trains an MLP 784-256-10 with dropout 0.2, AdamW, 3 epochs, batch 128, on 10,000 MNIST training images, validating on 5,000 held-out training images (the test set is untouched). <strong>Verified:</strong>
+- Grid search, lr ∈ {1e-4, 1e-3, 1e-2} × wd ∈ {1e-4, 1e-2, 1}: best val acc <strong>0.9382</strong> at lr 1e-3, wd 1e-4; <strong>3</strong> distinct learning rates tried.
+- Random search, 9 trials, lr log-uniform in [10^-4.5, 10^-1.5], wd log-uniform in [1e-5, 1]: best val acc <strong>0.9434</strong> at lr 2.58e-3, wd 2.23e-4; <strong>9</strong> distinct learning rates tried.
+- One configuration (lr 1e-3, wd 1e-2) with 5 seeds: mean <strong>0.9386</strong>, std <strong>0.0007</strong>, min <strong>0.9378</strong>, max <strong>0.9396</strong>.
+- All 18 trials are in <code>out/day85_trials.csv</code>.</p>
+<p>Read the result carefully. The random-search winner beats the grid winner by 0.0052, about 7 seed-standard-deviations, so this gap is probably real for this model and budget. It came from a learning rate (2.58e-3) that the grid could not try. On the other hand, the grid best at wd 1e-4 (0.9382) and the 5-seed mean at wd 1e-2 (0.9386) are within one standard deviation: weight decay barely matters here over 3 epochs.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Open <code>out/day85_trials.csv</code> in pandas. Plot val acc against log10(lr), coloured by method. Where is the good region, and how wide is it?</li>
+<li>(45 min) Add a third method: random search over lr only, with wd fixed at 1e-4. Does it match the two-dimensional search with the same 9 trials?</li>
+<li>(30 min) Re-run the 5-seed measurement at the random-search winner. Is the gap to the grid winner still larger than two standard deviations when you compare 5-seed means?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>A 4 × 4 grid over (lr, wd) where only lr matters. How many distinct useful trials do you get out of 16? <em>Answer: 4.</em></li>
+<li>Seed std is 0.004. Config A scores 0.912 and B 0.915 on one seed each. Conclusion? <em>Answer: none; the gap is under one std.</em></li>
+<li>Why sample lr log-uniformly? <em>Answer: its effect is multiplicative; uniform sampling over [1e-5, 1e-1] would put almost every trial above 1e-2.</em></li>
+<li>Name three things a trial log must contain. <em>Answer: hyperparameters, metric, seed (plus code version and data split).</em></li>
+<li>You picked the best of 50 trials on validation. Is its validation score an unbiased estimate of future performance? <em>Answer: no, it is optimistically biased by the selection; that is what the untouched test set is for.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can explain why random search beats grid search when few hyperparameters matter.
+- [ ] I measured the seed-noise floor before comparing configurations.
+- [ ] My trials are logged in a file I can reload.
+- [ ] I can say which Day-85 differences are real and which are noise, with numbers.</p>
+<h3 id="extra-notes-successive-halving-in-one-paragraph">Extra notes: successive halving in one paragraph</h3>
+<p>Most bad configurations reveal themselves early. Successive halving starts many trials on a small budget (say 1 epoch), keeps the best half, doubles their budget, and repeats. With 16 trials and budgets 1, 2, 4, 8 epochs, the total cost is 16·1 + 8·2 + 4·4 + 2·8 = 64 epochs, against 128 for running all 16 to 8 epochs. Hyperband runs several such brackets with different starting sizes, to hedge against configurations that start slowly but finish well (a low learning rate is the classic case). The risk is exactly that: early ranking is not final ranking, especially when a schedule such as one-cycle makes early epochs unrepresentative. Day 86 shows this. The capstone's validation accuracy dropped to 0.3728 at epoch 8 and recovered to 0.7656 by epoch 15, so a halving rule applied at epoch 8 could easily have killed the eventual winner. If you implement halving, compare at matched points of the schedule, not just matched epochs.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Bergstra and Bengio (2012) for the low-effective-dimension argument, and Li et al., "Hyperband" (2017) for the bandit view of early stopping.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your colleague reports a 0.3% accuracy improvement from a new augmentation. What do you ask before believing it?" How many seeds, what is the seed std, was the test set used for selection, was the training budget matched, and is the code for both runs the same apart from the change?</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Comparing single runs with different seeds and calling the winner.</li>
+<li>Tuning on test, or on a validation set that overlaps training (check indices).</li>
+<li>Changing two things at once, so you cannot attribute the effect.</li>
+<li>Forgetting to log a failed trial. Failures are data: they map the edge of the stable region.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 86 builds the capstone model and its baselines, using the habits from today.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-084.html">← Day 84</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-086.html">Day 86 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

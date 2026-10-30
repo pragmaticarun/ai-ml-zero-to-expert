@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 172 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="172">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-171.html">← Day 171</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-173.html">Day 173 →</a></nav>
+<h1>Day 172: Int8 scoring, Rust/PyO3 kernel and KV budget</h1>
+<p class="meta">Week 25 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-25.md">source: weeks/week-25.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Why a Rust kernel (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Build and benchmark (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Reading the memory story (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/capstone/rust_score"><code>code/capstone/rust_score</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 171 (+1), Day 168 (+3), Day 164 (+7), Day 158 (+21; KV formulas).</p>
+<h3 id="block-1-why-a-rust-kernel-30-min">Block 1: Why a Rust kernel (30 min)</h3>
+<p>Python numpy int8 matmul for scoring promotes to int32 and is slow when written naively. A PyO3 module can keep int8 weights, accumulate in i32, dequantize with per-row scales, and parallelise with rayon — the same pattern as Week 23's <code>tiny_infer</code>. For the <strong>1467×384</strong> course index, OpenBLAS fp32 GEMM is already ~9 µs; the Rust path must be judged fairly (vs numpy-int8, and on larger matrices).</p>
+<h3 id="block-2-build-and-benchmark-40-min">Block 2: Build and benchmark (40 min)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># one-time: maturin develop --release in code/capstone/rust_score</span>
+python<span class="w"> </span>day172_perf.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day172_perf.log</code>, <code>day172_stats.json</code>):</strong>
+- Corpus 1467×384: numpy fp32 <strong>8.9 µs</strong>; numpy int8 <strong>393.7 µs</strong>; rust serial <strong>58.7 µs</strong> (<strong>6.71×</strong> vs np-int8); rayon <strong>68.7 µs</strong>. Top-3 agreement <strong>3/3</strong>; max|diff vs fp32| <strong>0.0016</strong>. Int8 bytes <strong>569,196</strong>.
+- Synthetic <strong>50k×384</strong>: np-fp32 <strong>582.7 µs</strong>; np-int8 <strong>12,548.5 µs</strong>; rust rayon <strong>293.0 µs</strong> → <strong>42.83×</strong> vs np-int8, <strong>1.99×</strong> vs fp32.
+- Synthetic <strong>100k×256</strong>: rust rayon <strong>50.35×</strong> vs np-int8. Gate ≥1.5× vs numpy-int8: <strong>PASS</strong> (best <strong>50.35×</strong>).
+- SmolLM2 KV fp16: <strong>23,040 B/tok</strong> (22.5 KiB); ctx 512 → <strong>11.2 MiB</strong>; ctx 2048 → <strong>45.0 MiB</strong>.
+- ru_maxrss after SmolLM2: <strong>692 MiB</strong>. Prefill 5 tok: <strong>26.3 ms</strong>. Decode with KV: <strong>12.1 ms/tok</strong>. No-cache decode <strong>1.6×</strong> slower than KV path on this run.</p>
+<h3 id="block-3-reading-the-memory-story-35-min">Block 3: Reading the memory story (35 min)</h3>
+<p>RSS ~692 MiB is under the "≤4 GiB growth" spirit of the budget (weights + python + embeddings). KV at 22.5 KiB/token explains why long chat histories hurt on-device long before weight size does — same formula as Day 158 (GQA with 3 kv heads × 64 dim × 30 layers × 2 × 2 bytes).</p>
+<p>Honesty: on the real 1467-row corpus, ship numpy fp32 for scoring unless you care about the int8 memory footprint (≈0.57 MB vs 2.25 MB fp32). Ship Rust when N grows or when you need a portable kernel beside Python.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>KV bytes per token fp16? <strong><em>23040.</em></strong></li>
+<li>Best rust vs numpy-int8 speedup logged? <strong><em>50.35×.</em></strong></li>
+<li>Does rust beat OpenBLAS on 1467×384? <em>No — fp32 GEMM ~8.9 µs vs rust ~59 µs.</em></li>
+<li>No-cache vs KV slowdown factor? <em><strong>1.6×</strong> on this decode test.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Call <code>build_int8_index</code> once, then score 100 random queries; plot latency histogram. Confirm top-3 agreement stays ≥2/3 on 20 random corpus rows used as queries.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li><code>rust_score</code> uses pyo3 0.25 / numpy 0.25 to match Week 23's crate versions in the local cargo cache.</li>
+<li>Re-quantizing every call was a first-bug; <code>build_int8_index</code> caches scales + int8 matrix.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Add a blocked int8×int8 GEMM via <code>ndarray</code> or a hand-written tiling loop; compare to rayon row-parallel.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Int8 is always faster." Reply: show the 1467-row numbers. Int8 wins on memory and on fair int8 baselines / large N; BLAS fp32 wins on tiny N.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Comparing a re-quantize-every-call kernel to BLAS.</li>
+<li>Forgetting KV when claiming "135M fits on device".</li>
+<li>Reporting ASSUMED phone latency from server-CPU runs.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Re-run the 50k×384 benchmark with <code>parallel=False</code>; compare to rayon. On how many cores does rayon help?</li>
+<li>Estimate KV mebibytes for ctx=4096 at fp16 and at int8 KV (halve the bytes); does it still fit your RAM budget beside 692 MiB RSS?</li>
+<li>Add a unit test that <code>score_int8</code> raises if called before <code>build_int8_index</code>.</li>
+</ol>
+<p>The first Rust version re-quantized the database on every score call and lost to numpy by 100×. Caching the int8 matrix and scales flipped the story. Microbenchmark discipline: warm up, median of many trials, report the comparison baseline explicitly (fp32 BLAS vs int8 numpy vs rust). A single "speedup" number without a baseline is marketing.</p>
+<p>KV-cache budgeting is the on-device punchline. Weights for SmolLM2 are fixed; KV grows with batch × sequence × layers × kv_heads × head_dim × 2 (K and V) × dtype bytes. With GQA (3 kv heads, 64 dim, 30 layers, fp16) you pay 23040 bytes for every new token of history. A multi-turn tutor session at 2k context is already ~45 MiB of KV before activations. That is why Day 169's max_new_tokens cap exists and why "just raise context" is not a free product decision.</p>
+<p>RSS 692 MiB after load is a process peak via <code>ru_maxrss</code>, not a precise weight-only figure. Treat it as a ceiling check against the 4 GiB budget row. If you add ONNX Runtime, another tokenizer, or a second model for reranking, re-measure — do not sum datasheet sizes and hope.</p>
+<p>When would you ship Rust scoring for this course corpus? When you embed many more notes (whole PDF libraries), when you need identical scores in a non-Python worker, or when you care about the 0.57 MB int8 footprint on a small device. For 1467 rows in a Python service, numpy fp32 is the pragmatic default; keep the crate green anyway — it is the Week 23 skill check inside the capstone.</p>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 173 freezes the eval harness and regression gates.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-171.html">← Day 171</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-173.html">Day 173 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

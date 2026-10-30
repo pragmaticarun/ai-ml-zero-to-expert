@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 87 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="87">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-086.html">← Day 86</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-088.html">Day 88 →</a></nav>
+<h1>Day 87: Month-3 capstone: ablations</h1>
+<p class="meta">Week 13 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-13.md">source: weeks/week-13.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-13/day87_capstone_ablations.py"><code>code/week-13/day87_capstone_ablations.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 86 (+1), Day 84 (+3), Day 80 (+7), Day 66 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>What an ablation is.</strong> Remove or change one component, retrain with everything else identical (same seed, split, budget and code), and measure the change. An ablation answers "does this part earn its place in <em>this</em> setting?" It does not answer whether the part is useful in general.</p>
+<p><strong>Design rules.</strong>
+- Change one thing per run. If removing batch norm also needs a lower learning rate to train at all, say so in the row name, as the script does ("no batch norm (lr 0.01)").
+- Match the budget. All rows use the same number of epochs. A shorter budget than the main run is fine (it makes the study affordable) but must be stated, because some components only pay off late.
+- Include a "full model" row trained under the ablation budget, and compare against that row, not against the main run.
+- Add a data row (train on 50% of the data). It tells you whether more data or more modelling would help most.
+- State the noise floor. One seed per row means differences under about a point of accuracy are not interpretable.</p>
+<p><strong>Reading surprises.</strong> When a component you expected to help shows no gain or a small gain from removal, the honest options are: the effect is within noise; the budget is too short for it to matter (augmentation is the classic case, since it slows fitting and pays off over longer training); or the component really does not help at this depth and data size. Do not delete the row, and do not quietly change the budget until the expected ordering appears.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-13/day87_capstone_ablations.py</code> (it took 1,975 s on a busy box; expect 10-30 minutes). Every row is 8 epochs, seed 0, same split. <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>config</th>
+<th>final train loss</th>
+<th>val acc</th>
+<th>delta vs full</th>
+<th>time (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>full model</td>
+<td>0.8035</td>
+<td>0.7044</td>
+<td>0</td>
+<td>86</td>
+</tr>
+<tr>
+<td>no augmentation</td>
+<td>0.5366</td>
+<td>0.7112</td>
+<td>+0.0068</td>
+<td>74</td>
+</tr>
+<tr>
+<td>no residual connections</td>
+<td>0.7802</td>
+<td>0.7108</td>
+<td>+0.0064</td>
+<td>356</td>
+</tr>
+<tr>
+<td>no batch norm (lr 0.01)</td>
+<td>1.7112</td>
+<td>0.3536</td>
+<td>−0.3508</td>
+<td>951</td>
+</tr>
+<tr>
+<td>half width (16)</td>
+<td>0.9278</td>
+<td>0.6612</td>
+<td>−0.0432</td>
+<td>305</td>
+</tr>
+<tr>
+<td>no weight decay</td>
+<td>0.8029</td>
+<td>0.7032</td>
+<td>−0.0012</td>
+<td>69</td>
+</tr>
+<tr>
+<td>label smoothing 0.1</td>
+<td>1.1706</td>
+<td>0.7024</td>
+<td>−0.0020</td>
+<td>54</td>
+</tr>
+<tr>
+<td>50% of training data</td>
+<td>0.9929</td>
+<td>0.6180</td>
+<td>−0.0864</td>
+<td>37</td>
+</tr>
+</tbody>
+</table>
+<p>Logged to <code>out/day87_ablations.csv</code>. The times are <strong>not</strong> comparable between rows: other jobs were competing for the CPU during the no-residual, no-BN and half-width runs. Do not read "removing residuals makes training 4× slower" into this table.</p>
+<p><strong>What the table says.</strong>
+- Batch norm is the one component that matters enormously here: without it, even at a safer learning rate, the network reaches 0.3536.
+- Width matters: halving it costs 0.0432.
+- Data matters most of the rest: half the data costs 0.0864, twice the width penalty. More images would help more than more architecture.
+- Weight decay and label smoothing are within noise at this budget (−0.0012, −0.0020).
+- <strong>Surprises:</strong> removing augmentation (+0.0068) and removing residual connections (+0.0064) both scored slightly <em>higher</em>. Both are under a point with one seed, so they are not evidence that these parts hurt. The no-augmentation train loss (0.5366 against 0.8035) shows that without augmentation the model fits the training set faster. Over 8 epochs it has not yet overfitted enough for augmentation to pay off. Residual connections exist to make <em>deep</em> networks trainable (Day 72: the 22-layer residual net beat the plain one by 0.1025). This network has only about 8 weight layers, where plain and residual nets train comparably.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(60 min) Re-run "full model" and "no augmentation" with seeds 1 and 2 (<code>fit(seed=...)</code>). Is the +0.0068 still there as a mean over three seeds?</li>
+<li>(30 min) Re-run the same pair for 15 epochs. Does augmentation start to pay off with the longer budget?</li>
+<li>(30 min) Add a row with a 25% data fraction and plot val acc against data fraction (25%, 50%, 100%). Extrapolate, with caution, what doubling the data might give.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why does the ablation compare against a full model trained for 8 epochs and not against the 15-epoch main run (0.7656)? <em>Answer: the budgets must match; 15 epochs vs 8 would confound the comparison.</em></li>
+<li>Why does the no-BN row change the learning rate too? <em>Answer: at lr 0.05 the unnormalised network is likely to diverge, so the row would measure instability, not BN's contribution; the change is named in the row.</em></li>
+<li>A component gives +0.003 with one seed. What do you write in the report? <em>Answer: "no measurable effect at this budget (single seed)".</em></li>
+<li>Half data costs 0.0864; half width costs 0.0432. Which would you invest in first? <em>Answer: more data (or stronger augmentation as a proxy), then width.</em></li>
+<li>Why is the no-augmentation train loss so much lower? <em>Answer: the model sees the exact same images each epoch and memorises faster; augmented images are harder to fit.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] Every row changes exactly one thing, or names the second change.
+- [ ] I can state the noise floor and which rows fall inside it.
+- [ ] I reported the two surprising rows without deleting or "fixing" them.
+- [ ] I know why the timing column cannot be compared here.</p>
+<h3 id="extra-notes-ablation-vs-addition">Extra notes: ablation vs addition</h3>
+<p>An ablation removes a component from the full model; an addition study adds it to a minimal model. They can disagree. Components often overlap in what they provide: weight decay, augmentation, label smoothing and dropout all regularise. Removing any one of them from a model that has the others may show no effect, because the rest cover for it, even though adding it alone to a bare model would help a lot. Today's weight-decay and label-smoothing rows are consistent with that. Interactions also run the other way: batch norm makes larger learning rates usable, so "no BN" partly measures "lower usable learning rate". For a full picture you would run a small factorial design (for example augmentation × weight decay, 4 runs, several seeds each) and look at the interaction term. That costs more, so for a capstone the honest compromise is the one-at-a-time table plus a sentence on which conclusions might be interaction effects.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the ablation sections of the ResNet paper (He et al., 2016) and the batch norm paper (Ioffe and Szegedy, 2015), and note how many seeds each reports.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your ablation shows that removing a component improves accuracy by 0.5%. Do you remove it?" Not on one seed: measure the seed std, repeat with several seeds and the full budget, check whether the effect depends on budget (augmentation) or depth (residuals), and only then decide. Also consider robustness and calibration, not only accuracy.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Comparing rows trained with different seeds, budgets or data orders.</li>
+<li>Silently tuning the learning rate per row; if you do, say so.</li>
+<li>Reading wall-clock timings from a shared machine as properties of the model.</li>
+<li>Treating a single-seed table as a ranking.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 88 asks <em>where</em> the frozen model fails, and touches the test set once.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-086.html">← Day 86</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-088.html">Day 88 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

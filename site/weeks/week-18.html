@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 18 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="18">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-17.html">← Week 17</a><a href="../syllabus.html">Syllabus</a><a href="week-19.html">Week 19 →</a></nav>
+<h1>Week 18 (Days 120-126)</h1><p class="meta"><a href="../../weeks/week-18.md">source: weeks/week-18.md</a> · <a href="../../pdf/week-18.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-120.html">Day 120: MONTH-4 CAPSTONE: an end-to-end LLM question-answering system, plus the Month-4 checkpoint exam</a> <span class="st" data-st="120"></span></li><li><a href="../days/day-121.html">Day 121: MDPs, returns and Bellman equations</a> <span class="st" data-st="121"></span></li><li><a href="../days/day-122.html">Day 122: Dynamic programming: policy evaluation, value iteration and policy iteration</a> <span class="st" data-st="122"></span></li><li><a href="../days/day-123.html">Day 123: Monte Carlo and TD learning; Q-learning vs SARSA</a> <span class="st" data-st="123"></span></li><li><a href="../days/day-124.html">Day 124: Function approximation: from tables to features</a> <span class="st" data-st="124"></span></li><li><a href="../days/day-125.html">Day 125: Deep Q-networks (DQN) on CartPole</a> <span class="st" data-st="125"></span></li><li><a href="../days/day-126.html">Day 126: PROJECT W18: model-free agents on FrozenLake 8x8 vs the DP optimum; Quiz 18</a> <span class="st" data-st="126"></span></li></ul><h3>Exams this week</h3><ul><li><a href="../exams/w18-d120.html">Day 120: Month 4 checkpoint exam (15 questions; 90 minutes; closed notes, then mark yourself)</a></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-18"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>(Day 120) In the capstone, retrieval recall@5 was 0.79 but answer accuracy was 0.25. Where did the failure analysis place most errors?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Generation: 8 of 12 were generation errors, 1 was a retrieval miss, and 3 were correct.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>(Day 120) Why did the simulated int8 model show no speed-up?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The weights were rounded but stored in fp32 again, so the arithmetic was the same. It showed quality loss only.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>(Day 121) Define the return G_t, and give its lower bound when every reward is −1 and γ &lt; 1.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>G_t = Σ_k γ^k r_{t+k+1}; the lower bound is −1/(1−γ).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>(Day 121) Write V^π as a linear solve.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>V = (I − γP_π)^{-1} r_π.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>(Day 122) What does policy iteration alternate, and why does it terminate?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It alternates policy evaluation and greedy improvement. Each step improves the policy, and a finite MDP has finitely many deterministic policies.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>(Day 122) Why did VI take 571 sweeps at γ 0.99 but 145 at 0.9 on 4x4 FrozenLake?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The error shrinks by about γ per sweep, so the number of sweeps needed grows as γ approaches 1.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>(Day 122) Why can V(start) = 0.006 sit next to a success rate of 0.596?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>V is discounted (γ 0.9 makes a long, safe path worth almost nothing), while success counts any arrival within gymnasium's 100-step limit.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>(Day 123) Write the SARSA and Q-learning targets. Which one learned the cliff-edge path?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>SARSA: r + γQ(s', a'). Q-learning: r + γ max_a Q(s', a). Q-learning learned the edge path (−13 in all 10 seeds).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>(Day 123) Why did a constant-α MC plateau?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Each update moves V a fixed fraction towards a noisy return, so the error stops falling at a noise floor (MC α 0.03 stayed at 0.099).</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>(Day 124) What is "semi" about semi-gradient TD, and what did it cost on the 1000-state walk?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It ignores the target's dependence on w. It converged to a biased fixed point: RMS error 0.131, against 0.061 for MC and a best possible of 0.053.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>(Day 125) Name DQN's two stabilisers, and say what happened without the target network.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Experience replay and a target network. Without the target network, all 3 seeds collapsed to about 9-step episodes.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>(Day 126) Give the three metrics used in the project, and one case where they disagreed.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>max Q(start) vs V*, policy agreement, and greedy success in gymnasium. Example: Q-learning seed 0 at 20k episodes had max Q 0.407 (close to 0.415) but only 0.376 success.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> Day 120 (the Month-4 capstone and checkpoint exam) is written in full and closes Month 4. Days 121-126 (Month 5 opens: RL fundamentals) are written in full; their numbers come from <code>code/week-18/day121_*.py</code> to <code>day126_*.py</code> (CPU only, gymnasium 1.4.0, each under about 2 minutes), with logs in <code>code/week-18/out/</code>. Day 120's numbers come from <code>code/week-18/day120_capstone.py</code>, run once on this box (CPU only, 8 threads, torch 2.15.0+cpu, transformers 5.21.1, about 50 seconds), with its log in <code>code/week-18/out/day120_capstone.log</code>.</p>
+<p><strong>Compute note.</strong> The capstone runs on CPU because every model is small: the MiniLM embedder and cross-encoder, and SmolLM2-135M-Instruct. The int8 quantisation is simulated: weights are rounded and then stored in fp32 again, so it shows quality loss but no speed-up. On a GPU, or with a real int8/int4 kernel (for example llama.cpp, which this box cannot build because it has no <code>g++</code> or <code>cmake</code>), you would also measure memory and speed gains, and you could use a larger generator. That matters most here, because the generator is where this system fails.</p>
+<p><strong>Models and data.</strong> These are the same verified, locally cached models as Week 17: <code>sentence-transformers/all-MiniLM-L6-v2</code>, <code>cross-encoder/ms-marco-MiniLM-L6-v2</code> and <code>HuggingFaceTB/SmolLM2-135M-Instruct</code>. The corpus is <code>weeks/week-01.md</code> to <code>week-16.md</code>. Nothing new was downloaded.</p>
+<hr />
+<h2 id="weekly-quiz-week-18-12-questions-40-minutes-covers-days-120-126">Weekly quiz: Week 18 (12 questions; 40 minutes; covers Days 120-126)</h2>
+<ol>
+<li>(Day 120) In the capstone, retrieval recall@5 was 0.79 but answer accuracy was 0.25. Where did the failure analysis place most errors?</li>
+<li>(Day 120) Why did the simulated int8 model show no speed-up?</li>
+<li>(Day 121) Define the return G_t, and give its lower bound when every reward is −1 and γ &lt; 1.</li>
+<li>(Day 121) Write V^π as a linear solve.</li>
+<li>(Day 122) What does policy iteration alternate, and why does it terminate?</li>
+<li>(Day 122) Why did VI take 571 sweeps at γ 0.99 but 145 at 0.9 on 4x4 FrozenLake?</li>
+<li>(Day 122) Why can V(start) = 0.006 sit next to a success rate of 0.596?</li>
+<li>(Day 123) Write the SARSA and Q-learning targets. Which one learned the cliff-edge path?</li>
+<li>(Day 123) Why did a constant-α MC plateau?</li>
+<li>(Day 124) What is "semi" about semi-gradient TD, and what did it cost on the 1000-state walk?</li>
+<li>(Day 125) Name DQN's two stabilisers, and say what happened without the target network.</li>
+<li>(Day 126) Give the three metrics used in the project, and one case where they disagreed.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>Generation: 8 of 12 were generation errors, 1 was a retrieval miss, and 3 were correct.</li>
+<li>The weights were rounded but stored in fp32 again, so the arithmetic was the same. It showed quality loss only.</li>
+<li>G_t = Σ_k γ^k r_{t+k+1}; the lower bound is −1/(1−γ).</li>
+<li>V = (I − γP_π)^{-1} r_π.</li>
+<li>It alternates policy evaluation and greedy improvement. Each step improves the policy, and a finite MDP has finitely many deterministic policies.</li>
+<li>The error shrinks by about γ per sweep, so the number of sweeps needed grows as γ approaches 1.</li>
+<li>V is discounted (γ 0.9 makes a long, safe path worth almost nothing), while success counts any arrival within gymnasium's 100-step limit.</li>
+<li>SARSA: r + γQ(s', a'). Q-learning: r + γ max_a Q(s', a). Q-learning learned the edge path (−13 in all 10 seeds).</li>
+<li>Each update moves V a fixed fraction towards a noisy return, so the error stops falling at a noise floor (MC α 0.03 stayed at 0.099).</li>
+<li>It ignores the target's dependence on w. It converged to a biased fixed point: RMS error 0.131, against 0.061 for MC and a best possible of 0.053.</li>
+<li>Experience replay and a target network. Without the target network, all 3 seeds collapsed to about 9-step episodes.</li>
+<li>max Q(start) vs V*, policy agreement, and greedy success in gymnasium. Example: Q-learning seed 0 at 20k episodes had max Q 0.407 (close to 0.415) but only 0.376 success.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

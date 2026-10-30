@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 66 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="66">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-065.html">← Day 65</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-067.html">Day 67 →</a></nav>
+<h1>Day 66: Initialisation; vanishing and exploding gradients</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day66_init_vanishing.py"><code>code/week-10/day66_init_vanishing.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 65 (+1), Day 63 (+3), Day 59 (+7), Day 45 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Backprop multiplies one Jacobian per layer. If each factor shrinks the signal a little, the product over 10 layers is tiny (vanishing); if each grows it, the product explodes. Initialisation chooses the scale of those factors at step 0.</p>
+<p><strong>Variance argument.</strong> For a linear layer with fan-in n and independent zero-mean inputs and weights, Var(output) = n · Var(w) · Var(input). To keep variance constant through layers:
+- <strong>Xavier/Glorot</strong> (for tanh/sigmoid-ish, symmetric activations): Var(w) = 2/(fan_in + fan_out), or 1/fan_in in its simple form.
+- <strong>He/Kaiming</strong> (for ReLU, which zeroes half its inputs): Var(w) = 2/fan_in.</p>
+<p><strong>Activation matters too.</strong> The sigmoid derivative is at most 0.25 (Day 62), so even with good weights its gradient shrinks by at least 4× per layer. Tanh's derivative is up to 1. ReLU's is 0 or 1.</p>
+<p><strong>Recurrence is the extreme case.</strong> Multiplying by the same matrix W again and again grows or shrinks like ρ(W)^t, where ρ is the spectral radius. Day 78 returns to this for RNNs.</p>
+<p><strong>Gradient clipping.</strong> If the gradient norm exceeds a threshold c, rescale it to have norm c. It does not fix bad initialisation, but it stops a single huge step from destroying training.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-10/day66_init_vanishing.py</code>. It builds 12-layer MLPs (MNIST, 5,000 training images) and prints gradient norms at the first and last layers, the initial loss, and test accuracy after a short training run. <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>activation + init</th>
+<th>grad norm layer 1</th>
+<th>grad norm layer 11</th>
+<th>test acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sigmoid + Xavier</td>
+<td>2.80e-06</td>
+<td>1.57</td>
+<td>0.0974</td>
+</tr>
+<tr>
+<td>tanh + Xavier</td>
+<td>0.952</td>
+<td>0.343</td>
+<td>0.8678</td>
+</tr>
+<tr>
+<td>ReLU, std 0.01</td>
+<td>1.84e-11</td>
+<td>—</td>
+<td>0.1135</td>
+</tr>
+<tr>
+<td>ReLU, std 1</td>
+<td>6.99e9</td>
+<td>—</td>
+<td>0.0980 (initial loss 5.9e10)</td>
+</tr>
+<tr>
+<td>ReLU + He, lr 0.05</td>
+<td>4.48</td>
+<td>8.14</td>
+<td>0.2916 (initial loss 3.285)</td>
+</tr>
+</tbody>
+</table>
+<p>Read it carefully. Sigmoid's first layer receives gradients six orders of magnitude smaller than the last: the network trains only its top layers and stays at chance. std 0.01 vanishes; std 1 explodes. He initialisation gives healthy gradients at both ends, yet at lr 0.05 it still trained poorly (0.2916). With <strong>lr 0.01 it reached 0.7679</strong> and with lr 0.02, 0.7526. Good initialisation is necessary, not sufficient: the learning rate still has to fit.</p>
+<p>The script also multiplies a vector by one fixed matrix with spectral radius <strong>1.51</strong>: |h| = <strong>3.55e2, 3.13e5, 9.86e8</strong> after 10, 30 and 50 steps. And it clips the gradient [30, 40] (norm 50) to norm 5, giving <strong>[3, 4]</strong>: same direction, smaller step.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Write <code>init_(model, kind)</code> applying <code>nn.init.xavier_normal_</code> or <code>kaiming_normal_(nonlinearity="relu")</code>, biases zero. Reproduce the table for depth 6 and depth 12.</li>
+<li>(30 min) Plot per-layer activation std after one forward pass for each setting. Which ones are flat across depth?</li>
+<li>(30 min) Add <code>torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)</code> to the "ReLU std 1" run. Does it train now? Explain why or why not in two sentences.</li>
+<li>(20 min) Try He init with lr in {0.005, 0.01, 0.02, 0.05}. Mark the best on a small plot.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>fan_in = 256, ReLU. He std? <em>Answer: sqrt(2/256) ≈ 0.088.</em></li>
+<li>Sigmoid, 10 layers, best-case derivative each layer. Upper bound on the product of derivatives? <em>Answer: 0.25^10 ≈ 9.5e-7.</em></li>
+<li>Spectral radius 0.9, 50 steps. Rough shrink factor? <em>Answer: 0.9^50 ≈ 5.2e-3.</em></li>
+<li>Clip g = [6, 8] to max norm 5. <em>Answer: [3, 4].</em></li>
+<li>Why initialise biases to zero but not weights? <em>Answer: zero weights make all units in a layer identical (symmetry is never broken); zero biases are fine because random weights already break symmetry.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Explain in your own words why the initial loss was 5.9e10 with std 1 and 3.285 with He (close to ln 10 = 2.303). Self-check:
+- [ ] I can derive the He variance in three lines.
+- [ ] I can recognise vanishing gradients from per-layer norms.
+- [ ] I can state what clipping does and does not fix.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look up orthogonal initialisation (<code>nn.init.orthogonal_</code>) and "fixup"-style initialisation for residual nets without normalisation. Compare one of them with He at depth 20.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"A 20-layer MLP's loss doesn't move from ln(10). Walk me through your diagnosis." Mention: check the initial loss, per-layer gradient norms, activation statistics, the init scheme, the activation, the learning rate, and adding normalisation (Day 69) or residual connections (Day 72).</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Applying He init to sigmoid layers or Xavier to deep ReLU stacks without thinking.</li>
+<li>Re-initialising after the optimiser was created with different tensors (if you replace parameters rather than filling them in place).</li>
+<li>Concluding "init doesn't matter" from a shallow net. It shows up with depth.</li>
+<li>Forgetting PyTorch's default <code>nn.Linear</code> init (a Kaiming-uniform variant with a=√5) is <em>not</em> plain He: check what you are actually using.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 67 keeps the network fixed and changes how we step: optimisers and learning-rate schedules.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-065.html">← Day 65</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-067.html">Day 67 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

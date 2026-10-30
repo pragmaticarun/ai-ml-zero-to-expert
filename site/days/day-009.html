@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 9 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="9">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-008.html">← Day 8</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-010.html">Day 10 →</a></nav>
+<h1>Day 9: Matrices and matrix multiplication (with a Rust comparison)</h1>
+<p class="meta">Week 2 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-02.md">source: weeks/week-02.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-02/day09_matmul.py` and `code/week-02/rust_matmul/`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-02/rust_matmul"><code>code/week-02/rust_matmul</code></a></li><li><a href="../../code/week-02/day09_matmul.py"><code>code/week-02/day09_matmul.py</code></a></li><li><a href="../../code/week-02/rust_matmul/"><code>code/week-02/rust_matmul/</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 8 (+1), Day 6 (+3), Day 2 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A matrix has two readings, and you need both:
+1. <strong>A table of data:</strong> rows are examples, columns are features (X with shape m × n).
+2. <strong>A function that transforms vectors:</strong> W maps an n-D input to a k-D output by taking k dot products. A neural-network layer is exactly this: y = Wx + b.</p>
+<p><strong>Matrix multiplication</strong> C = AB is "every row of A dotted with every column of B": Cᵢⱼ = Σₚ Aᵢₚ Bₚⱼ. The shapes must chain: (m × k)(k × n) → (m × n). Predicting for a whole dataset at once is one matmul, X (m × n) @ w (n) → m predictions.</p>
+<p><strong>Concrete example.</strong> Two flats [[1000, 2], [1500, 3]] (area, bedrooms) and two models stored as columns, W = [[0.05, 0.04], [4, 6]]. X @ W gives a 2 × 2 table where row i holds both models' predictions for flat i. Row 0 is (0.05·1000 + 4·2, 0.04·1000 + 6·2) = (58, 52).</p>
+<p><strong>Plain-language properties.</strong>
+- Not commutative: AB ≠ BA in general. The lab checks a random 3 × 3 case: <code>False</code>.
+- Associative: (AB)C = A(BC). The cost differs hugely by order, and this is why frameworks optimise the order of matmul chains.
+- Transpose: (AB)ᵀ = BᵀAᵀ. You will use this in every gradient derivation (Day 16).
+- Identity I: AI = A. Inverse A⁻¹ when it exists: A⁻¹A = I.
+- Cost: an (m × k)(k × n) product takes 2mkn FLOPs.</p>
+<p><strong>Systems view: why BLAS is thousands of times faster than Python.</strong> Verified on this box:
+- pure-Python triple loop (i-p-j order) at n = 128: <strong>58-74 ms ≈ 53-72 MFLOP/s</strong> across my runs
+- naive Rust, same algorithm (<code>code/week-02/rust_matmul</code>, <code>cargo run --release</code>): n = 512 in <strong>30.4 ms ≈ 8.8 GFLOP/s</strong>
+- NumPy/BLAS at n = 1024: <strong>6.5-9.3 ms ≈ 230-330 GFLOP/s</strong> (timings vary run to run on a shared box)</p>
+<p>So compiling the same algorithm gives roughly 120-160× over Python. Blocking for cache, SIMD and multithreading (what BLAS does) gives another ~25-35× over naive Rust. Your C++/Rust instincts (loop order, contiguous memory, cache tiles) are exactly what makes BLAS fast. In Month 6 you will write a tiled kernel in Triton.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Compute by hand:
+A = [[1, 2], [3, 4]], B = [[0, 1], [1, 0]].
+- AB = [[1·0+2·1, 1·1+2·0], [3·0+4·1, 3·1+4·0]] = [[2, 1], [4, 3]], which swaps A's columns.
+- BA = [[3, 4], [1, 2]], which swaps A's rows.
+They differ: B acts on whichever side it sits.</p>
+<p>Chain cost: A is 1000 × 10, B is 10 × 1000 and v is 1000 × 1. (AB)v costs 2·1000·10·1000 + 2·1000·1000 ≈ 22M FLOPs. A(Bv) costs 2·10·1000 + 2·1000·10 = 40K FLOPs. That is a 500× difference from parentheses alone.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-02day09_matmulpy-and-codeweek-02rust_matmul">Block 3: Coding lab (2h): <code>code/week-02/day09_matmul.py</code> and <code>code/week-02/rust_matmul/</code></h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>code/week-02/day09_matmul.py
+<span class="nb">cd</span><span class="w"> </span>code/week-02/rust_matmul<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cargo<span class="w"> </span>run<span class="w"> </span>--release
+</code></pre></div>
+
+<p>Tasks:
+1. Change the Python loop order to i-j-p (the inner loop then walks down a column of B) and measure. In Python the effect is small because interpreter overhead dominates. Do the same change in Rust, where it matters a lot. Explain why.
+2. In Rust, add a blocked (tiled) version with 64 × 64 tiles. Report your GFLOP/s.
+3. Verify (AB)ᵀ = BᵀAᵀ numerically with <code>np.allclose</code>.
+4. Time <code>(A @ B) @ v</code> vs <code>A @ (B @ v)</code> with the shapes from the worked example.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Shape of (3 × 4)(4 × 2)? <em>Answer:</em> 3 × 2.</li>
+<li>FLOPs for (64 × 128)(128 × 256)? <em>Answer:</em> 2·64·128·256 = 4,194,304.</li>
+<li>Is (AB)ᵀ = AᵀBᵀ? <em>Answer:</em> no, it is BᵀAᵀ.</li>
+<li>What does X @ w compute for X (m × n)? <em>Answer:</em> m predictions, one dot product per row.</li>
+<li>Which matrix rotates 2-D vectors by 90°? <em>Answer:</em> [[0, −1], [1, 0]].</li>
+<li>Why do frameworks prefer large batched matmuls over many small ones? <em>Answer:</em> they amortise overhead and use the cache and SIMD well.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 8 (+1):</strong> compute the cosine of (1, 1) and (1, 0) (0.707).</li>
+<li><strong>Day 6 (+3):</strong> what is a group split and when do you need one?</li>
+<li><strong>Day 2 (+7):</strong> what are the strides of a (3, 4) int64 array? (32, 8)</li>
+<li><strong>Self-check:</strong>
+  1. Give the two readings of a matrix.
+  2. Shape rule for multiplication?
+  3. FLOP count of a matmul?
+  4. Why is BLAS much faster than a naive compiled loop?
+  5. Give an example where the order of a matmul chain matters.</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><strong><code>np.dot</code> vs <code>@</code> vs <code>*</code> on 2-D arrays:</strong> prefer <code>@</code> for clarity.</li>
+<li><strong>1-D arrays have no orientation:</strong> <code>w @ X</code> and <code>X @ w</code> behave differently. Check <code>.shape</code>.</li>
+<li><strong>Benchmarking in debug mode:</strong> Rust must use <code>--release</code>, otherwise the timings are meaningless.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Read a PyTorch <code>nn.Linear</code> docstring (https://pytorch.org/docs/stable/index.html) and notice that it is just y = xWᵀ + b. You already understand the core of a layer.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-008.html">← Day 8</a><a href="../weeks/week-02.html">Week 2</a><a rel="next" href="day-010.html">Day 10 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

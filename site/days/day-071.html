@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 71 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="71">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-070.html">← Day 70</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-072.html">Day 72 →</a></nav>
+<h1>Day 71: Convolutions from scratch (and as im2col matmul)</h1>
+<p class="meta">Week 11 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-11.md">source: weeks/week-11.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-11/day71_conv_scratch.py"><code>code/week-11/day71_conv_scratch.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 70 (+1), Day 68 (+3), Day 64 (+7), Day 50 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> An MLP on images treats pixel (3, 4) and pixel (3, 5) as unrelated inputs, and must learn "edge detector" again at every position. A convolution slides one small filter across the image: the same weights everywhere (<em>weight sharing</em>), looking only at a neighbourhood (<em>local connectivity</em>). That builds in translation equivariance: shift the input, and the feature map shifts.</p>
+<p><strong>Definition.</strong> For input x with C channels and a filter w of shape (C, k, k), output at (i, j) = b + Σ_c Σ_u Σ_v w[c, u, v] · x[c, i·s + u, j·s + v]. Deep-learning libraries compute this cross-correlation (no kernel flip) and call it convolution. A layer has K filters, so its weight is (K, C, k, k) and it outputs K channels.</p>
+<p><strong>Output size.</strong> With input size n, kernel k, padding p, stride s: <strong>out = ⌊(n + 2p − k)/s⌋ + 1</strong>. Memorise it. "Same" padding for odd k and stride 1 is p = (k−1)/2.</p>
+<p><strong>Parameters.</strong> K·C·k·k + K. This does not depend on the image size, unlike a dense layer.</p>
+<p><strong>Receptive field.</strong> How many input pixels can influence one output unit. Stacking 3×3 convolutions grows it by 2 per layer; pooling or stride multiplies the growth.</p>
+<p><strong>im2col.</strong> Copy every k×k×C patch into a column of a big matrix (C·k·k rows, one column per output position). Then convolution is one matrix multiply: W (K × C·k·k) @ cols. Fast libraries use this or similar tricks (Winograd, FFT, direct kernels), because matmul is what CPUs and GPUs are best at.</p>
+<p><strong>Pooling.</strong> Max or average over a window, usually 2×2 stride 2: halves the resolution, adds a little translation invariance, no parameters.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-11/day71_conv_scratch.py</code>. <strong>Verified:</strong>
+- A 1-D-like edge detector [−1, 1] on a step signal gives <strong>[0, 3, 3]</strong>: it responds where intensity changes.
+- Loop convolution vs <code>torch.nn.functional.conv2d</code>: max error <strong>1.1e-14</strong>; im2col version: <strong>8.9e-15</strong>. Both are correct to round-off.
+- Timing for an 8×3×32×32 batch and 16×3×3×3 filters, across my reruns: loops <strong>208–244 ms</strong>, im2col <strong>2.1–3.1 ms</strong>, torch <strong>0.27–0.39 ms</strong> (one rerun on a heavily loaded box gave torch 15.28 ms, so always time twice). im2col is roughly 80–100× faster than loops; the library roughly another 8–9×.
+- Output sizes for the script's six cases: <strong>30, 32, 32, 16, 24, 112</strong> (check each with the formula in Block 4).
+- <code>Conv2d(3, 16, 3)</code> has <strong>448</strong> parameters. A dense layer mapping the same 3×32×32 input to the same 16×30×30 output would need <strong>44,251,200</strong>.
+- The stack in the script has a receptive field of <strong>16</strong> pixels.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Write <code>conv2d_loops(x, w, b, stride, pad)</code> for a single image. Test against torch on random data with stride 2 and padding 1.</li>
+<li>(40 min) Write <code>im2col</code> and <code>conv2d_im2col</code>. Time both against torch for an 8×3×32×32 batch and 16 filters (then try 3×64×64 yourself).</li>
+<li>(20 min) Implement 2×2 max pooling with <code>reshape</code> and <code>max</code> (no loops).</li>
+<li>(20 min) Hand-design a 3×3 vertical edge filter and apply it to a Fashion-MNIST image. Plot the output.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>n = 32, k = 3, p = 0, s = 1. <em>Answer: 30.</em></li>
+<li>n = 32, k = 3, p = 1, s = 1. <em>Answer: 32.</em></li>
+<li>n = 32, k = 5, p = 2, s = 2. <em>Answer: ⌊(32+4−5)/2⌋+1 = 16.</em></li>
+<li>n = 224, k = 7, p = 3, s = 2. <em>Answer: 112.</em></li>
+<li>Parameters of Conv2d(64, 128, 3)? <em>Answer: 64·128·9 + 128 = 73,856.</em></li>
+<li>Receptive field of three stacked 3×3 convs (stride 1)? <em>Answer: 7.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Without notes: write the output-size formula, the parameter-count formula, and explain im2col in three sentences. Self-check:
+- [ ] I can reproduce the 448 vs 44,251,200 comparison.
+- [ ] I can explain why the library is faster than im2col.
+- [ ] I know that frameworks compute cross-correlation.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the "Convolution arithmetic" guide by Dumoulin and Visin (linked in <code>docs/resources.md</code>), especially transposed convolutions, which you will need for upsampling and generative models.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Why do CNNs need far fewer parameters than MLPs on images, and what assumption do they make?" Weight sharing and locality; assumption: useful features are local and position-independent.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Off-by-one output sizes: always check with a dummy tensor, <code>model(torch.zeros(1, 3, 32, 32)).shape</code>.</li>
+<li>Channels-last (NHWC) arrays passed to PyTorch, which expects NCHW. See Day 75 for why <code>view</code> is wrong here.</li>
+<li>Forgetting padding, so feature maps shrink each layer and the Flatten size is wrong.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 72 stacks convolutions into the famous architectures, and tests the key idea behind ResNet.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-070.html">← Day 70</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-072.html">Day 72 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

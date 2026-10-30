@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 111 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="111">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-110.html">← Day 110</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-112.html">Day 112 →</a></nav>
+<h1>Day 111: Best-of-n, verifiers and exploiting an implicit reward</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day111_best_of_n.py"><code>code/week-16/day111_best_of_n.py</code></a></li><li><a href="../../code/week-15/out/day103_lora.pt"><code>code/week-15/out/day103_lora.pt</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 110 (+1), Day 108 (+3), Day 104 (+7), Day 90 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Best-of-n (rejection sampling).</strong> Sample n answers, score each, return the best. It is the simplest way to "optimise" against a reward without changing weights. Its strength depends on two things: whether the right answer appears among the samples at all (<em>pass@n</em>), and whether the scorer can recognise it.</p>
+<p><strong>Scorers.</strong> (a) The policy's own log-prob: picks the answer the model already likes most; close to greedy. (b) A learned reward model: works if the RM is accurate on these samples. (c) A <em>verifier</em>: for tasks with checkable answers (unit tests, exact arithmetic, word reversal) a program can decide correctness. With a perfect verifier, best-of-n accuracy equals pass@n.</p>
+<p><strong>DPO's implicit reward as a scorer.</strong> DPO defines r̂(x,y) = β·log(π_θ(y|x)/π_ref(y|x)). It looks like a free reward model. But it was only trained to rank the chosen/rejected kinds of answers. On other samples, especially strange ones the reference finds very unlikely, the ratio can be huge for a bad answer. That is reward hacking at inference time.</p>
+<p><strong>Best-of-n and RLHF.</strong> Best-of-n is also used to build training data (keep the best samples and fine-tune on them: "rejection sampling fine-tuning", or "expert iteration"), and as a baseline: an RL method should beat best-of-n at the same compute.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-16/day111_best_of_n.py</code>: for each of the 40 test prompts, sample 8 answers from the Day 108 DPO model at temperature 0.8 and choose by each scorer. The implicit reward uses β = 0.1; the reference log-probs come from the same model with the LoRA scale set to 0. Run time 54 s.</p>
+<p><strong>Verified (out/day111_best_of_n.log):</strong>
+- Greedy: 0.17.
+- Best-of-8 by policy log-prob: 0.15.
+- Best-of-8 by DPO implicit reward: <strong>0.00</strong>.
+- Oracle verifier (pass@8): 0.20.
+- Mean distinct samples per prompt: 5.4 of 8.</p>
+<p>The verifier gains only a little over greedy (0.17 → 0.20), because the correct answer rarely appears among 8 samples: this policy is weak, so selection cannot help much. Choosing by the implicit reward never picked a correct answer, even on prompts where the verifier found one among the samples (random choice was not measured). The samples it picks are ones the reference model finds extremely unlikely, which the log-ratio rewards. A scorer outside its training distribution is exploited by optimisation, even one as mild as picking 1 of 8.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script and compare with the log.</li>
+<li>Print the chosen sample for the implicit-reward scorer on five prompts. Describe what they have in common.</li>
+<li>Use length-normalised implicit reward (divide by the number of answer tokens). Does it still score 0.00?</li>
+<li>Try n = 2, 4, 16 and plot pass@n and best-of-n by policy log-prob against n.</li>
+<li>Use the Week 15 SFT adapter (<code>code/week-15/out/day103_lora.pt</code>) as the policy. With a model that already solves the task, what does pass@8 become?</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why can best-of-n with a perfect verifier never exceed pass@n?</li>
+<li>Why might choosing by the policy's log-prob (0.15) be slightly below greedy (0.17)?</li>
+<li>Why is the DPO implicit reward exploitable on samples it never saw?</li>
+<li>Name two tasks where verifiers exist and two where they do not.</li>
+</ol>
+<p><strong>Answers.</strong> (1) It can only return one of the samples; if none is correct, nothing is. (2) Sampling at temperature 0.8 may not include the greedy answer, and the highest-probability <em>sample</em> is not always the greedy sequence; with n = 40 the 0.02 gap is one item, i.e. noise. (3) It is a log-ratio; any answer the reference rates very unlikely gets a big value if the policy rates it less unlikely, whether or not it is good. (4) Verifiable: code with tests, maths with known answers. Not verifiable: essay quality, helpfulness of advice.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can define pass@n and best-of-n and explain how they relate.
+- [ ] I can compare three scorers and explain the Day 111 numbers.
+- [ ] I can explain why an implicit or learned reward breaks under selection pressure.
+- [ ] I know where best-of-n is used in training pipelines.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Best-of-n has a cost (n generations per query) and a well-known analytic KL to the base policy, which grows only like log n. That makes it a useful reference point when comparing RL methods. Verifier-based methods (reinforcement learning with verifiable rewards) are a major current direction exactly because verifiers do not drift like learned RMs; but they exist only for some tasks.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Search for "Let's Verify Step by Step" (process vs outcome reward models).</li>
+<li>Read about the pass@k estimator in the Codex paper ("Evaluating Large Language Models Trained on Code") and why it uses an unbiased estimator rather than taking k samples once.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"You have a code model and unit tests. Would you use best-of-n, RL, or both?" Points: unit tests are a verifier, so best-of-n at inference gives pass@n directly at n× cost; RL with test-based rewards can raise pass@1 so fewer samples are needed; tests can be gamed (special-casing, weak tests), so hold out tests; compare RL against best-of-n at equal compute.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Using the DPO implicit reward as a general reward model without checking it.</li>
+<li>Reporting pass@n as if it were single-answer accuracy.</li>
+<li>Forgetting the n× inference cost.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow's project: the same pairs, three objectives (SFT, DPO, DPO+NLL), one table.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-110.html">← Day 110</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-112.html">Day 112 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

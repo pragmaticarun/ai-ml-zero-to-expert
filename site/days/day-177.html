@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 177 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="177">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-176.html">← Day 176</a><a href="../weeks/week-26.html">Week 26</a><a rel="next" href="day-178.html">Day 178 →</a></nav>
+<h1>Day 177: Performance and robustness pass</h1>
+<p class="meta">Week 26 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-26.md">source: weeks/week-26.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Percentiles beat means (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run robustness script (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Read the evasions (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-26/day177_robust.py"><code>code/week-26/day177_robust.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 176 (+1), Day 173 (+3), Day 169 (+7), Day 158 (+21).</p>
+<h3 id="block-1-percentiles-beat-means-30-min">Block 1: Percentiles beat means (30 min)</h3>
+<p>User-visible latency is a tail story. Measure retrieve p50/p90/p95 on all 25 QA pairs and RAG p50/max on a 5-question slice. Compare to the ≤8 s RAG budget.</p>
+<h3 id="block-2-run-robustness-script-40-min">Block 2: Run robustness script (40 min)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>code/week-26/day177_robust.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day177_robust.log</code>, <code>day177_stats.json</code>):</strong>
+- Retrieve ms: p50 <strong>118.8</strong>, p90 <strong>126.2</strong>, p95 <strong>127.7</strong>, max <strong>128.1</strong>.
+- RAG+gen (n=5): p50 <strong>0.84 s</strong>, max <strong>1.09 s</strong>.
+- Known-pattern injection <strong>3/3</strong>; paraphrases blocked <strong>1/5</strong> (<strong>4 evasions</strong> logged).
+- Retrieve top-1 stability 5×: <strong>stable</strong> (<code>week-14.md#0-0</code>).
+- Calc abuse pre-harden <strong>3/4</strong> (lambda slipped). <strong>AST allow-list hardened the same day</strong>; post-test rejects lambda/import/open (<strong>4/4</strong>).
+- RSS <strong>973 MiB</strong>. Freeze recall still <strong>0.72</strong>.</p>
+<h3 id="block-3-read-the-evasions-35-min">Block 3: Read the evasions (35 min)</h3>
+<p>Paraphrases like "Forget your rules…" and "act as DAN…" did not match <code>INJECTION_PAT</code>. Detectors leak. Mitigations that still hold — allow-listed tools, AST calc, no filesystem tools, max length — matter more than extending the regex forever. Document residual risk in the Day 178 report; do not hide the 4 evasions.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Retrieve p95? <strong><em>127.7 ms.</em></strong></li>
+<li>Paraphrase block rate? <strong><em>1/5.</em></strong></li>
+<li>Post-fix calc battery? <strong><em>4/4 reject/allow correct.</em></strong></li>
+<li>Is RAG p50 under budget? <em>Yes (0.84 ≪ 8).</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Add one high-precision regex for "DAN" / "disregard the above" and re-measure FP on 10 benign questions. Keep the evasion list in the report either way.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Fuzz calc with 50 random AST-invalid strings; all must reject.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Our block rate is 100%." Ask: on which set? Known-pattern or paraphrase? Show Day 177's 1/5.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Quietly expanding the freeze set with paraphrases used as training for the regex.</li>
+<li>Reporting only p50.</li>
+<li>Leaving Call/Lambda in the AST allow-list (fixed today).</li>
+</ul>
+<h3 id="timed-6-hour-schedule-suggested">Timed 6-hour schedule (suggested)</h3>
+<ul>
+<li>0:00–0:30 Review KV + injection notes.</li>
+<li>0:30–1:30 Run Day 177; capture evasions verbatim.</li>
+<li>1:30–3:00 Harden calc; re-test abuse battery.</li>
+<li>3:00–4:30 Optional regex tighten + FP re-measure.</li>
+<li>4:30–5:30 Write residual-risk paragraph for Day 178.</li>
+<li>5:30–6:00 Commit agent.py harden + day177_stats.json.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Record p50/p95 retrieve in the design doc.</li>
+<li>Paste the four EVADED strings into FINAL_EVAL_REPORT residual risks.</li>
+<li>Confirm <code>run_calc('(lambda:1)()')</code> raises after the harden.</li>
+</ol>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 178 freezes the story: ablations, worked/didn't, release decision.</p>
+<h3 id="extra-depth-and-systems-notes">Extra depth and systems notes</h3>
+<p>Percentile latency is the user-visible truth. A mean that looks fine can hide a tail that breaks a demo. Day 177 therefore records retrieve p50/p90/p95/max across all 25 QA pairs and RAG+generate p50/max on a five-question slice. Verified numbers on this box: retrieve p50 <strong>118.8 ms</strong>, p90 <strong>126.2</strong>, p95 <strong>127.7</strong>, max <strong>128.1</strong>; RAG p50 <strong>0.84 s</strong>, max <strong>1.09 s</strong> — both comfortably under the ≤8 s budget from Day 169. RSS after the warm path was <strong>973 MiB</strong>, inside the 4 GiB spirit of the RAM budget. Freeze recall remained <strong>0.72</strong>.</p>
+<p>Robustness is where detectors embarrass themselves. Known-pattern injection blocked <strong>3/3</strong>. Paraphrase injections blocked only <strong>1/5</strong>, with four evasions logged verbatim (including DAN-style and "forget your rules" phrasings). That echoes Week 21 and Week 22: regex suites overfit the strings you wrote yesterday. Mitigations that still hold without perfect detection — allow-listed tools, no filesystem tools, max length, AST-safe calc — are the real safety floor. Document residual risk; do not hide the 1/5 in a footnote.</p>
+<p>The calc abuse battery originally scored <strong>3/4</strong> because <code>run_calc</code> treated <code>ast.Call</code> as allowed, so <code>(lambda:1)()</code> slipped through. The same-day harden switched to a strict arithmetic-only AST tuple (BinOp, UnaryOp, Constant/Num, Expression, and operator nodes only). Post-test rejects lambda, import, and open while still accepting <code>1+2*3</code>. That is default-deny on node types, not an ever-growing reject list. Retrieve top-1 stability across five identical queries stayed on <code>week-14.md#0-0</code>, which is the quiet proof that embedding and search are deterministic given fixed floats and thread settings.</p>
+<p>When you present Day 177, put known-pattern 3/3 beside paraphrase 1/5 on the same slide. Put p50 beside p95. Put pre-harden 3/4 beside post-harden 4/4. Green-only slides fail the honesty bar that Month 6 has been teaching since the BLOCKED Month-5 capstone. Optional stretch: add a high-precision line for "DAN" / "disregard the above", re-measure false positives on ten benign questions, and keep the evasion list in the report either way. Fuzz calc with fifty random AST-invalid strings; all must reject.</p>
+<p>Systems habit: if retrieve latency suddenly doubles, check BLAS thread counts and whether another agent is hammering the shared box before you rewrite the index. If top-1 flaps, chase seeds and OpenMP env vars. Robustness work is unfinished by design — paraphrase attackers will always find a new wording — so the release decision tomorrow must say course-yes / production-no unless you have a stronger guard story than regex.</p>
+<p>Timed practice: rehearse explaining the lambda hole in under sixty seconds. Graders love a concrete bug with a concrete fix. Then commit <code>agent.py</code> and <code>day177_stats.json</code> together so the harden and the measurement stay paired in history.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-176.html">← Day 176</a><a href="../weeks/week-26.html">Week 26</a><a rel="next" href="day-178.html">Day 178 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

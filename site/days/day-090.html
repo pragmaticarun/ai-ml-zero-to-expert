@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 90 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="90">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-089.html">← Day 89</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-091.html">Day 91 →</a></nav>
+<h1>Day 90: MONTH-3 CAPSTONE delivery (report) + checkpoint exam</h1>
+<p class="meta">Week 13 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-13.md">source: weeks/week-13.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-13/day90_capstone_delivery.py"><code>code/week-13/day90_capstone_delivery.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 89 (+1), Day 87 (+3), Day 83 (+7), Day 69 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The report.</strong> Someone who has not seen your code should be able to judge your claim from the report alone. Use this structure (one to two pages):
+1. <strong>Task and data.</strong> Source (OpenML 40926), image size, classes, split sizes and seed, and the rule that the test set is used once.
+2. <strong>Baselines.</strong> Majority class and logistic regression, with numbers.
+3. <strong>Model and recipe.</strong> Architecture, parameter count, optimiser, schedule, augmentation, epochs, hardware and time.
+4. <strong>Result.</strong> Validation and test accuracy, with the date the test number was produced.
+5. <strong>Ablations.</strong> The Day-87 table, its budget, the noise caveat and the surprising rows.
+6. <strong>Error analysis.</strong> Per-class accuracy, top confusions, slices, calibration, abstention, and your hand-tag counts.
+7. <strong>Limitations and next steps.</strong> Single seeds, small images, CPU budget, and the two or three experiments the evidence points to.</p>
+<p><strong>Writing rules.</strong> Every number in the report must come from a log or a CSV you can point to. Do not compare with published full-CIFAR-10 results: different data size, budget and resolution. Say "no measurable effect" rather than "slightly better" when a difference is within noise.</p>
+<p><strong>The checkpoint exam.</strong> Two hours, closed notes, then mark it with the answers in the week files. It covers Weeks 9-13: 40% concepts (explain), 40% computation (by hand), 20% code reading (find the bug). A score below 70% in any section means a revisit week before Month 4 goes further; the syllabus has slack for that.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-13/day90_capstone_delivery.py</code> (about 5 s). It collects the logs and writes <code>out/capstone_report.md</code> (<strong>44 lines</strong>). <strong>Verified:</strong> the report contains:
+- Data: OpenML 40926, 15,000 / 2,500 / 2,500, seed 0. Model: small ResNet, <strong>308,650</strong> parameters. Environment: Python 3.13.5, torch 2.15.0+cpu.
+- Result: validation <strong>0.7656</strong>, test <strong>0.7736</strong> (test used once).
+- The 15-epoch training curve from <code>out/day86_history.csv</code>, and the 8-row ablation table from <code>out/day87_ablations.csv</code>.
+- A placeholder in the error-analysis section for your Day-88 tag counts, and a limitations section (single seed per ablation, 32 × 32 images and CPU budget).</p>
+<p>The generated report is a skeleton, not a finished report. Your job today is to add the baselines (0.1016 and 0.3688), the error-analysis figures from Day 88, your tag counts, and a "next steps" section justified by the evidence: more data (Day 87, −0.0864 at half data), more width or epochs (Day 88, underfitting with train error 0.1728), and brightness/contrast augmentation (Day 88, the darkest quartile 9 points below the brightest).</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<p>This block is the exam, timed.
+1. (40 min) <strong>Concepts.</strong> (a) Why do residual connections help deep networks? (b) What does batch norm do differently in train and eval mode? (c) Why does random search beat grid search? (d) What is ECE? (e) Why can an LSTM remember longer than a vanilla RNN?
+2. (40 min) <strong>Computation.</strong> (a) Output size of a 5×5 conv, stride 2, padding 2, on 64 × 64. (b) Parameters of Conv2d(64, 128, 3) with bias. (c) Adam's first update size for any gradient with bias correction and lr 1e-3. (d) The ECE of two bins: (n = 50, acc 0.8, conf 0.9) and (n = 150, acc 0.7, conf 0.7). (e) Cross-entropy of probabilities [0.25, 0.25, 0.5] when the true class is the third.
+3. (40 min) <strong>Code reading.</strong> Find the bug in each: (a) a validation loop without <code>model.eval()</code>; (b) <code>loss.backward()</code> in a loop without <code>zero_grad</code>; (c) normalisation statistics computed on <code>torch.cat([train, test])</code>; (d) a truncated-BPTT loop without <code>h = h.detach()</code>.</p>
+<p><em>Answers to the computation section:</em> (a) (64 + 4 − 5)/2 + 1 = 32 (floor of 31.5 is 31, plus 1). (b) 64·128·9 + 128 = 73,856. (c) about lr = 1e-3 per parameter, whatever the gradient's scale. (d) (50·0.1 + 150·0)/200 = 0.025. (e) −ln 0.5 = 0.693.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<p>Mark the exam. For every wrong answer, write one flashcard and find the day that covers it. Then:
+1. Rewrite one report sentence that overclaims. Example: "removing residual connections improves accuracy" becomes "removing residual connections had no measurable effect at 8 epochs with one seed (+0.0064)".
+2. Write the abstract of your report in at most 80 words, containing the test number, both baselines and the one most important limitation.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] My report has all seven sections and every number points to a file.
+- [ ] I scored at least 70% in each exam section, or I have scheduled a revisit.
+- [ ] My limitations section names the single-seed ablations and the CPU budget.</p>
+<h3 id="extra-notes-what-a-reviewer-looks-for">Extra notes: what a reviewer looks for</h3>
+<p>Imagine someone reviewing the capstone for a hiring decision. They spend three minutes and look for four things. <strong>One:</strong> is the evaluation trustworthy? A fixed split, a seed, a test set used once, and baselines answer that. <strong>Two:</strong> does the author know which parts matter? The ablation table, with its caveats, answers that, and admitting the two surprising rows is a positive signal, not a weakness. <strong>Three:</strong> does the author understand the failures? Per-class numbers, the cat→dog confusion (74 errors), the dark-image slice and the 28 confident errors show you looked at the data, not just the metric. <strong>Four:</strong> can the work be reproduced? <code>bash run_all.sh 3</code> re-runs every Month-3 script, and the report lists the environment. A short, honest report with these four properties beats a long one with a higher number and no evidence. Keep the report in the repository next to the code and the CSVs it cites.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Mitchell et al., "Model Cards for Model Reporting" (2019), and add a model-card section (intended use, out-of-scope use, metrics by slice) to your report.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Walk me through a project where a result surprised you." Use Day 87: augmentation and residual connections did not help at 8 epochs; explain the budget and depth reasons, the noise floor, and the experiment you would run to settle it.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reporting the best validation epoch as the result instead of the frozen model's test number.</li>
+<li>Missing environment details (library versions, hardware), so nobody can reproduce the timings.</li>
+<li>Numbers typed by hand into the report that drift from the logs. Generate tables from CSVs, as the script does.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 91 begins Month 4: attention, the building block of transformers.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-089.html">← Day 89</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-091.html">Day 91 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

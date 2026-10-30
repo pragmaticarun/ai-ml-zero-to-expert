@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 151 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="151">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-150.html">← Day 150</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-152.html">Day 152 →</a></nav>
+<h1>Day 151: Profiling Python ML code</h1>
+<p class="meta">Week 22 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Measure first (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The run (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Reading a profile (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 150 (+1), Day 148 (+3), Day 144 (+7), Day 130 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-measure-first-30-min">Block 1: Measure first (30 min)</h3>
+<p>Month 6 is about making code fast, and the first rule is that you do not know where the time goes until you measure. Intuition about hot spots is wrong often enough that guessing is a waste of effort. The tools, from coarse to fine:
+- <strong>Wall-clock timing</strong> with <code>time.perf_counter</code>, a warm-up call, several repeats, and the <em>minimum</em> (or median) reported. The minimum is the least noisy estimate of the code's cost; the median tells you what users see.
+- <strong>cProfile</strong> (deterministic function-level profiler in the standard library): counts calls and time per function. It adds overhead to every call, so it distorts code that makes many tiny calls, but the <em>ranking</em> is usually right.
+- <strong>tracemalloc</strong>: Python-level memory allocations, current and peak.
+- <strong>torch.profiler</strong>: per-operator times for PyTorch, including the C++ kernels beneath <code>nn.Linear</code>.
+- Sampling profilers (such as py-spy) and hardware counters (perf) are the next step; neither is used here.</p>
+<p>The target is the Day 150 capstone's notes path, the Week 17 <code>BM25.scores</code>, which is pure Python.</p>
+<h3 id="block-2-the-run-60-min">Block 2: The run (60 min)</h3>
+<p><code>day151_profiling.py</code> times the baseline, profiles it, measures memory, applies two fixes the profile suggests, checks the scores did not change, and profiles a small MLP.</p>
+<p><strong>Verified (out/day151_profiling.log):</strong>
+- Corpus 1,099 chunks, 58 queries; BM25 build 0.03 s.
+- Baseline: 1.46 ms/query (best of 3 repeats over 58 queries).
+- cProfile: 438,322 function calls in 0.167 s. The generator expression at <code>_rag.py:56</code> has 218,928 calls and 0.101 s own time; <code>sum</code> 63,742 calls, 0.030 s; <code>dict.get</code> 155,186 calls, 0.015 s; <code>torch.tensor</code> 0.006 s; <code>re.findall</code> under 0.001 s.
+- tracemalloc: building BM25 peaks at 6.1 MB (per-document Counters); one query peaks at 32 kB.
+- Fix A, inverted index: 0.295 ms/query (5×). Fix B, scipy sparse matrix-vector product: 0.043 ms/query (34×). Max score difference from baseline 1.8e-06 for both. W is 1,099 × 7,006 with 77,359 non-zeros (1.00% dense).
+- torch.profiler, MLP 384-1024-384 on batch 256, 20 calls, 1 thread: <code>aten::addmm</code> 86.03% of self CPU (41.519 ms over 40 calls), <code>aten::linear</code> 5.52%, <code>aten::gelu</code> 5.03%, <code>aten::copy_</code> 2.52%.</p>
+<h3 id="block-3-reading-a-profile-45-min">Block 3: Reading a profile (45 min)</h3>
+<p><strong>The profile names the algorithm, not just the line.</strong> The hot generator is the inner loop of <code>scores</code>, which runs over <em>every document</em> for <em>every query</em>: 1,099 documents × 58 queries, with a dictionary lookup per query term. Making that loop slightly faster would help a little. The profile instead says the structure is wrong: most documents contain none of the query's words, so scanning them is wasted work.</p>
+<p><strong>Fix A changes the algorithm.</strong> An inverted index stores, for each term, the documents that contain it and their precomputed BM25 weight. A query then touches only the posting lists of its terms. That alone gave 5×, still in pure Python.</p>
+<p><strong>Fix B changes the representation.</strong> The same weights as a sparse matrix W (documents × terms) turn scoring into one sparse matrix-vector product, W·q, where q counts the query terms. The loop now runs in compiled code. 34×. The scores agree to 1.8e-06, which is float32 rounding, so the fix is correct.</p>
+<p><strong>Profiler overhead is real.</strong> The baseline at 1.46 ms × 58 queries is about 0.085 s of work, while cProfile reported 0.167 s for the same calls: roughly 2× inflation, because the profiler hooks every one of the 438,322 calls. Use cProfile to find <em>where</em>, and plain timing to measure <em>how much</em>.</p>
+<p><strong>Memory is not this code's problem.</strong> A 6.1 MB build peak and 32 kB per query are tiny. Recording that is still worth it: you now know memory is not the reason to change this code.</p>
+<p><strong>For the MLP, the profile says "leave it".</strong> 86% of the time is in <code>addmm</code>, the matrix multiply, which is already OpenBLAS. GELU is 5%. Fusing GELU into the matmul could save at most that 5% (Amdahl's law). To make this MLP faster you would change the matmul: fewer FLOPs (smaller layers, sparsity), a cheaper dtype (Day 152 measures bf16), or more threads.</p>
+<p><strong>Amdahl's law</strong> in one line: if a fraction p of the time is sped up by s, the overall speed-up is 1 / ((1 − p) + p/s). With p = 0.05, even infinite s gives only 1.05×.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why report the minimum of repeats? <em>It is the least noisy estimate; noise only adds time.</em></li>
+<li>Why was cProfile's total 2× the timed cost? <em>Per-call hook overhead on 438k calls.</em></li>
+<li>Why did the inverted index help? <em>It skips documents without query terms instead of scanning all 1,099.</em></li>
+<li>What is the maximum gain from fusing GELU in the MLP? <em>About 5% of the time; addmm dominates.</em></li>
+</ol>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Profile the Week 17 dense-embedding retrieval (or any model forward pass you have) with torch.profiler, record the top three operators, and compute the Amdahl bound for speeding up the second one by 10×.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Always check correctness after an optimisation, with a tolerance that matches the dtype. The 1.8e-06 difference here is expected for float32 sums done in a different order; an exact-equality test would have failed for a correct fix.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read the <code>cProfile</code> and <code>tracemalloc</code> docs (linked in <code>docs/resources.md</code>) and try <code>pstats</code> sorting by cumulative time to see callers rather than callees.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"An endpoint is slow. Walk me through how you would find out why." <em>Expected: reproduce with a fixed input; time end to end; trace spans to find the slow stage; profile that stage; check algorithm before micro-optimising; verify the fix keeps outputs equal; re-measure under realistic load.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Optimising without a profile.</li>
+<li>Reporting cProfile times as real costs.</li>
+<li>Timing the first call (imports, caches, JIT, lazy loading).</li>
+<li>Micro-optimising a loop that should not exist.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: why compiled code is fast and where the hardware limits are, with memory bandwidth, the roofline model and memory layout.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-150.html">← Day 150</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-152.html">Day 152 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

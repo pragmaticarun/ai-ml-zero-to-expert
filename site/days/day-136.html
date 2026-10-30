@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 136 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="136">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-135.html">← Day 135</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-137.html">Day 137 →</a></nav>
+<h1>Day 136: Planning, retries and memory (scripted policies)</h1>
+<p class="meta">Week 20 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-20.md">source: weeks/week-20.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 135 (+1), Day 133 (+3), Day 129 (+7), Day 115 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Policy used today: scripted, not SmolLM2.</strong> Day 135 measured SmolLM2 at 0/24 in the ReAct loop. Any planning or memory result built on it would just measure noise. So today's policies are deterministic scripts, and the experiments isolate the <em>architecture</em>: how plans, retries and memory behave when the decisions themselves are correct.</p>
+<p><strong>Plan-then-execute vs ReAct.</strong> A <em>planner</em> writes the whole sequence of tool calls up front ("lookup A, lookup B, then calculator on results 1 and 2") and an executor runs it. That costs fewer model calls, the plan can be checked before anything runs, and it is easy to parallelise. But it is brittle: the plan does not react to what happens. <em>ReAct</em> decides one step at a time after seeing each observation. That is adaptive, but it costs a model call per step and can wander. Real systems mix the two: plan, execute, then re-plan on failure.</p>
+<p><strong>Unreliable tools.</strong> Real tools time out, rate-limit and fail transiently. We model this as: each call fails with probability p and returns <code>TimeoutError: transient</code>. Three strategies:
+- plan with no retry, which fails on the first error;
+- plan with up to 2 retries per step;
+- ReAct, which observes each failure and re-issues the call, with a cap of 10 calls.</p>
+<p><strong>Memory.</strong> An agent's context window is finite and costs money per token. The options are:
+- <em>window</em>: keep the last N turns;
+- <em>full history</em>: everything, which grows without bound;
+- <em>retrieval memory</em>: store turns and retrieve the top-k relevant ones per question, with BM25 or dense MiniLM embeddings, reusing the Week 17 <code>_rag</code> code;
+- <em>key-value store</em>: write explicit facts under keys and overwrite them on update.</p>
+<p>The hard case is <strong>updates</strong>. A fact that changed ("the access code for P7 is now …") must win over its stale version.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day136_planning_memory.py</code> part (1) runs the 24 tasks × 50 seeds at p ∈ {0, 0.1, 0.3}. It reports success and mean tool calls. Part (2) generates a 65-turn synthetic conversation with 20 facts among distractors. 5 facts are updated near the end, and 20 questions follow. Each memory builds a context per question, and we score whether the context contains the <em>current</em> value. We also report the mean context size in words.</p>
+<p><strong>Verified (out/day136_planning_memory.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>p</th>
+<th>plan, no retry</th>
+<th>plan, 2 retries</th>
+<th>ReAct, cap 10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.0</td>
+<td>1.000 (2.50 calls)</td>
+<td>1.000 (2.50)</td>
+<td>1.000 (2.50)</td>
+</tr>
+<tr>
+<td>0.1</td>
+<td>0.760 (2.30)</td>
+<td>0.999 (2.80)</td>
+<td>1.000 (2.80)</td>
+</tr>
+<tr>
+<td>0.3</td>
+<td>0.401 (1.91)</td>
+<td>0.924 (3.43)</td>
+<td>0.995 (3.63)</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>memory</th>
+<th>accuracy</th>
+<th>on 5 updated facts</th>
+<th>mean context words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>window, last 10 turns</td>
+<td>0.25</td>
+<td>1.00</td>
+<td>87</td>
+</tr>
+<tr>
+<td>full history</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>538</td>
+</tr>
+<tr>
+<td>BM25 top-3</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>27</td>
+</tr>
+<tr>
+<td>MiniLM dense top-3</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>27</td>
+</tr>
+<tr>
+<td>BM25 top-1</td>
+<td>0.75</td>
+<td>0.00</td>
+<td>9</td>
+</tr>
+<tr>
+<td>MiniLM dense top-1</td>
+<td>0.80</td>
+<td>0.20</td>
+<td>9</td>
+</tr>
+<tr>
+<td>key-value store</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>Readings:
+- Retries are the cheap fix. At p=0.3, two retries raise success from 0.401 to 0.924 for about 1.5 extra calls per task.
+- ReAct's feedback loop reaches 0.995 at 3.63 calls.
+- The window remembers only recent facts, which is why it scores 1.00 on the updates (they are recent) but 0.25 overall.
+- Top-1 retrieval <em>fails on the updates</em>: BM25 top-1 scored 0.00 on them, because the old and new statements are equally similar to the question, so the stale one often wins.
+- The key-value store is perfect at 4 words of context, because it overwrites.</p>
+<p>Caveat: this memory test is easy. The questions share exact keywords with the facts. An earlier version without top-1 rows showed nothing; the top-1 rows were added to expose the stale-fact problem.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Add exponential backoff to "plan, 2 retries" with a simulated clock. Report the time cost at p=0.3.</li>
+<li>Add a <em>re-plan</em> strategy: run the plan; if a step fails after its retries, re-plan from the current state. Where does it land between the two existing columns?</li>
+<li>Fix top-1 retrieval for updates by adding a recency bonus to the score. Report your accuracy on the updated facts.</li>
+<li>Paraphrase the 20 questions so they share no keywords with the facts. Re-run BM25 vs dense top-3.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why does plan-no-retry use <em>fewer</em> calls as p rises (1.91 at p=0.3)? <em>It aborts at the first failure, so later steps are never called.</em></li>
+<li>What does a key-value memory need that retrieval memory does not? <em>A write policy: someone (the model or code) must decide the key and when to overwrite.</em></li>
+<li>Why is the window's 1.00 on updated facts misleading? <em>The updates happen to be recent. Its overall accuracy is 0.25.</em></li>
+<li>Why did top-3 fix the update problem in this test? <em>Both the old and new statements fit in 3 results, and the context showed the newer one. In a real system you would still need ordering or timestamps.</em></li>
+<li>What is the cost of full history here? <em>538 words of context per question vs 27 for top-3 and 4 for the KV store.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Which memory would you pick for a customer-support agent that must remember a user's changing shipping address? Justify it with one number from today's table.</p>
+<p><strong>Extra notes.</strong> "Memory" in agent frameworks is usually one of these four things under a new name. Ask which one, and how it handles updates and deletions.</p>
+<p><strong>Going deeper.</strong> Combine two memories: a KV store for facts that change, plus dense retrieval for long free-text notes. Design an eval where neither memory alone scores 1.00.</p>
+<p><strong>Interview-style question (15 min).</strong> "Our agent sometimes uses a customer's old address." Likely cause: retrieval memory with no recency or overwrite. Fixes: keyed facts with overwrite, timestamps in retrieved snippets, recency-weighted scoring, and an eval with updates in it (like ours). Report accuracy on the <em>updated facts</em> separately, because the overall number hid the problem here (dense top-1 had 0.80 overall but 0.20 on updates).</p>
+<p><strong>Common mistakes.</strong> Evaluating memory only on facts that never change. Ignoring context cost. Assuming a larger window is always better. Retrying side-effect tools without idempotency keys: a retried <code>send_email</code> sends twice.</p>
+<p><strong>What to do next.</strong> Day 137 turns retrieval into a tool (the Month-4 RAG) and adds a code-execution tool, with an honest look at its sandbox.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-135.html">← Day 135</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-137.html">Day 137 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

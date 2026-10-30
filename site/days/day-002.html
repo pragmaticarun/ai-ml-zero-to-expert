@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 2 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="2">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-001.html">← Day 1</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-003.html">Day 3 →</a></nav>
+<h1>Day 2: NumPy arrays: shapes, dtypes, indexing, broadcasting</h1>
+<p class="meta">Week 1 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-01.md">source: weeks/week-01.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-01/day02_numpy_basics.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-01/day02_numpy_basics.py"><code>code/week-01/day02_numpy_basics.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 1 (+1).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A NumPy array is what you would write in C++: one contiguous buffer of a single dtype, plus a small header holding a <strong>shape</strong> and <strong>strides</strong> (bytes to jump per axis). That is all it is. Transposing, slicing and reshaping usually only change the header, so they create a <em>view</em> that shares the same memory. Arithmetic runs in compiled loops over the buffer.</p>
+<p><strong>Concrete example.</strong> <code>M = np.arange(12).reshape(3, 4)</code> is 12 int64 values. Its strides are <code>(32, 8)</code>: move 32 bytes to go down a row and 8 bytes to go across a column. <code>M.T</code> has strides <code>(8, 32)</code> and <strong>shares memory</strong> with M. The lab prints <code>True</code> for <code>np.shares_memory(M, M.T)</code>. If you have written image code with a row pitch, this is the same idea.</p>
+<p><strong>Plain-language maths of broadcasting.</strong> When two arrays meet in an operation, NumPy lines up their shapes <em>from the right</em>. Each pair of dimensions must be equal, or one of them must be 1, and a size-1 dimension is stretched (virtually, without copying) to match.</p>
+<div class="codehilite"><pre><span></span><code>M            (3, 4)
+row vector      (4,)  -&gt; treated as (1, 4) -&gt; stretched to (3, 4): added to every row
+col vector   (3, 1)   -&gt; stretched across the 4 columns
+</code></pre></div>
+
+<p>Standardising a feature matrix is the most common use. <code>(X - X.mean(axis=0)) / X.std(axis=0)</code> subtracts each column's mean. X has shape (n, d) and the mean has shape (d,), so broadcasting does it per column.</p>
+<p><strong>Axis rule of thumb:</strong> <code>axis=k</code> means "collapse dimension k". <code>X.mean(axis=0)</code> on (n, d) gives (d,), one mean per feature. Use <code>keepdims=True</code> when you want to broadcast the result back.</p>
+<p><strong>dtypes.</strong> float64 is the default and is safe for learning. float32 is what GPUs and phones use (machine epsilon ≈ 1.19e-7 vs 2.2e-16 for float64, as the lab prints). int8 is used for quantised models in Month 4. Integer arrays <strong>wrap silently</strong> like C: int8 100 + 120 = −36 in the lab, with only a warning.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Subtract each row's mean from M = [[0,1,2,3],[4,5,6,7],[8,9,10,11]].
+- Row means: 1.5, 5.5 and 9.5. With keepdims the shape is (3, 1).
+- Broadcasting (3,4) − (3,1) subtracts 1.5 from row 0, and so on.
+- Every row becomes [−1.5, −0.5, 0.5, 1.5]. The lab prints exactly this.
+Without keepdims, the means would have shape (3,). Lined up from the right against (3, 4), 3 ≠ 4, so you get an error. That is the lucky case. The unlucky case is a square matrix, where it silently subtracts <em>column</em>-wise. <strong>Lesson: be explicit with keepdims or reshape.</strong></p>
+<h3 id="block-3-coding-lab-2h-codeweek-01day02_numpy_basicspy">Block 3: Coding lab (2h): <code>code/week-01/day02_numpy_basics.py</code></h3>
+<p>Run it and read every printed line next to the code. Verified highlights: the standardised feature means are about 0 and the stds are 1. The <code>y - col</code> shape is <code>(3, 3)</code>, an <em>accidental broadcast</em>, which is the most dangerous bug in ML code (Day 23 shows it corrupting a gradient). The int8 overflow prints −36.</p>
+<p>Tasks:
+1. Build a (1000, 3) array of random features and compute the per-feature min and max, then min-max scale to [0, 1] in one expression.
+2. Use boolean masking to set all negative values to 0 (this is ReLU, which you will meet on Day 62).
+3. Using <code>np.shares_memory</code>, find out which of <code>M[1]</code>, <code>M[:, 1]</code>, <code>M[[0, 2]]</code> and <code>M.reshape(4, 3)</code> are views. (Fancy indexing copies.)
+4. Make an RGB "image" <code>img = np.zeros((480, 640, 3), np.uint8)</code>, draw a red rectangle with slicing, and convert it to grayscale with a weighted sum over the last axis (<code>img @ [0.299, 0.587, 0.114]</code>). Watch the dtype.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Shapes: (5, 1) + (3,) = ? <em>Answer:</em> (5, 3).</li>
+<li>(4, 3) + (4,) = ? <em>Answer:</em> error (3 vs 4 when aligned from the right).</li>
+<li>How do you compute the mean of each <em>row</em> of X (n, d) as a column vector? <em>Answer:</em> <code>X.mean(axis=1, keepdims=True)</code>, shape (n, 1).</li>
+<li>Strides of a C-ordered float32 array with shape (10, 20)? <em>Answer:</em> (80, 4).</li>
+<li>Why is <code>a += 1</code> on a view dangerous? <em>Answer:</em> it modifies the original array.</li>
+<li>Given <code>y</code> with shape (n,) and predictions <code>p</code> with shape (n, 1), what is the shape of <code>y - p</code>, and how do you fix it? <em>Answer:</em> (n, n). Fix with <code>p.ravel()</code> or <code>y[:, None]</code>.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Spaced repetition, Day 1:</strong> recompute the MSE for w = 5, b = 0 using NumPy in one line: <code>((5*x - y)**2).mean()</code>. You should get 3.286.</li>
+<li><strong>Self-check:</strong>
+  1. What two pieces of metadata turn a flat buffer into an N-d array?
+  2. What is the broadcasting rule?
+  3. What does <code>axis=0</code> do on (n, d)?
+  4. Name one operation that returns a copy rather than a view.
+  5. What is float32 epsilon roughly? (1e-7)</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><strong>Shape bugs:</strong> add <code>assert X.shape == (n, d)</code> at function boundaries, just like preconditions in C++.</li>
+<li><strong>Silent broadcast between (n,) and (n,1):</strong> always <code>ravel()</code> predictions.</li>
+<li><strong>Integer arrays in maths:</strong> <code>np.array([1, 2, 3]) / 2</code> is fine, but <code>arr_int8 + arr_int8</code> overflows. Cast to float early.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Read the NumPy broadcasting page in the official docs (https://numpy.org/doc/stable/), then try predicting 10 shapes before you run them. Shape fluency pays off every day from here to transformers.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-001.html">← Day 1</a><a href="../weeks/week-01.html">Week 1</a><a rel="next" href="day-003.html">Day 3 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 11 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="11">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-10.html">← Week 10</a><a href="../syllabus.html">Syllabus</a><a href="week-12.html">Week 12 →</a></nav>
+<h1>Week 11 (Days 71-77): Convolutional networks</h1><p class="meta"><a href="../../weeks/week-11.md">source: weeks/week-11.md</a> · <a href="../../pdf/week-11.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-071.html">Day 71: Convolutions from scratch (and as im2col matmul)</a> <span class="st" data-st="71"></span></li><li><a href="../days/day-072.html">Day 72: CNN architectures: LeNet to ResNet ideas</a> <span class="st" data-st="72"></span></li><li><a href="../days/day-073.html">Day 73: Training a CNN on CIFAR-10 (CPU-sized)</a> <span class="st" data-st="73"></span></li><li><a href="../days/day-074.html">Day 74: Transfer learning and fine-tuning a pretrained CNN</a> <span class="st" data-st="74"></span></li><li><a href="../days/day-075.html">Day 75: Debugging deep nets: overfit one batch, loss curves, sanity checks</a> <span class="st" data-st="75"></span></li><li><a href="../days/day-076.html">Day 76: Audio/image pipelines for multimedia devs (spectrograms, augmentation)</a> <span class="st" data-st="76"></span></li><li><a href="../days/day-077.html">Day 77: PROJECT W11: image or audio classifier; Quiz 11</a> <span class="st" data-st="77"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-11"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Write the convolution output-size formula and compute it for n = 32, k = 5, p = 2, s = 2.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>⌊(n + 2p − k)/s⌋ + 1 = 16.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>How many parameters does Conv2d(3, 16, 3) have, and how many would the equivalent dense layer need?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>448; 44,251,200.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Give the timings for loops vs im2col vs torch from Day 71.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Roughly 208–244 ms, 2.1–3.1 ms, 0.27–0.39 ms across reruns (timings depend on machine load).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>At which depth did the residual net beat the plain one on Day 72, and by how much?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Depth 10: 0.7145 vs 0.6120, about +0.10.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why did the MLP on CIFAR-10-small overfit more than the CNN?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>No weight sharing or locality: 1.58M parameters each tied to a pixel position, so it memorises positions.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What happened when augmentation was added on Day 73, in train and val accuracy?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Train acc fell from 0.9372 to 0.7928, val acc from 0.7444 to 0.7268 in 10 epochs (smaller gap, no gain yet).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Give the three transfer-learning results on Day 74.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>From scratch 0.3852, frozen features + LR 0.6424, fine-tune layer4+fc 0.6856.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What initial loss do you expect for 10 classes, and what did Day 75 measure?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>ln 10 ≈ 2.3026; measured 2.2930.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>What did the shuffled-label check show, and what would a failure have meant?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Test accuracy fell to 0.0889 (chance). A high value would mean leakage.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>For fs 8,000 Hz and n_fft 256, give the bin width and number of bins.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>31.25 Hz, 129 bins.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Which four Fashion-MNIST pairs caused 58% of the Day-77 errors?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>T-shirt/top–Shirt, Coat–Shirt, Pullover–Coat, Pullover–Shirt.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Define ECE and give the Day-77 value.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Confidence-binned average of |accuracy − confidence|, weighted by bin size; 0.0127.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 3). Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Compute a convolution by hand, with loops and as an im2col matrix multiply, and get the output-size arithmetic right every time.</li>
+<li>Know the architectural ideas from LeNet to ResNet, and show in a run why residual connections help depth.</li>
+<li>Train a CNN on CIFAR-10-small on a CPU and compare it fairly with an MLP.</li>
+<li>Use a pretrained network: frozen features vs fine-tuning.</li>
+<li>Debug deep nets with a fixed checklist (initial loss, overfit one batch, sanity checks).</li>
+<li>Turn audio into images (spectrograms) and reuse what you know about CNNs.</li>
+<li>Ship a classifier with an error analysis (weekly project).</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 71 conv from scratch] --&gt; B[Day 72 architectures]
+  B --&gt; C[Day 73 CIFAR CNN]
+  C --&gt; D[Day 74 transfer learning]
+  D --&gt; E[Day 75 debugging]
+  E --&gt; F[Day 76 audio pipelines]
+  F --&gt; G[Day 77 project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note (honest).</strong> All runs are CPU-only (8 threads, no GPU). We therefore use <strong>CIFAR-10-small</strong>, 20,000 32×32 images, and short training (5-10 epochs). The accuracies below are far below what the same architectures reach on full CIFAR-10 with a GPU and long schedules. They are good for <em>comparisons inside this course</em>, not for comparing with papers.</p>
+<p><strong>Datasets:</strong> CIFAR-10-small from OpenML, dataset 40926 (<code>https://www.openml.org/d/40926</code>), loaded by <code>load_cifar_small()</code> in <code>code/common.py</code> and split once in <code>code/week-11/_cifar.py</code> into 15,000 train / 2,500 validation / 2,500 test (seed 0), normalised with training statistics. (The original Toronto tarball was unreachable from this box when the course was built; see <code>data/README.md</code>.) Fashion-MNIST via torchvision as in Week 10. ImageNet ResNet-18 weights from <code>https://download.pytorch.org/models/resnet18-f37072fd.pth</code> (about 45 MB). Day 76 generates synthetic audio, so nothing is downloaded.</p>
+<hr />
+<h2 id="weekly-quiz-week-11">Weekly quiz: Week 11</h2>
+<ol>
+<li>Write the convolution output-size formula and compute it for n = 32, k = 5, p = 2, s = 2.</li>
+<li>How many parameters does Conv2d(3, 16, 3) have, and how many would the equivalent dense layer need?</li>
+<li>Give the timings for loops vs im2col vs torch from Day 71.</li>
+<li>At which depth did the residual net beat the plain one on Day 72, and by how much?</li>
+<li>Why did the MLP on CIFAR-10-small overfit more than the CNN?</li>
+<li>What happened when augmentation was added on Day 73, in train and val accuracy?</li>
+<li>Give the three transfer-learning results on Day 74.</li>
+<li>What initial loss do you expect for 10 classes, and what did Day 75 measure?</li>
+<li>What did the shuffled-label check show, and what would a failure have meant?</li>
+<li>For fs 8,000 Hz and n_fft 256, give the bin width and number of bins.</li>
+<li>Which four Fashion-MNIST pairs caused 58% of the Day-77 errors?</li>
+<li>Define ECE and give the Day-77 value.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>⌊(n + 2p − k)/s⌋ + 1 = 16.</li>
+<li>448; 44,251,200.</li>
+<li>Roughly 208–244 ms, 2.1–3.1 ms, 0.27–0.39 ms across reruns (timings depend on machine load).</li>
+<li>Depth 10: 0.7145 vs 0.6120, about +0.10.</li>
+<li>No weight sharing or locality: 1.58M parameters each tied to a pixel position, so it memorises positions.</li>
+<li>Train acc fell from 0.9372 to 0.7928, val acc from 0.7444 to 0.7268 in 10 epochs (smaller gap, no gain yet).</li>
+<li>From scratch 0.3852, frozen features + LR 0.6424, fine-tune layer4+fc 0.6856.</li>
+<li>ln 10 ≈ 2.3026; measured 2.2930.</li>
+<li>Test accuracy fell to 0.0889 (chance). A high value would mean leakage.</li>
+<li>31.25 Hz, 129 bins.</li>
+<li>T-shirt/top–Shirt, Coat–Shirt, Pullover–Coat, Pullover–Shirt.</li>
+<li>Confidence-binned average of |accuracy − confidence|, weighted by bin size; 0.0127.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

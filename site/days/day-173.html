@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 173 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="173">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-172.html">← Day 172</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-174.html">Day 174 →</a></nav>
+<h1>Day 173: Evaluation harness, regression gates and drift</h1>
+<p class="meta">Week 25 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-25.md">source: weeks/week-25.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: What a harness must do (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run the harness (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Gate design review (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 172 (+1), Day 169 (+3), Day 165 (+7), Day 147 (+21).</p>
+<h3 id="block-1-what-a-harness-must-do-30-min">Block 1: What a harness must do (30 min)</h3>
+<p>A harness is not a demo notebook. It loads frozen artefacts, computes the budget metrics, compares to a baseline JSON, applies <strong>pass/fail gates</strong>, and writes a scorecard. Drift (PSI on embedding features) watches whether "production" traffic still looks like the index.</p>
+<h3 id="block-2-run-the-harness-40-min">Block 2: Run the harness (40 min)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>day173_eval.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day173_eval.log</code>, <code>day173_stats.json</code>):</strong>
+- recall@3 <strong>18/25 = 0.720</strong>; p50 retrieve <strong>119.0 ms</strong>.
+- grounded <strong>8/8 = 1.000</strong>; p50 RAG+gen <strong>0.75 s</strong>.
+- tools <strong>3/3</strong>; injection block <strong>3/3 = 1.000</strong>; FP <strong>0/10</strong>.
+- PSI dim0 base-vs-prod <strong>0.0957</strong>; PSI L2-norm <strong>0.0017</strong>; synthetic +0.5 shift reported <strong>0.0000</strong> on this binning (percentile bins can absorb a constant shift — treat as a caveat; use PSI on norms / multi-dim in production).
+- Gates: <strong>PASS</strong>; failed=[]; rel_recall_drop <strong>0.000</strong> vs Day 171 baseline 0.72.</p>
+<h3 id="block-3-gate-design-review-35-min">Block 3: Gate design review (35 min)</h3>
+<p>Gates encoded: recall≥0.70, grounded≥0.60, tool≥0.80, injection≥0.80, fp_benign==0, p50_rag≤8.0, no &gt;10% relative recall drop, injection floor 0.70. Any failure → status FAIL → Day 175 release blocked.</p>
+<p>Relative drop needs a stored baseline (<code>day171_stats.json</code>). Without it, the harness would silently accept a cold start — always commit the baseline JSON.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Harness status? <strong><em>PASS.</em></strong></li>
+<li>p50 RAG? <strong><em>0.75 s.</em></strong></li>
+<li>What does rel_recall_drop 0.000 mean? <em>Same 0.72 as Day 171 baseline.</em></li>
+<li>Why PSI alone is not enough? <em>Constant shifts can hide in coarse bins; pair with recall gates.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Deliberately scramble 30% of <code>chunks.json</code> texts, rebuild nothing else, re-run recall only, and confirm <code>no_recall_drop_10pct</code> fails. Restore the file.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Groundedness still uses the Day 171 heuristic; do not claim human factuality.</li>
+<li>Tool cases include <code>calc: 17*19</code> → 323.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Add a factuality rubric of 5 questions scored by exact keyword sets from the notes; report separately from groundedness.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"All metrics are green in the notebook." Reply: ask for the scorecard JSON, the baseline hash, and which single gate would have blocked last week's regression.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Re-tuning prompts on the freeze set.</li>
+<li>Logging only means without p50 latency.</li>
+<li>No FP measurement for injection guards.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Add a JSON schema for the scorecard and validate <code>day173_stats.json</code> against it in the script.</li>
+<li>Compute PSI on three random embedding dimensions; report the max. Set a watch threshold (e.g. 0.2) and document it.</li>
+<li>Break injection on purpose (comment out <code>guard_user</code>), re-run, confirm status FAIL, restore.</li>
+</ol>
+<p>Baseline discipline: <code>day171_stats.json</code> is the contract. If someone re-runs Day 171 after changing chunking, they must bump a version field or the relative-drop gate becomes meaningless. Prefer copying the baseline to <code>capstone/out/baseline_freeze.json</code> and pointing Day 173 at that path.</p>
+<p>PSI caveats showed up live: a constant +0.5 shift produced a 0.0 PSI with the percentile-bin implementation because both distributions were remapped into the same empirical bins derived from <code>expected</code>. That is a reminder to test your drift detector with a known shift and with a known population change (e.g. replace half the corpus with unrelated text). Prefer monitoring features that affect product quality — retrieval score distributions, hit-week histograms — not only dim-0 of the embedding matrix.</p>
+<p>Gates should be boring boolean expressions. Clever adaptive thresholds that "learn" from the last week of traffic will eventually learn to accept regressions. Keep the budget numbers in one JSON file shared with Day 169 so the proposal and the harness cannot disagree.</p>
+<p>Log every gate's inputs, not only the FAIL set. When Day 175 prints <code>gate_recall 0.72</code>, that number should match <code>day173_stats.json</code> bit-for-bit. Divergences mean someone re-ran a partial script or edited JSON by hand.</p>
+<h3 id="timed-6-hour-schedule-suggested">Timed 6-hour schedule (suggested)</h3>
+<ul>
+<li>0:00–0:30 Review budget table beside Day 171 stats.</li>
+<li>0:30–1:30 Run harness; save scorecard; diff against Day 171.</li>
+<li>1:30–2:30 PSI experiments (dim0, norms, known shift).</li>
+<li>2:30–3:30 Deliberate failure practice (scramble chunks); restore.</li>
+<li>3:30–4:30 Schema-validate scorecard; document gate booleans.</li>
+<li>4:30–5:30 Interview prep: explain each gate in one sentence.</li>
+<li>5:30–6:00 Commit <code>day173_stats.json</code> as the freeze input for Day 175.</li>
+</ul>
+<p>A harness that cannot fail is theatre. The scramble practice exists so you see FAIL in your terminal at least once. Take a screenshot or keep the failing JSON under <code>out/day173_fail_example.json</code> for the Week 26 write-up. Hiring committees and instructors trust people who can show a red gate they fixed.</p>
+<p>Connect drift to product: if PSI on hit-week histograms spikes, students may have started asking about material outside the indexed week files. The right response is to extend the corpus and re-freeze, not to widen the PSI threshold until the alert goes quiet.</p>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 174 runs the RAI audit and writes the model card from these numbers.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-172.html">← Day 172</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-174.html">Day 174 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

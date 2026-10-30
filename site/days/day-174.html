@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 174 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="174">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-173.html">← Day 173</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-175.html">Day 175 →</a></nav>
+<h1>Day 174: Responsible-AI audit and model card</h1>
+<p class="meta">Week 25 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-25.md">source: weeks/week-25.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Threat model first (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Red-team and card (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: What the card must say (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/capstone/out/MODEL_CARD.md"><code>code/capstone/out/MODEL_CARD.md</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 173 (+1), Day 170 (+3), Day 166 (+7), Day 167 (+21).</p>
+<h3 id="block-1-threat-model-first-30-min">Block 1: Threat model first (30 min)</h3>
+<p>Seven threats logged: prompt injection, tool abuse, data exfiltration, hallucination, privacy, fairness (topic skew), supply chain. Each has a mitigation already in code (regex guard, AST calc, no file tools, RAG gate, course-only corpus, per-week recall, pinned HF ids + local cache).</p>
+<h3 id="block-2-red-team-and-card-40-min">Block 2: Red-team and card (40 min)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>day174_safety.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day174_safety.log</code>, <code>day174_stats.json</code>):</strong>
+- Red-team mitigated <strong>6/6</strong> (3 injection blocks + 2 calc rejects for <code>__import__</code>/<code>open</code> + 1 more injection). Benign FP <strong>0/3</strong>.
+- Per-week recall (macro): min <strong>0.00</strong>, max <strong>1.00</strong>, mean <strong>0.633</strong> across 15 week tags (micro recall remains 0.72 — some single-question weeks miss).
+- Model card: <code>code/capstone/out/MODEL_CARD.md</code> + <code>model_card.json</code> with eval/perf summaries embedded from Days 172-173.</p>
+<h3 id="block-3-what-the-card-must-say-35-min">Block 3: What the card must say (35 min)</h3>
+<p>Intended use: CPU study helper over course notes — <strong>not</strong> a general chatbot, not medical/legal advice. Limitations copied from logs: SmolLM2 hallucinates without RAG; regex injection guards evade paraphrases; fairness proxy is topic recall only (no demographics in corpus); BLAS may beat int8 on tiny N. Ethical note: cite chunks; refuse jailbreaks; do not log secrets.</p>
+<p>Agent hardening today: <code>call_tool("calc")</code> catches <code>ValueError</code> and returns <code>calc rejected</code> instead of crashing the service (needed for Day 175).</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Red-team mitigated fraction? <strong><em>6/6.</em></strong></li>
+<li>Where is the model card? <em><code>code/capstone/out/MODEL_CARD.md</code>.</em></li>
+<li>Why is macro recall 0.63 with micro 0.72? <em>Equal weight per week tag; singleton misses hurt macro.</em></li>
+<li>Is this cleared for real users? <em>No — card says no real-user deployment claim.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Add two paraphrase injection strings that evade <code>INJECTION_PAT</code>. Document them under "residual risks" in the card. Optionally tighten the regex — re-run FP on the 10 benign list.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>Week 24's NIST/EU overview still applies; this card is product-specific evidence, not legal advice.</li>
+<li>Supply-chain mitigation is pinning + local cache; checksums are optional homework.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Run the Week 24 membership-inference idea on the LoRA training pairs (expect ~chance on 25 Qs) and cite it under privacy.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"We have a model card PDF from marketing." Reply: cards without measured recall, injection FP, and threat mitigations are brochures. Point at <code>day173_stats.json</code> and the red-team table.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Hiding LoRA nonsense generations.</li>
+<li>Claiming demographic fairness on a corpus with no demographic labels.</li>
+<li>Leaving calc exceptions uncaught so attackers DoS the service.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Expand the red-team list to 15 strings; keep FP measurement on ≥10 benign prompts.</li>
+<li>Fill the "contact" and "version" fields of the model card with your name and a semver bump rule.</li>
+<li>Write a residual-risk paragraph for paraphrase injections and for macro-recall skew toward well-indexed weeks.</li>
+</ol>
+<p>Responsible AI in this course is evidence, not vibe. The audit script prints mitigations that exist in code paths you can grep. If a threat row says "AST allow-list" but <code>run_calc</code> still calls <code>eval</code> on raw strings with names, the audit is false. Day 174 caught a real gap — uncaught <code>ValueError</code> from calc — and fixed <code>agent.py</code> so the service cannot be crashed by <code>calc: open(...)</code>.</p>
+<p>Fairness here is a <strong>proxy</strong>: per-week retrieval recall. There are no demographic attributes in <code>weeks/*.md</code>, so demographic parity does not apply. Saying "we checked fairness" without saying <em>which</em> fairness is a Week 24 failure mode returning as paperwork. The card's fairness section must keep the word "proxy".</p>
+<p>Model cards should be generated from logs, not typed from memory. Embedding Day 172 and Day 173 JSON into <code>model_card.json</code> prevents the classic drift where the card says recall 0.8 after the harness moved to 0.72. When you re-run Days 172-174, regenerate the card in the same commit.</p>
+<p>Non-deployment is a feature of Week 25. The card's intended-use sentence is a control. If a classmate asks to put this behind a public URL for strangers, the answer is no until Week 26+ hardening, abuse rates, and retention policy exist — and even then, only with the owner's approval for irreversible actions.</p>
+<h3 id="timed-6-hour-schedule-suggested">Timed 6-hour schedule (suggested)</h3>
+<ul>
+<li>0:00–0:30 Review Week 24 Day 167 card structure.</li>
+<li>0:30–1:30 Threat model table in your own words.</li>
+<li>1:30–2:30 Red-team run + calc hardening verification.</li>
+<li>2:30–3:30 Per-week recall macro analysis; list worst weeks.</li>
+<li>3:30–4:30 Generate MODEL_CARD.md; read it as if you were an external auditor.</li>
+<li>4:30–5:30 Residual risks + paraphrase injections practice.</li>
+<li>5:30–6:00 Commit card + day174_stats.json; link paths in the design doc.</li>
+</ul>
+<p>Auditors look for missing negative results. Include the Day 170 LoRA nonsense generations in the limitations list. Include the grounded-but-wrong k-means answer. Include the PSI shift caveat from Day 173. A card that only lists victories reads as marketing and fails the Week 24 standard you already practiced.</p>
+<p>If you translate the card to HTML or PDF later, keep the JSON as the source of truth. Manual edits to Markdown that are not re-generated from JSON will drift within a day of re-running scripts.</p>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 175 packages the HTTP service, runs 10 integration tests, and delivers the 20-question Month-6 midpoint exam.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-173.html">← Day 173</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-175.html">Day 175 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

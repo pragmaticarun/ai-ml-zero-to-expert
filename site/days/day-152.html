@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 152 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="152">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-151.html">← Day 151</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-153.html">Day 153 →</a></nav>
+<h1>Day 152: Memory bandwidth, the roofline model, layout and fusion</h1>
+<p class="meta">Week 22 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Two limits (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The measurements (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: What it means (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 151 (+1), Day 149 (+3), Day 145 (+7), Day 131 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-two-limits-30-min">Block 1: Two limits (30 min)</h3>
+<p>Every kernel is limited by one of two things: how fast the CPU can do arithmetic (peak FLOP/s) or how fast memory can deliver bytes (bandwidth, GB/s). <strong>Arithmetic intensity</strong> is FLOPs per byte moved. The <strong>roofline model</strong> says attainable performance is min(peak FLOP/s, intensity × bandwidth). The <em>ridge point</em>, peak ÷ bandwidth, is the intensity where a kernel stops being memory-bound. Most of deep learning outside the big matmuls (element-wise ops, norms, softmax, embedding lookups, small-batch inference) is memory-bound, and that is why fusion and lower-precision storage matter.</p>
+<h3 id="block-2-the-measurements-60-min">Block 2: The measurements (60 min)</h3>
+<p><code>day152_roofline.py</code> measures bandwidth, matmul throughput by dtype and thread count, places kernels on the roofline, and times layout and fusion effects. A first run crashed in section 5 (an augmented assignment <code>y += ...</code> inside a function made <code>y</code> local: <code>UnboundLocalError</code>); the fix uses <code>np.add(..., out=y)</code> chains. All numbers below are from the clean re-run.</p>
+<p><strong>Verified (out/day152_roofline.log):</strong>
+- Bandwidth, 256 MB float64, 1 thread: copy 29.5 GB/s (read + write), sum 13.3 GB/s, a+a→b 17.5 GB/s (0.73 GFLOP/s).
+- Matmul GFLOP/s (torch, n×n), 1 thread at n=64/256/1024/2048: float64 87.0/110.6/114.4/110.9; float32 74.3/226.7/235.4/238.6; bfloat16 36.8/862.1/1654.4/1581.5.
+- 8 threads: float64 57.0/375.8/436.0/701.1; float32 74.2/1040.6/1666.2/1701.1; bfloat16 29.9/1450.1/8826.9/11843.7.
+- Roofline, float32, 1 thread: peak 239 GFLOP/s, bandwidth 29.5 GB/s → ridge 8.1 FLOP/byte. Vector add 0.08 FLOP/byte (≤ 2.5 GFLOP/s); dot 0.25 (≤ 7.4); matvec 0.50 (≤ 14.8); matmul n=1024 170.67 (compute-bound, ≤ 238.6).
+- Measured matvec n=4096 float32: 17.1 GFLOP/s, 34.3 GB/s of matrix read, <em>above</em> the DRAM roof, because the 64 MB matrix fits in the 320 MB L3 cache.
+- Layout, 4096×4096 float64: sum(axis=1) 4.8 ms, sum(axis=0) 4.5 ms; 512 row slices 0.8 ms vs 512 column slices 13.0 ms (15.8× slower, strided); making the transpose contiguous 128.2 ms (2.1 GB/s).
+- Fusion: 2x²+3x+1 on 8M float64: naive (temporaries) 26.9 ms; in-place Horner with <code>out=</code> 12.1 ms (2.2×); max difference 1.8e-15.
+- Dot product of 1M floats: Python loop 30.4 ms, numpy 0.037 ms (832×).</p>
+<h3 id="block-3-what-it-means-45-min">Block 3: What it means (45 min)</h3>
+<p><strong>Element-wise work is starved.</strong> Adding two arrays reaches 0.73 GFLOP/s, about 0.3% of the 239 GFLOP/s single-thread float32 matmul peak. The arithmetic is free; the bytes are not. The roofline predicts this: at 0.08 FLOP/byte the ceiling is 2.5 GFLOP/s even with perfect code.</p>
+<p><strong>Matmul is the opposite.</strong> At n=1024, intensity is 170 FLOP/byte, far right of the 8.1 ridge, and float32 reaches 235-239 GFLOP/s on one thread, the measured peak. Small matrices are the exception: at n=64, multi-threading <em>hurts</em> (float64 87.0 → 57.0) because thread start-up costs more than the work.</p>
+<p><strong>bf16 and AMX.</strong> This Xeon has AMX matrix tiles. bf16 matmul on 8 threads reaches 11,843.7 GFLOP/s at n=2048, about 7× float32's 1,701.1. At n=64 it is the slowest option (29.9-36.8), since converting and tiling dominate. Lower precision pays only when the matmul is big enough to keep the tiles busy. On a GPU the same lesson holds with tensor cores.</p>
+<p><strong>Caches bend the roofline.</strong> The matvec measured 17.1 GFLOP/s against a 14.8 DRAM-bound prediction, because the matrix sat in L3. A real roofline has one memory roof per cache level. Roofline numbers are upper bounds for a given level of the hierarchy, not exact predictions.</p>
+<p><strong>Layout decides bandwidth.</strong> NumPy arrays are row-major (C order) by default. A row slice is contiguous; a column slice reads one element per 32 KB row stride, wasting most of each cache line: 15.8× slower. Whole-array reductions along either axis were close (4.8 vs 4.5 ms) because numpy reorders the loops internally. Making a transpose contiguous costs a full copy at only 2.1 GB/s, since the strided reads are the slow part.</p>
+<p><strong>Fusion saves passes over memory.</strong> The naive polynomial makes several temporary 64 MB arrays, each a full read-and-write pass. The <code>out=</code> version reuses one buffer, halving the time with identical results. Compilers for ML (XLA, TorchInductor, Triton kernels) do this automatically by fusing element-wise chains into one loop.</p>
+<p><strong>Python loops are the worst case.</strong> 832× for a dot product: each Python iteration is an interpreted bytecode dispatch plus boxed float objects.</p>
+<p><strong>GPU note (not measured):</strong> a datacenter GPU has much higher bandwidth and far higher peak FLOP/s, so its ridge point sits at a similar or higher intensity. Element-wise kernels remain memory-bound there too, which is why the fused-softmax idea shown in Day 154's UNTESTED Triton file matters.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Compute the dot product's intensity in float32. <em>2 FLOPs per 8 bytes = 0.25 FLOP/byte.</em></li>
+<li>Why did 8 threads slow down n=64 float64 matmul? <em>Threading overhead exceeds the tiny amount of work.</em></li>
+<li>Why can measured matvec beat the DRAM roof? <em>The matrix was in L3 cache, which has higher bandwidth.</em></li>
+<li>Why are column slices of a C-order array slow? <em>Strided access uses one element per cache line.</em></li>
+</ol>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Re-run section 1 with 8 threads (<code>torch.set_num_threads(8)</code> and a threaded numpy op) and see how much bandwidth rises. Then compute where a LayerNorm over a 4096×1024 float32 tensor sits on the roofline.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Always state the dtype, thread count and size with any throughput number. "1,700 GFLOP/s" means nothing without "float32, 8 threads, n=2048".</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read about the cache-aware roofline model and about how blocked (tiled) matmul raises the intensity seen by each cache level.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your model's inference is half element-wise ops by time. What do you try?" <em>Expected: they are memory-bound, so fuse them (torch.compile or custom kernels), reduce bytes (bf16/int8 storage), avoid layout copies, batch to raise intensity.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Counting FLOPs without bytes.</li>
+<li>Expecting threads to help small kernels.</li>
+<li>Ignoring hidden copies from transposes and <code>.contiguous()</code>.</li>
+<li>Comparing dtypes at a size where conversion dominates.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow you write your own compiled kernels in Rust and call them from Python, testing vectorisation and threading against the limits you measured today.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-151.html">← Day 151</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-153.html">Day 153 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

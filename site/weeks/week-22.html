@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 22 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="22">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-21.html">← Week 21</a><a href="../syllabus.html">Syllabus</a><a href="week-23.html">Week 23 →</a></nav>
+<h1>Week 22 (Days 148-154)</h1><p class="meta"><a href="../../weeks/week-22.md">source: weeks/week-22.md</a> · <a href="../../pdf/week-22.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-148.html">Day 148: LLMOps I: prompt versioning, eval harnesses and regression gates</a> <span class="st" data-st="148"></span></li><li><a href="../days/day-149.html">Day 149: LLMOps II: tracing, latency and cost tracking, guardrails</a> <span class="st" data-st="149"></span></li><li><a href="../days/day-150.html">Day 150: MONTH-5 CAPSTONE: a monitored, tested, tool-using service, plus the Month-5 checkpoint exam</a> <span class="st" data-st="150"></span></li><li><a href="../days/day-151.html">Day 151: Profiling Python ML code</a> <span class="st" data-st="151"></span></li><li><a href="../days/day-152.html">Day 152: Memory bandwidth, the roofline model, layout and fusion</a> <span class="st" data-st="152"></span></li><li><a href="../days/day-153.html">Day 153: Rust extensions with PyO3: vectorisation and threads</a> <span class="st" data-st="153"></span></li><li><a href="../days/day-154.html">Day 154: PROJECT W22: a Rust kernel for the capstone&#x27;s retrieval, plus GPU kernels (UNTESTED)</a> <span class="st" data-st="154"></span></li></ul><h3>Exams this week</h3><ul><li><a href="../exams/w22-d150.html">Day 150: Month-5 checkpoint exam (15 questions; 60 minutes; covers Days 121-150)</a></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-22"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>On Day 148, v3 scored 13/24 and v2 7/24. Why did the gate fail, and which cases broke?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It lost 3 seen cases v2 passed (<code>1024/16</code>, <code>99/3</code>, <code>45%7</code>); the gate forbids per-case regressions whatever the aggregate (McNemar p=0.146).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What makes a generation cache safe to reuse, and what was checked on Day 148?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Deterministic decoding and a key covering prompt hash, input, model and settings; a rerun gave 24 hits and identical results, and greedy outputs were identical when generated twice.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>On Day 149, what share of the assumed cost came from input tokens, and what is the cheapest fix?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>85% (mean 421 input vs 24 output tokens); shorten the few-shot prompt or cache the prefix.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Of 8 attacks "blocked" on Day 149, how many were genuinely recognised as attacks, and why does the answer matter?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>6 by the input regex; the 2 output blocks were schema failures. The model never called <code>send_email</code> anyway, and 4 paraphrases evaded the regex, so the regex is weak protection.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why did the Day 150 release get blocked?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>recall@3 was 0.53 (&lt; 0.60) and one notes question was misrouted to tools by the word "compute".</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Why did the per-query low-confidence flag fail on Day 150 while PSI worked? Give the PSI values.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Top scores overlap: 8% flagged in-domain and 8% for all-new topics. Window PSI: 0.165 in-domain vs threshold 1.027; 1.491 half-new; 3.263 all-new.</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What did cProfile say about BM25 on Day 151, and what were the two fixes' speed-ups?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The inner generator scanning every document dominated (0.101 of 0.167 s); inverted index 5×, sparse mat-vec 34×.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Compute the arithmetic intensity of float32 vector add and its roofline ceiling from Day 152's bandwidth.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>1 FLOP per 12 bytes ≈ 0.08 FLOP/byte; 0.08 × 29.5 GB/s ≈ 2.5 GFLOP/s.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Why was bf16 the slowest dtype at n=64 but about 7× float32 at n=2048?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>At n=64 conversion and tiling overhead dominate (29.9-36.8 GFLOP/s); at n=2048 AMX tiles are busy: 11,843.7 vs 1,701.1 GFLOP/s on 8 threads.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Why does a 16-accumulator dot product run 5-6× faster than a single-accumulator one, and why does it stop helping at 128 MB?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Independent sums break the serial add chain and fill SIMD lanes; at 128 MB one thread is bandwidth-bound (~8.4 GFLOP/s for numpy and SIMD alike); only threads (59-64.5 GFLOP/s) helped.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Why was the online softmax slower than the 3-pass one on the CPU?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It computes exp twice per element plus a branch, and the pass it saves is over L1-resident 4 KB rows.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>In the Day 154 project, what limits further end-to-end speed-up, and by how much?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Tokenising (37% of the 0.0070 ms); Amdahl caps the gain at 591× over Python even with an infinitely fast kernel.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> Days 148-154 are written in full. Days 148-150 close Month 5 (LLMOps, then the Month 5 capstone and checkpoint exam). Days 151-154 open Month 6, performance engineering. Every number comes from <code>code/week-22/day148_*.py</code> to <code>day154_*.py</code>, each run on this box, with logs in <code>code/week-22/out/</code>. Shared LLMOps helpers are in <code>code/week-22/_llmops.py</code>. The Rust extension crate is <code>code/week-22/rust_kernels/</code>, and the capstone tests are <code>code/week-22/test_capstone.py</code>.</p>
+<p><strong>Reused, not rewritten:</strong> Week 17's <code>_rag.py</code> (the notes corpus, BM25, the 58-question eval set) and Week 20's <code>_agent.py</code> (tool schemas, validator, SmolLM2-135M-Instruct generation, the <code>send_email</code> tool that only records to an in-memory OUTBOX). Nothing in this week sends anything anywhere.</p>
+<p><strong>Not available, and labelled wherever it appears:</strong>
+- There is <strong>no GPU</strong>, no <code>nvcc</code> and no Triton install. <code>code/week-22/gpu_untested/softmax_triton_UNTESTED.py</code> and <code>vector_add_UNTESTED.cu</code> are <strong>UNTESTED</strong>: written for reading, never compiled, never run.
+- There is <strong>no C++ compiler (g++)</strong> and no pybind11, so SYLLABUS Day 154's "C++ pybind11 custom op" became a Rust/PyO3 extension built with maturin. The ideas (a compiled kernel, a thin binding, releasing the GIL) carry over directly.
+- Prices in the Day 149 cost tracking are <strong>ASSUMED</strong> ($0.50 per million input tokens, $1.50 per million output tokens). They are not any provider's price list; the point is the arithmetic.</p>
+<p><strong>Compute note.</strong> The CPU is an 8-core Xeon with AVX-512, AVX-512 BF16 and AMX tiles, 15 GB RAM, and OpenBLAS under numpy. The LLM is SmolLM2-135M-Instruct, which runs at about 38 tokens/s here. A GPU would change Days 148-150 mostly in speed: the same eval harness would run a far bigger model, which would follow prompts and attacks better (so the guardrail results would look different, probably worse for the regex guard). It would change Days 152-154 in kind: GPU memory bandwidth is roughly an order of magnitude higher, the roofline ridge point moves, and kernels are written for thousands of threads, which is what the UNTESTED Triton and CUDA files sketch.</p>
+<p><strong>Sources</strong> (all opened and checked this week; links in <code>docs/resources.md</code>): the Python <code>cProfile</code> and <code>tracemalloc</code> docs, the PyTorch profiler docs, the SciPy sparse docs, the PyO3 user guide, the maturin guide, the rayon docs, the Rust book, the Triton docs and its fused-softmax tutorial, and the NVIDIA CUDA C++ Programming Guide. Explanations here are original, not copied.</p>
+<hr />
+<h2 id="weekly-quiz-week-22-12-questions-40-minutes-covers-days-148-154">Weekly quiz: Week 22 (12 questions; 40 minutes; covers Days 148-154)</h2>
+<ol>
+<li>On Day 148, v3 scored 13/24 and v2 7/24. Why did the gate fail, and which cases broke?</li>
+<li>What makes a generation cache safe to reuse, and what was checked on Day 148?</li>
+<li>On Day 149, what share of the assumed cost came from input tokens, and what is the cheapest fix?</li>
+<li>Of 8 attacks "blocked" on Day 149, how many were genuinely recognised as attacks, and why does the answer matter?</li>
+<li>Why did the Day 150 release get blocked?</li>
+<li>Why did the per-query low-confidence flag fail on Day 150 while PSI worked? Give the PSI values.</li>
+<li>What did cProfile say about BM25 on Day 151, and what were the two fixes' speed-ups?</li>
+<li>Compute the arithmetic intensity of float32 vector add and its roofline ceiling from Day 152's bandwidth.</li>
+<li>Why was bf16 the slowest dtype at n=64 but about 7× float32 at n=2048?</li>
+<li>Why does a 16-accumulator dot product run 5-6× faster than a single-accumulator one, and why does it stop helping at 128 MB?</li>
+<li>Why was the online softmax slower than the 3-pass one on the CPU?</li>
+<li>In the Day 154 project, what limits further end-to-end speed-up, and by how much?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>It lost 3 seen cases v2 passed (<code>1024/16</code>, <code>99/3</code>, <code>45%7</code>); the gate forbids per-case regressions whatever the aggregate (McNemar p=0.146).</li>
+<li>Deterministic decoding and a key covering prompt hash, input, model and settings; a rerun gave 24 hits and identical results, and greedy outputs were identical when generated twice.</li>
+<li>85% (mean 421 input vs 24 output tokens); shorten the few-shot prompt or cache the prefix.</li>
+<li>6 by the input regex; the 2 output blocks were schema failures. The model never called <code>send_email</code> anyway, and 4 paraphrases evaded the regex, so the regex is weak protection.</li>
+<li>recall@3 was 0.53 (&lt; 0.60) and one notes question was misrouted to tools by the word "compute".</li>
+<li>Top scores overlap: 8% flagged in-domain and 8% for all-new topics. Window PSI: 0.165 in-domain vs threshold 1.027; 1.491 half-new; 3.263 all-new.</li>
+<li>The inner generator scanning every document dominated (0.101 of 0.167 s); inverted index 5×, sparse mat-vec 34×.</li>
+<li>1 FLOP per 12 bytes ≈ 0.08 FLOP/byte; 0.08 × 29.5 GB/s ≈ 2.5 GFLOP/s.</li>
+<li>At n=64 conversion and tiling overhead dominate (29.9-36.8 GFLOP/s); at n=2048 AMX tiles are busy: 11,843.7 vs 1,701.1 GFLOP/s on 8 threads.</li>
+<li>Independent sums break the serial add chain and fill SIMD lanes; at 128 MB one thread is bandwidth-bound (~8.4 GFLOP/s for numpy and SIMD alike); only threads (59-64.5 GFLOP/s) helped.</li>
+<li>It computes exp twice per element plus a branch, and the pass it saves is over L1-resident 4 KB rows.</li>
+<li>Tokenising (37% of the 0.0070 ms); Amdahl caps the gain at 591× over Python even with an infinitely fast kernel.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 6 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="6">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-05.html">← Week 5</a><a href="../syllabus.html">Syllabus</a><a href="week-07.html">Week 7 →</a></nav>
+<h1>Week 6 (Days 36-42): The classical ML toolbox: k-NN, naive Bayes, SVMs, trees, forests, boosting</h1><p class="meta"><a href="../../weeks/week-06.md">source: weeks/week-06.md</a> · <a href="../../pdf/week-06.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-036.html">Day 36: k-nearest neighbours; distance metrics; curse of dimensionality</a> <span class="st" data-st="36"></span></li><li><a href="../days/day-037.html">Day 37: Naive Bayes; generative vs discriminative models</a> <span class="st" data-st="37"></span></li><li><a href="../days/day-038.html">Day 38: Support vector machines and kernels</a> <span class="st" data-st="38"></span></li><li><a href="../days/day-039.html">Day 39: Decision trees: entropy, Gini, splitting</a> <span class="st" data-st="39"></span></li><li><a href="../days/day-040.html">Day 40: Random forests and bagging</a> <span class="st" data-st="40"></span></li><li><a href="../days/day-041.html">Day 41: Gradient boosting from scratch, then HistGradientBoosting</a> <span class="st" data-st="41"></span></li><li><a href="../days/day-042.html">Day 42: PROJECT W6: tabular pipeline with boosting; Quiz 6</a> <span class="st" data-st="42"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-06"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>How do k and feature scaling affect k-NN?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Small k means high variance and large k high bias. Without scaling, the widest-range feature dominates (wine: 0.69 unscaled vs 0.95 scaled).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>Our d=1000 nearest/farthest ratio was about what, and what does it imply?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.874. Distances concentrate, so "nearest" carries little information.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>State the naive Bayes assumption, and why computing in log space matters.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Features are independent given the class. Logs avoid underflow when multiplying many small probabilities.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Did NB beat logistic regression at small m in our run?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>No. Logistic regression led at every size; NB only plateaued earlier.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Write the soft-margin SVM objective.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>½‖w‖² + C Σ max(0, 1 − yᵢ(w·xᵢ + b)).</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What does a large RBF γ do?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It shrinks each point's influence radius, so boundaries get wiggly (overfitting, or collapse with small C).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Compute the Gini impurity for [6 pos, 4 neg].</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.48.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>What happened to test accuracy when the breast-cancer tree grew past depth 3?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It fell from 0.9161 to 0.9021 as the tree became pure (overfitting).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Write the variance of an average of B trees with correlation ρ.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>ρσ² + (1 − ρ)σ²/B.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>What fraction of rows is out-of-bag, and how close was OOB to test on adult?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>About 36.8% (1/e). OOB 0.8550 vs test 0.8582.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>In gradient boosting with squared loss, what does each tree fit?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The residuals y − F, i.e. the negative gradient of the loss.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Which model won the Week 6 project, with what test AUC?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>HistGB with native categoricals: test ROC-AUC 0.9281.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full. Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Build k-NN, Gaussian naive Bayes, a hinge-loss linear SVM, a CART decision tree and gradient boosting <strong>from scratch</strong>, and match each against scikit-learn.</li>
+<li>Understand each model's inductive bias, meaning what kind of pattern it finds easily, so you can pick one for a problem before trying it.</li>
+<li>Know the ensemble ideas behind most winning tabular models: bagging decorrelates, and boosting corrects residuals.</li>
+<li>Ship a leakage-proof tabular pipeline on the adult income data.</li>
+</ol>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  K[k-NN: memory] --&gt; S[SVM: margins &amp; kernels]
+  NB[Naive Bayes: generative] --&gt; S
+  T[Decision tree] --&gt; RF[Random forest: bagging]
+  T --&gt; GB[Gradient boosting: residuals]
+  RF --&gt; P[Project: adult income pipeline]
+  GB --&gt; P
+</code></pre></div>
+
+<p><strong>Datasets this week</strong> (all fetched by code, nothing is committed): scikit-learn's bundled digits, wine and breast-cancer data, synthetic moons, California housing, and <strong>adult</strong> (US 1994 census income, 48,842 rows, 14 features, fetched from OpenML via <code>common.load_adult()</code>).</p>
+<hr />
+<h2 id="weekly-quiz-week-6">Weekly quiz: Week 6</h2>
+<ol>
+<li>How do k and feature scaling affect k-NN?</li>
+<li>Our d=1000 nearest/farthest ratio was about what, and what does it imply?</li>
+<li>State the naive Bayes assumption, and why computing in log space matters.</li>
+<li>Did NB beat logistic regression at small m in our run?</li>
+<li>Write the soft-margin SVM objective.</li>
+<li>What does a large RBF γ do?</li>
+<li>Compute the Gini impurity for [6 pos, 4 neg].</li>
+<li>What happened to test accuracy when the breast-cancer tree grew past depth 3?</li>
+<li>Write the variance of an average of B trees with correlation ρ.</li>
+<li>What fraction of rows is out-of-bag, and how close was OOB to test on adult?</li>
+<li>In gradient boosting with squared loss, what does each tree fit?</li>
+<li>Which model won the Week 6 project, with what test AUC?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>Small k means high variance and large k high bias. Without scaling, the widest-range feature dominates (wine: 0.69 unscaled vs 0.95 scaled).</li>
+<li>0.874. Distances concentrate, so "nearest" carries little information.</li>
+<li>Features are independent given the class. Logs avoid underflow when multiplying many small probabilities.</li>
+<li>No. Logistic regression led at every size; NB only plateaued earlier.</li>
+<li>½‖w‖² + C Σ max(0, 1 − yᵢ(w·xᵢ + b)).</li>
+<li>It shrinks each point's influence radius, so boundaries get wiggly (overfitting, or collapse with small C).</li>
+<li>0.48.</li>
+<li>It fell from 0.9161 to 0.9021 as the tree became pure (overfitting).</li>
+<li>ρσ² + (1 − ρ)σ²/B.</li>
+<li>About 36.8% (1/e). OOB 0.8550 vs test 0.8582.</li>
+<li>The residuals y − F, i.e. the negative gradient of the loss.</li>
+<li>HistGB with native categoricals: test ROC-AUC 0.9281.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 108 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="108">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-107.html">← Day 107</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-109.html">Day 109 →</a></nav>
+<h1>Day 108: DPO from scratch</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day108_dpo.py"><code>code/week-16/day108_dpo.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 107 (+1), Day 105 (+3), Day 101 (+7), Day 87 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>From the closed form to a loss.</strong> Day 106 showed that the KL-regularised optimum is π<em>(y|x) = π_ref(y|x)·exp(r(x,y)/β)/Z(x). Rearranging gives the reward in terms of the policy: r(x,y) = β·log(π</em>(y|x)/π_ref(y|x)) + β·log Z(x). Put that into the Bradley-Terry likelihood. Z(x) depends only on the prompt, so it cancels in r(x,y_w) − r(x,y_l), and we get the <strong>DPO loss</strong>:</p>
+<p>L = −log σ( β·[ (log π_θ(y_w|x) − log π_ref(y_w|x)) − (log π_θ(y_l|x) − log π_ref(y_l|x)) ] ).</p>
+<p>No reward model, no sampling, no value network: just two forward passes per pair through the policy, plus reference log-probs, which can be precomputed once because π_ref is frozen. The quantity β·log(π_θ/π_ref) is called the <strong>implicit reward</strong>. The bracket times β is the <strong>reward margin</strong>; "preference accuracy" is the fraction of pairs with a positive margin.</p>
+<p><strong>What the gradient does.</strong> The gradient raises log π_θ(y_w) and lowers log π_θ(y_l), weighted by σ(−margin): pairs the model already ranks correctly get little weight. Nothing in the loss requires the chosen answer to become <em>likely</em>, only <em>more likely relative to the rejected one than under the reference</em>. Lowering the rejected answer is often the easiest way to do that. This explains today's main result.</p>
+<p><strong>Sequence log-probs.</strong> log π(y|x) is the sum of the log-probs of the answer tokens given the prompt and the earlier answer tokens. The prompt tokens are masked out. In <code>_pref.logp_batch</code>, the mask starts at position prompt_len − 1 because logits at position t predict token t+1.</p>
+<p><strong>Implementation choices.</strong> Policy = SmolLM2-135M-Instruct + LoRA r=16 on all linear layers (Week 15's <code>_lora.py</code>). Reference = the same instruct model before adding LoRA. β = 0.1, lr 5e-4, 120 steps × 4 pairs, each training pair used once.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-16/day108_dpo.py</code>.</p>
+<p><strong>Verified (out/day108_dpo.log):</strong>
+- Reference log-probs for 480 train + 40 test pairs took 23 s. Mean reference log-prob: chosen −20.2, rejected −7.1. The instruct model finds the <em>wrong</em> (unreversed) answer far more likely.
+- Before DPO: exact match 0.00. The model starts explaining ("To reverse the order of these words, I will first identify the words that are").
+- Step 0: loss 0.693 (= log 2, margin 0, as expected at initialisation since LoRA B = 0).
+- Step 20: loss 0.000, margin 9.87, pref acc 1.00; Δlog-prob chosen +10.7, rejected −87.9.
+- Step 119: margin 12.08; Δ chosen +14.2, rejected −106.6. Training took 84 s.
+- Held-out pairs: implicit-reward preference accuracy 1.00, mean margin 13.53, Δ chosen +8.6, Δ rejected −126.7.
+- After DPO: exact match <strong>0.17</strong>. Example: "spring orange lemon cloud" → "clouds orange springfirehose".</p>
+<p>The loss was at 0.000 from step 20, and held-out preference accuracy was perfect, yet only 0.17 of generations were exactly right and the example output is broken. DPO mostly made the rejected answer extremely unlikely (−126.7 nats) while raising the chosen one only modestly. Pushing down one specific wrong answer does not make the right answer the model's greedy output, and with a high learning rate the probability mass goes partly to garbage.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Run the script (about 2 minutes) and compare with the log.</li>
+<li>Print the full Δlog-prob trajectory every 5 steps and plot chosen vs rejected.</li>
+<li>Make the rejected answer a random other order instead of the unreversed one. Does exact match change?</li>
+<li>Implement the DPO loss with <code>torch.nn.functional.logsigmoid</code> and check against a hand computation for one pair.</li>
+<li>Verify that at step 0 the loss is exactly log 2 ≈ 0.693, and explain why using the LoRA initialisation.</li>
+<li>Add the reference model as a second copy instead of precomputing its log-probs; time both versions.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why does Z(x) cancel in the DPO derivation?</li>
+<li>What does a margin of 12.08 at β = 0.1 mean in log-prob units?</li>
+<li>Why can the reference log-probs be computed once before training?</li>
+<li>Give one reason exact match can stay low when preference accuracy is 1.00.</li>
+</ol>
+<p><strong>Answers.</strong> (1) It is the same for both answers to the same prompt, and BT uses only the difference. (2) Margin/β = 120.8 nats of relative log-prob change between chosen and rejected. (3) π_ref is frozen and the pairs are fixed (offline data). (4) The loss is satisfied by lowering the rejected answer; it does not make the chosen answer the argmax of generation, and other unseen outputs can gain mass (measured: Δ rejected −126.7 vs Δ chosen +8.6).</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can derive the DPO loss from the Day 106 closed form in five lines.
+- [ ] I can define implicit reward, reward margin and preference accuracy.
+- [ ] I can compute sequence log-probs with the correct prompt mask and shift.
+- [ ] I can explain why Day 108's preference accuracy was 1.00 but exact match 0.17.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>DPO is <em>offline</em>: it learns from a fixed set of pairs, usually generated by some other model. Online or iterative variants regenerate pairs from the current policy. Known DPO pathologies include the one seen here (both or only the rejected log-probs fall), sensitivity to β and learning rate, and length exploitation. Variants add an NLL term on the chosen answer (tested on Day 112), normalise by length, or change the loss shape (IPO, KTO, ORPO, SimPO are names to look up; read their papers before relying on any claim about them).</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read "Direct Preference Optimization: Your Language Model is Secretly a Reward Model" (Rafailov et al., 2023), sections 4 and 5, and match each equation to <code>day108_dpo.py</code>.</li>
+<li>Read the TRL library's DPO trainer documentation for what production code adds (padding, label masking, reference handling).</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Explain DPO to an engineer who knows SFT, and say when you would choose it over PPO." Points: same objective as KL-regularised RLHF; the optimal policy defines an implicit reward, so the BT loss can be written in policy log-probs; no RM or sampling loop, so it is cheap and stable; but it is offline, depends on pair quality and coverage, and can lower the chosen likelihood. PPO/online methods are preferred when you have a good reward or verifier and want the model to learn from its own samples.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Including prompt tokens in the sequence log-prob.</li>
+<li>Using the policy (with gradients) as the reference.</li>
+<li>Averaging token log-probs in DPO but summing them for the reference (or vice versa).</li>
+<li>Reporting training preference accuracy as the result.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: what β and the learning rate change, and whether the model forgets its general language modelling.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-107.html">← Day 107</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-109.html">Day 109 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

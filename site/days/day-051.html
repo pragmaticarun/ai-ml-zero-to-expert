@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 51 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="51">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-050.html">← Day 50</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-052.html">Day 52 →</a></nav>
+<h1>Day 51: Anomaly detection</h1>
+<p class="meta">Week 8 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-08.md">source: weeks/week-08.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-08/day51_anomaly.py"><code>code/week-08/day51_anomaly.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 50 (+1), Day 48 (+3), Day 44 (+7), Day 30 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Fraud, machine faults and intrusions are rare, varied and often new. You may have few or no labelled examples. Instead of learning "what anomalies look like", learn <strong>what normal looks like</strong>, and flag points that normal data would rarely produce.</p>
+<p><strong>The density approach (Ng-style).</strong>
+1. Fit a density p(x) on normal training data.
+2. Flag x when p(x) &lt; ε.
+3. Choose ε on a small <strong>labelled validation set</strong> for best F1.</p>
+<ul>
+<li><strong>Independent Gaussians:</strong> p(x) = Πⱼ N(xⱼ; μⱼ, σⱼ²). Cheap, but blind to correlations. A point can be normal on each feature separately and still be an anomaly jointly.</li>
+<li><strong>Multivariate Gaussian:</strong> p(x) = N(x; μ, Σ). It captures correlations, needs m ≫ n, and Σ must be invertible (add a small ridge).</li>
+<li>Work in <strong>log p</strong>. Transform skewed features first (log), so that a Gaussian fits.</li>
+</ul>
+<p><strong>Isolation Forest.</strong> Build random trees that split on random features at random thresholds. Anomalies are few and different, so they get isolated in <strong>fewer splits</strong>. The anomaly score comes from the average path length. It needs no density assumption and scales well.</p>
+<p><strong>Anomaly detection vs supervised learning.</strong> With plenty of labelled anomalies of <em>stable</em> types, a supervised classifier is better. Use anomaly detection when anomalies are rare, diverse or new.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-08/day51_anomaly.py</code> uses breast cancer as a stand-in. Benign = "normal" and malignant = "anomaly", with anomalies made rare. Training has <strong>237 normal rows only</strong>. Validation has 80 rows (20 anomalies), and so does test. Features are log-transformed and scaled. Verified:</p>
+<table>
+<thead>
+<tr>
+<th>method</th>
+<th>test precision</th>
+<th>recall</th>
+<th>F1</th>
+<th>AP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>independent Gaussians</td>
+<td>0.765</td>
+<td>0.650</td>
+<td>0.703</td>
+<td>0.831</td>
+</tr>
+<tr>
+<td><strong>multivariate Gaussian</strong></td>
+<td><strong>0.895</strong></td>
+<td><strong>0.850</strong></td>
+<td><strong>0.872</strong></td>
+<td><strong>0.950</strong></td>
+</tr>
+<tr>
+<td>Isolation Forest</td>
+<td>0.867</td>
+<td>0.650</td>
+<td>0.743</td>
+<td>0.878</td>
+</tr>
+</tbody>
+</table>
+<p>The multivariate Gaussian wins because the 30 features are strongly correlated (radius, perimeter and area), and only it models that. Its chosen threshold, log p = −2.0e8, looks absurd. It reflects a nearly singular covariance (some directions have tiny variance), so anomalies that move along those directions get astronomically small densities. The <em>ranking</em> is still excellent. Treat a raw log-density value as a score, not a meaningful probability.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Implement both Gaussian detectors with <code>scipy.stats.norm.logpdf</code> and <code>multivariate_normal.logpdf</code>, plus <code>tune_epsilon(scores_val, y_val)</code>.</li>
+<li>Change the covariance ridge from 1e-3 to 1e-1 and 1. How do the threshold and F1 change?</li>
+<li>Add the Mahalanobis distance (x − μ)ᵀΣ⁻¹(x − μ) as a score. Show that it ranks identically to the multivariate log p.</li>
+<li>Isolation Forest: sweep <code>n_estimators</code> and <code>max_samples</code>, and plot the score histograms for normal vs anomaly.</li>
+<li>Stretch: inject 5% anomalies into the <em>training</em> set (contamination) and re-measure all three. Which one is most robust?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Features x₁ ~ N(0, 1) and x₂ ~ N(0, 1), with correlation 0.99. Is x = (2, −2) anomalous under the independent model? Under the multivariate model? <em>(Mildly under independent; extremely under multivariate.)</em></li>
+<li>Why choose ε on validation data with labels? <em>(The density alone doesn't say where "rare enough" lies.)</em></li>
+<li>Why log-transform skewed features first? <em>(Gaussian fit.)</em></li>
+<li>Isolation Forest's intuition in one line? <em>(Anomalies get isolated in fewer random splits.)</em></li>
+<li>When would you prefer a supervised classifier? <em>(Many labelled anomalies of stable types.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. Describe the density-threshold recipe.
+  2. What does the multivariate Gaussian capture that independent Gaussians miss?
+  3. What is Isolation Forest's score based on?
+  4. Which method won here, and why?
+  5. Why is a log p of −2e8 not alarming?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>For high-dimensional data (images, logs), density estimation is hard. Common substitutes are <strong>reconstruction error</strong> (PCA or autoencoder: normal data reconstructs well) and <strong>one-class SVM</strong>. Try PCA reconstruction error with k = 5 here and compare its AP.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"We have 10 labelled frauds and 100,000 normal transactions. Supervised or anomaly detection?" Write your answer. With 10 positives a supervised model cannot learn the variety of fraud, and its validation estimates would be noise. Fit a density or isolation model on normal data, and use the 10 frauds only to choose the threshold and to sanity-check the ranking (average precision). Plan to switch to, or combine with, a supervised model as labelled fraud accumulates. Mention the operating cost: every flagged transaction costs analyst time, so report precision at the review capacity (for example, the top 100 scores per day), not only F1.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Tuning ε on the test set.</li>
+<li>Fitting the density on data that contains anomalies, without knowing it.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: recommendation, which means predicting a user's rating of a film they haven't seen.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-050.html">← Day 50</a><a href="../weeks/week-08.html">Week 8</a><a rel="next" href="day-052.html">Day 52 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

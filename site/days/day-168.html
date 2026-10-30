@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 168 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="168">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-167.html">← Day 167</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-169.html">Day 169 →</a></nav>
+<h1>Day 168: PROJECT W24: responsible-AI audit of an earlier model; Quiz 24</h1>
+<p class="meta">Week 24 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-24.md">source: weeks/week-24.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: The brief (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Run it (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Read the report as a reviewer (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (15 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Extension (40 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-24/out/day168_audit_report.md"><code>code/week-24/out/day168_audit_report.md</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 167 (+1), Day 165 (+3), Day 161 (+7), Day 147 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-the-brief-20-min">Block 1: The brief (20 min)</h3>
+<p>Audit the Adult logistic-regression classifier from Days 162–167 as if a product team asked "can we ship this for income-related decisions?" Produce a written report covering intended use, fairness (baseline + mitigations), interpretability, privacy, robustness/shift, LLM-safety note (for any text layer), documentation/governance, energy, a go/no-go decision, and residual risks. Numbers only from re-runs or earlier week-24 logs.</p>
+<h3 id="block-2-run-it-45-min">Block 2: Run it (45 min)</h3>
+<p><code>python day168_project.py</code> re-fits the baseline and mitigated variants, re-measures key metrics, and writes <code>out/day168_audit_report.md</code>.</p>
+<p><strong>Verified (out/day168_project.log / day168_audit_report.md, 660 words):</strong>
+- Baseline t=0.5: acc 0.8542; DI 0.29; TPR 0.624/0.489; FPR 0.096/0.021; prec 0.739/0.741.
+- Reweighing t=0.5: lower accuracy, DI rises toward ~0.57, Female precision drops (see Day 163 table for exact figures; report regenerates live).
+- Equal-opportunity thresholds (train-side): near-matched TPR, accuracy almost unchanged.
+- Permutation importance top features include marital-status, capital-gain, education-num; sex is lower. Proxy sex-AUC ≈ 0.93.
+- MIA AUC on this LR ≈ 0.50. Fit time ~0.3 s; ASSUMED 45 W → ~14 J.
+- Decision recorded in the report: <strong>ship as a course artefact: YES; ship as a real decision system: NO.</strong></p>
+<h3 id="block-3-read-the-report-as-a-reviewer-40-min">Block 3: Read the report as a reviewer (40 min)</h3>
+<p>Open <code>code/week-24/out/day168_audit_report.md</code>. Check that every numeric claim has a matching log line in Days 162–167 or in Day 168's own re-measurement. Check that the no-go reasons are specific (DI, proxy AUC, dataset age, no legal review, incomplete shift/adversarial cover for tabular inputs) rather than vague. Check that residual risks name intersectionality and threshold overfitting. This is the skill: an audit that a sceptic can re-run.</p>
+<p>Preferred mitigated variant for further course work, per the report: <strong>equal-opportunity group thresholds</strong> when TPR parity is the goal; <strong>reweighing</strong> when demographic parity is required and the precision cost is accepted.</p>
+<h3 id="block-4-self-check-15-min">Block 4: Self-check (15 min)</h3>
+<ol>
+<li>Why is "course artefact = YES" compatible with "real decision = NO"? <em>Different intended uses; the card says so.</em></li>
+<li>Which mitigation preserved accuracy best here? <em>Equal-opportunity thresholds.</em></li>
+<li>Name two residual risks the report lists. <em>Intersectionality not audited; thresholds can overfit the fairness metric; ASSUMED watts; 135M LLM numbers.</em></li>
+<li>Where do the governance references come from? <em>NIST.AI.100-1.pdf and the Commission AI Act overview page opened on 2026-10-29.</em></li>
+</ol>
+<h3 id="block-5-extension-40-min">Block 5: Extension (40 min)</h3>
+<p>Add an intersectional table (sex × race) for the baseline model to the report. Then write a one-paragraph "executive summary" at the top aimed at a non-ML product manager.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>The report file is the deliverable; the script is how it stays reproducible under <code>run_all.sh</code>.</li>
+<li>Re-running Day 168 regenerates the report from scratch so it cannot drift from the code.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Map each report section to a NIST AI RMF MEASURE / MANAGE category and to an EU AI Act high-risk obligation on the Commission page (documentation, logging, human oversight) — as a <em>mapping exercise</em>, not a compliance claim.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Summarise the audit in eight sentences for leadership." Use the report's Decision section: pedagogical only; DI 0.29; mitigation options measured; privacy MIA ~chance; shift/adversarial gaps; documentation filed; no-go for real decisions; next measurement if product requirements change.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Auditing only accuracy.</li>
+<li>Softening a no-go into "needs more study" without naming blockers.</li>
+<li>Leaving residual risks unlisted.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Take the weekly quiz. Week 25 continues Month 6 with governance/careers and the final capstone design (SYLLABUS Days 169–170).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-167.html">← Day 167</a><a href="../weeks/week-24.html">Week 24</a><a rel="next" href="day-169.html">Day 169 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

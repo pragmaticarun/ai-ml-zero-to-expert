@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 101 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="101">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-100.html">← Day 100</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-102.html">Day 102 →</a></nav>
+<h1>Day 101: LoRA from scratch, then PEFT</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day101_lora.py"><code>code/week-15/day101_lora.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 100 (+1), Day 98 (+3), Day 94 (+7), Day 80 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Low-rank adaptation</strong> (Hu et al., 2021, "LoRA: Low-Rank Adaptation of Large Language Models"). Freeze the pretrained weight W (d_out × d_in). Learn an update ΔW = B·A with A of shape r × d_in and B of shape d_out × r, with rank r much smaller than d. The layer computes</p>
+<p>y = W x + (α / r) · B A x.</p>
+<ul>
+<li><strong>Initialisation:</strong> A random, B zero, so ΔW = 0 and training starts exactly at the pretrained model.</li>
+<li><strong>Scale α / r:</strong> keeps the update size comparable across ranks, so you can change r without retuning the learning rate much.</li>
+<li><strong>Parameters:</strong> r·(d_in + d_out) per adapted matrix instead of d_in·d_out.</li>
+<li><strong>Merging:</strong> after training, W' = W + (α/r)·B A gives a plain model with zero inference overhead. Or keep adapters separate and swap them per task on one shared base.</li>
+</ul>
+<p><strong>Why it works.</strong> Hu et al. report that the weight updates needed for adaptation have low "intrinsic rank": a small r captures most of the benefit for many tasks. It is not guaranteed for every task; tasks that need much new knowledge benefit from higher r or full fine-tuning.</p>
+<p><strong>Memory benefit.</strong> Gradients and Adam states are needed only for A and B. The frozen W can even be stored in lower precision (Day 102). The forward and backward activations are still needed, so LoRA saves optimiser memory more than activation memory.</p>
+<p><strong>PEFT.</strong> The <code>peft</code> library wraps a model: <code>get_peft_model(model, LoraConfig(r, lora_alpha, target_modules, lora_dropout))</code>, and offers <code>merge_and_unload()</code>, saving adapters only, and many other methods (prefix tuning, IA³ and others).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day101_lora.py</code> (<strong>119 s</strong>). LoRA r = 8, α = 16 on q_proj and v_proj in all 30 layers, lr 1e-3, 100 steps of 4 × 128 tokens. <strong>Verified:</strong>
+- Trainable <strong>460,800</strong> of 134,975,808 (<strong>0.34%</strong>). Check: per layer, q (576→576) adds 8·(576+576) = 9,216 and v (576→192) adds 8·(576+192) = 6,144, so 15,360 × 30 = 460,800.
+- Logits change at init (B = 0): <strong>0.0e+00</strong>. The adapted model is exactly the base model before training.
+- My LoRA: <strong>0.47 s/step</strong> (vs 0.88 for full fine-tuning), validation perplexity <strong>26.29 → 23.19</strong>.
+- Merging into W: max logit difference <strong>7.4e-05</strong> (float32 rounding), and the parameter count returns to 134,515,008.
+- <code>peft</code> with the same config: trainable <strong>460,800</strong>, equal to mine (<strong>True</strong>); after 100 steps with the same seed, validation perplexity <strong>23.16</strong> (mine 23.19). <code>merge_and_unload()</code> returns a plain <code>LlamaForCausalLM</code>.
+- Compare Day 100: full fine-tuning reached 21.38 with the same steps. LoRA on q,v recovered about 60% of that improvement ((26.29 − 23.19)/(26.29 − 21.38) ≈ 0.63) with 0.34% of the trainable parameters. Day 105 tests more ranks and targets.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Write <code>LoRALinear</code> yourself without looking; pass the "zero change at init" and "merge equals unmerged" tests.</li>
+<li>(30 min) Add LoRA dropout on the input to the A path.</li>
+<li>(45 min) Save only the adapter (a few MB), reload it into a fresh base model, and confirm identical logits.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>LoRA parameters for one 4096 × 4096 matrix at r = 16? <em>Answer: 16·8192 = 131,072 (vs 16.8M).</em></li>
+<li>Why is B initialised to zero rather than A? <em>Answer: either makes ΔW = 0, but with both zero no gradients flow; zero B + random A gives a nonzero gradient for B.</em></li>
+<li>What does merging cost at inference? <em>Answer: nothing extra; the matrix shape is unchanged.</em></li>
+<li>Why is the merge diff 7.4e-05, not 0? <em>Answer: float32 rounding: x·(W + ΔW) is not bitwise equal to xW + xΔW.</em></li>
+<li>When is serving unmerged adapters useful? <em>Answer: many tasks sharing one base model; hot-swapping adapters per request.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can write the LoRA forward pass, init and merge.
+- [ ] I can count LoRA parameters for any target set.
+- [ ] My implementation matches peft.</p>
+<h3 id="extra-notes-where-to-put-adapters">Extra notes: where to put adapters</h3>
+<p>The original paper adapted attention matrices. Later practice (for example in QLoRA, Day 102) adapts all linear layers including the MLP, which often helps more than raising r on attention alone. Day 105 tests exactly this trade-off at CPU scale.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Hu et al. (2021), section 4 (method) and section 7 (rank analysis).</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Explain LoRA to a colleague and when you would not use it." Frozen W plus a trainable low-rank update; cheap, swappable, mergeable. Avoid when the task needs large new knowledge or when you can afford full fine-tuning and want the last bit of quality.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Forgetting to freeze the base: all parameters train and memory explodes.</li>
+<li>Wrong scale (α instead of α/r) when comparing with peft.</li>
+<li>Optimiser built over all parameters including frozen ones (harmless but wasteful); build it over <code>requires_grad</code> only.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 102: configure peft, and combine LoRA with a 4-bit base.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-100.html">← Day 100</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-102.html">Day 102 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

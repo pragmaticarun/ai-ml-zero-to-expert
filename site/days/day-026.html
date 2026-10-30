@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 26 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="26">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-025.html">← Day 25</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-027.html">Day 27 →</a></nav>
+<h1>Day 26: Logistic regression</h1>
+<p class="meta">Week 4 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-04.md">source: weeks/week-04.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-04/day26_logistic_regression.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-04/day26_logistic_regression.py"><code>code/week-04/day26_logistic_regression.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 25 (+1), Day 23 (+3), Day 19 (+7), Day 5 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> For yes/no questions (spam? malignant? will the user skip this song?), we want a <strong>probability</strong> between 0 and 1. Take the linear score z = w·x + b, which can be any real number, and squash it with the <strong>sigmoid</strong> σ(z) = 1/(1 + e^(−z)). Large positive z gives about 1, large negative gives about 0, and z = 0 gives 0.5. The <strong>decision boundary</strong> is where z = 0, which is a straight line (a hyperplane) in feature space.</p>
+<p><strong>Why not linear regression on 0/1 labels?</strong> Its predictions go outside [0, 1], and outliers far on the "obviously yes" side drag the line and shift the boundary.</p>
+<p><strong>Why not MSE as the cost?</strong> With the sigmoid inside, MSE becomes non-convex with flat regions, and it barely punishes confident mistakes. <strong>Log-loss</strong> (cross-entropy), the Bernoulli negative log-likelihood from Day 21:</p>
+<p>L = −[y log p + (1 − y) log(1 − p)]</p>
+<p>Verified: a confident wrong prediction p = 0.001 for y = 1 costs <strong>6.908</strong> under log-loss vs <strong>0.998</strong> under squared error. Log-loss screams, while squared error shrugs.</p>
+<p><strong>The beautiful gradient.</strong> ∂J/∂w = (1/m) Xᵀ(p − y) and ∂J/∂b = mean(p − y). It is <em>the same form</em> as linear regression, with p in place of ŷ (the sigmoid's derivative cancels neatly). Prove it in the practice block.</p>
+<p><strong>Concrete results (verified):</strong>
+- 2-D toy (two Gaussian blobs, 300 points): train accuracy <strong>0.967</strong>, log-loss <strong>0.0826</strong>, boundary plot <code>out/day26_boundary.png</code>.
+- Breast-cancer dataset (569 samples, 30 features, stratified 75/25 split, standardised, L2 penalty λ = 1): from-scratch test accuracy <strong>0.9580</strong> = sklearn <code>LogisticRegression(C=1)</code> <strong>0.9580</strong> ✓.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>w = (2, −1), b = 0.5, x = (1, 3): z = 2 − 3 + 0.5 = −0.5, so p = σ(−0.5) = 1/(1 + e^0.5) = 1/2.6487 = <strong>0.378</strong>. That is class 0 at threshold 0.5.
+If the true y = 1, the loss is −ln 0.378 = 0.973 and the gradient for this example is (p − y)x = −0.622·(1, 3) = (−0.622, −1.866). The step w ← w − α·grad increases both weights, pushing z up. Correct.
+Log-odds view: z = ln(p/(1 − p)). Each unit increase in xⱼ multiplies the odds by e^(wⱼ).</p>
+<h3 id="block-3-coding-lab-2h-codeweek-04day26_logistic_regressionpy">Block 3: Coding lab (2h): <code>code/week-04/day26_logistic_regression.py</code></h3>
+<p>Tasks:
+1. Gradient-check the log-loss gradient numerically (Day 16 recipe).
+2. Remove the L2 penalty (λ = 0) on the breast-cancer data and train for 50,000 steps. What happens to ‖w‖ and why? <em>Hint:</em> nearly separable data pushes the weights toward infinity.
+3. Plot σ(z) and its derivative. Where is the gradient largest?
+4. Implement a numerically stable log-loss from z directly: <code>np.logaddexp(0, -z)</code> for y = 1. Compare it with the clipped version for z = ±50.</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>σ(0)? σ(large)? <em>Answer:</em> 0.5 and about 1.</li>
+<li>Show that σ′(z) = σ(z)(1 − σ(z)).</li>
+<li>Show that ∂L/∂z = p − y for one example. <em>Hint:</em> chain rule with Q2.</li>
+<li>What is the boundary for w = (1, 1), b = −2? <em>Answer:</em> the line x₁ + x₂ = 2.</li>
+<li>Loss for p = 0.9 and y = 1? <em>Answer:</em> −ln 0.9 = 0.105.</li>
+<li>How would you handle 3+ classes? <em>Answer:</em> one-vs-rest, or softmax (Month 3).</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 25 (+1):</strong> fit the scaler on what? What happens if you don't scale?</li>
+<li><strong>Day 23 (+3):</strong> learning-curve diagnoses.</li>
+<li><strong>Day 19 (+7):</strong> Bayes' rule, and the base-rate effect.</li>
+<li><strong>Self-check:</strong>
+  1. Write the sigmoid.
+  2. Log-loss formula?
+  3. Gradient form?
+  4. Why not MSE?
+  5. What is the decision boundary geometrically?</li>
+</ul>
+<h3 id="going-deeper-optional-inside-block-4">Going deeper (optional, inside Block 4)</h3>
+<p><strong>Calibration.</strong> A model's p is <em>calibrated</em> if, among cases where it says 0.8, about 80% are positive. Logistic regression is usually well calibrated. Many other models (boosted trees, SVMs, deep nets) are not, and need Platt scaling or isotonic regression (<code>sklearn.calibration</code>). Calibration matters whenever someone acts on the probability itself, for example a threshold set from costs.</p>
+<p><strong>Regularisation in logistic regression.</strong> The L2 penalty you used (λ = 1) keeps weights finite on nearly separable data and usually improves test performance. scikit-learn's <code>C</code> is the <em>inverse</em> strength: smaller C means stronger regularisation. Tune it on validation data, which is Day 33's topic.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><code>exp</code> overflow for large −z. Use the stable formulations, or clip z.</li>
+<li>log(0) gives nan. Clip p.</li>
+<li>Labels as {−1, +1} instead of {0, 1} with the 0/1 formula. Check <code>np.unique(y)</code>.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Accuracy 0.958 sounds great. Tomorrow asks: great at <em>what</em>? Which mistakes is it making?</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-025.html">← Day 25</a><a href="../weeks/week-04.html">Week 4</a><a rel="next" href="day-027.html">Day 27 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

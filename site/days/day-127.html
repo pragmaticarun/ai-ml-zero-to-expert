@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 127 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="127">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-126.html">← Day 126</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-128.html">Day 128 →</a></nav>
+<h1>Day 127: Policy gradients: REINFORCE and baselines</h1>
+<p class="meta">Week 19 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-19.md">source: weeks/week-19.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-19/day127_reinforce.py"><code>code/week-19/day127_reinforce.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 126 (+1), Day 124 (+3), Day 120 (+7), Day 106 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why learn the policy directly?</strong> Week 18 learned values (V, Q) and acted greedily on them. That works when actions are few and discrete and a max over them is cheap. Policy-gradient methods instead parameterise a stochastic policy π_θ(a|s), usually a softmax over network outputs, and climb the expected return J(θ) = E_τ~π_θ[G(τ)] directly. Advantages: they handle continuous or huge action spaces (a language model's vocabulary is the action space on Day 132), they can represent stochastic optimal policies, and small parameter changes give small behaviour changes instead of the sudden argmax flips that destabilised DQN.</p>
+<p><strong>The log-derivative trick.</strong> We cannot differentiate through the environment, but we can differentiate the probability of the actions we took:</p>
+<p>∇_θ J = E[ Σ_t ∇_θ log π_θ(a_t|s_t) · G_t ],</p>
+<p>where G_t = Σ_k γ^k r_{t+k+1} is the return from step t onward. The environment dynamics drop out because they do not depend on θ. In code, you build the "surrogate loss" L = −Σ_t log π_θ(a_t|s_t)·G_t, with G_t treated as a constant, and call backward. Only rewards <em>after</em> step t multiply step t's log-probability ("reward to go"), because an action cannot affect the past; using the full-episode return is still unbiased but noisier.</p>
+<p><strong>Variance is the enemy.</strong> The estimator is unbiased but extremely noisy: one episode on CartPole can last 9 steps or 500, and every log-probability in it is pushed by that return. On CartPole all rewards are +1, so every G_t is positive, and REINFORCE pushes up <em>every</em> action taken; it only learns because long episodes push harder.</p>
+<p><strong>Baselines.</strong> For any function b(s) that does not depend on the action, E[∇ log π(a|s)·b(s)] = b(s)·∇ Σ_a π(a|s) = b(s)·∇1 = 0. So we can subtract a baseline without adding bias: use (G_t − b(s_t)). A good b makes the weight positive for better-than-usual actions and negative for worse-than-usual ones, which cuts variance. Two common choices: a constant (the mean return), or a learned value network V_w(s) fitted by regression to G_t. The quantity G_t − V(s_t) is an estimate of the <strong>advantage</strong> A(s,a) = Q(s,a) − V(s), the central object of the rest of the week.</p>
+<p><strong>Practical details.</strong> Normalising returns per batch is common but changes the effective step size; we keep raw returns and use Adam. Discount γ 0.99 makes the horizon about 100 steps. Evaluation uses the greedy policy (argmax) on 20 held-out seeds, because the stochastic training policy understates what the network knows.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>python code/week-19/day127_reinforce.py</code> (a few seconds per seed). It first measures the spread of the gradient estimate at initialisation over 20 single-episode estimates, then trains 300 episodes per seed (Adam 1e-3, γ 0.99) with and without a learned value baseline.</p>
+<p><strong>Verified (out/day127_reinforce.log):</strong>
+- Gradient standard deviation at init: 0.436 with no baseline, 0.324 with a constant mean-return baseline.
+- No baseline: mean episode length in episodes 1-50 / 251-300 was 18.2 / 159.9 (seed 0), 25.6 / 89.8 (seed 1), 27.4 / 29.1 (seed 2); greedy eval 125.3, 176.6, 29.2.
+- Value baseline: 19.4 / 218.6, 25.0 / 411.2, 30.9 / 368.2; greedy eval 127.0, 478.9, 308.8.
+- Environment steps used: 17,397 / 19,571 / 8,383 without a baseline, 45,666-48,298 with one. Each seed ran in 1-4 s.</p>
+<p><strong>Reading it.</strong> The baseline cut gradient spread by about a quarter, and every seed with a value baseline ended better than its no-baseline twin. But note the confound: a fixed <em>episode</em> budget means better policies consume more <em>steps</em> (longer episodes), so the baseline runs also saw about 2-5 times more data. Day 133 fixes this by giving every method the same step budget. Seed 2 without a baseline never took off (29.1 at the end): a reminder that three seeds are a minimum, not a proof.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<ol>
+<li>Read <code>_pg.py</code>: <code>mlp</code>, <code>discounted</code>, <code>evaluate</code>. Check <code>discounted([1,1,1], 0.5)</code> by hand (1.75, 1.5, 1).</li>
+<li>In <code>day127_reinforce.py</code>, replace reward-to-go with the full-episode return for every step. Predict the effect on gradient spread, then measure it with the same 20-episode probe.</li>
+<li>Add return normalisation (subtract mean, divide by std within an episode). Compare final greedy eval across the same three seeds and record it in your notes.</li>
+<li>Plot episode length against episode index for both variants (matplotlib, saved to <code>out/</code>).</li>
+<li>Write three sentences on why seed-to-seed spread is so large here.</li>
+</ol>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Prove that a state-dependent baseline adds no bias.</li>
+<li>Why does every CartPole action get pushed up when there is no baseline?</li>
+<li>Why did the baseline runs use more environment steps?</li>
+<li>Give one reason to prefer reward-to-go over the full return.</li>
+<li>What does a negative (G_t − V(s_t)) do to the probability of a_t?</li>
+</ol>
+<p><strong>Answers.</strong> 1) E_a[∇log π·b] = b·Σ_a ∇π = b·∇1 = 0. 2) Every return is positive, so every log-probability gets a positive weight. 3) They learned longer episodes, and the budget was counted in episodes. 4) It drops terms that are pure noise (rewards before t), lowering variance. 5) It decreases it.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Do your review days (listed above). Then write, from memory, the REINFORCE gradient, the baseline argument and the advantage definition. Make five flashcards: log-derivative trick; reward to go; baseline unbiasedness; advantage; why greedy evaluation.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>REINFORCE is on-policy: each episode is used once and thrown away. This is why it is sample-hungry, and why PPO (Day 129) re-uses each batch several times under a safeguard.</li>
+<li>The value network is trained with plain MSE on G_t. It does not need to be accurate to help; it only needs to be correlated with the return.</li>
+<li>Entropy bonuses (Day 128) are another way to stop the softmax collapsing too early.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read the policy-gradient chapter of Sutton &amp; Barto's <em>Reinforcement Learning: An Introduction</em> (2nd ed.) (the authors host a free PDF; find it from their site), focusing on the REINFORCE-with-baseline box. Compare its update with the code line by line.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your REINFORCE agent learns on 2 of 3 seeds. How do you decide whether the fix is a baseline, a smaller learning rate or more seeds?" Strong answer: measure gradient variance at a fixed policy (as in Block 2), run at least 5 seeds per setting under a fixed step budget, look at learning curves rather than final numbers, and change one thing at a time.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Letting gradients flow into G_t or into the baseline inside the policy loss (detach them).</li>
+<li>Comparing methods under an episode budget, which favours whichever learns first.</li>
+<li>Reporting the stochastic training return as "performance" when the greedy policy is better (or worse).</li>
+<li>Drawing conclusions from one seed.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow replaces the Monte Carlo return with a bootstrapped one: the critic stops being just a baseline and becomes part of the target. Skim your Day 123 notes on TD targets first.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-126.html">← Day 126</a><a href="../weeks/week-19.html">Week 19</a><a rel="next" href="day-128.html">Day 128 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

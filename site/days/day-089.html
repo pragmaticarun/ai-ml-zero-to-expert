@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 89 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="89">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-088.html">← Day 88</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-090.html">Day 90 →</a></nav>
+<h1>Day 89: Cumulative review Months 1-3 (10 runnable drills)</h1>
+<p class="meta">Week 13 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-13.md">source: weeks/week-13.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-13/day89_cumulative_review.py"><code>code/week-13/day89_cumulative_review.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 88 (+1), Day 86 (+3), Day 82 (+7), Day 68 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why a cumulative review now.</strong> Spaced review (the +1/+3/+7/+21 schedule in <code>review-schedule.csv</code>) keeps recent material alive, but each review touches one day. Before the capstone report and the checkpoint exam you need the opposite view: one pass over the whole course, looking for the threads that connect it. The three months form one story.
+- <strong>Month 1 (mathematics and NumPy).</strong> Vectors, matrices and least squares; derivatives, the chain rule and gradient descent; probability, likelihood and cross-entropy. Every later loss and every later gradient comes from here.
+- <strong>Month 2 (classical machine learning).</strong> Train/validation/test discipline, cross-validation, bias and variance, regularisation, metrics such as precision and recall, and pipelines that prevent leakage. Every later experiment uses these habits.
+- <strong>Month 3 (deep learning).</strong> Autograd, data loading, initialisation, optimisers and schedules, regularisation, normalisation, convolutions, residual connections, sequence models, mixed precision, tuning, and now the capstone.</p>
+<p><strong>How to review.</strong> Do not reread. Retrieve: close the notes, write what you remember, then check. Then <strong>recompute</strong>: a fact you can reproduce in three lines of code is a fact you own. Today's script does exactly that with ten drills, each of which recomputes a result from an earlier lesson and checks it automatically.</p>
+<p><strong>Connections to draw today</strong> (write each one out in two or three sentences):
+1. Least squares (Month 1) is linear regression (Month 2), and also a one-layer network trained with squared loss (Month 3).
+2. Cross-entropy (Month 1) is logistic regression's loss (Month 2) and the classifier loss in every Month-3 network. At initialisation it should be near ln(C).
+3. Regularisation appears as ridge/lasso (Month 2) and as weight decay, dropout and augmentation (Month 3). All trade training fit for generalisation.
+4. Validation discipline (Month 2) became tuning discipline (Day 85) and the single test-set use (Day 88).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-13/day89_cumulative_review.py</code> (about 6 s). It exits with an error code if any drill fails, so it can run in <code>run_all.sh</code>. <strong>Verified:</strong> <strong>10/10 drills passed.</strong>
+- M1 least squares recovers w = [1, −2, 0.5] from noisy data: [<strong>0.999</strong>, <strong>−2.001</strong>, <strong>0.501</strong>].
+- M1 cross-entropy when the true class has probability 0.7: <strong>0.3567</strong>.
+- M2 5-fold cross-validated logistic regression on the 8 × 8 digits: mean <strong>0.9277</strong>, std <strong>0.0262</strong>.
+- M2 precision and recall for TP 70, FP 30, FN 10: P <strong>0.700</strong>, R <strong>0.875</strong>.
+- M3 parameters of an MLP 784-128-10: <strong>101,770</strong>.
+- M3 parameters of Conv2d(3, 16, 3): <strong>448</strong>.
+- M3 output size of a 3×3 conv with padding 1 on 32 × 32: <strong>32</strong>.
+- M3 gradients accumulate without <code>zero_grad</code>: two backward passes of x² at x = 3 give <strong>12.0</strong>.
+- M3 initial loss with near-zero logits: <strong>2.3024</strong> against ln 10 = <strong>2.3026</strong>.
+- M3 dropout p = 0.5 in train mode: mean of the output <strong>0.984</strong> (kept units scaled by 2); identity in eval mode.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(60 min) Add five drills of your own, at least one per month. Suggestions: the gradient of the logistic loss equals (p − y)x; ridge regression shrinks coefficients as λ grows; the BN running mean after one batch with momentum 0.1; the receptive field of two stacked 3×3 convolutions is 5; an LSTM with I = 10, H = 32 has 5,632 parameters (Day 79).</li>
+<li>(30 min) Make one drill fail on purpose and check that the script exits non-zero.</li>
+<li>(30 min) From <code>flashcards/month-01.csv</code> to <code>month-03.csv</code>, pick the 15 cards you get wrong most often and write a drill for any that can be computed.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why is the digits CV accuracy reported with a standard deviation? <em>Answer: the fold-to-fold spread (0.0262) shows how much a single split could mislead.</em></li>
+<li>Gradients accumulate. Name a case where that is useful. <em>Answer: gradient accumulation, which simulates a larger batch over several small ones.</em></li>
+<li>The initial loss is 4.1 with 10 classes. What do you suspect? <em>Answer: logits too large at initialisation (bad init or a missing normalisation), or wrong labels.</em></li>
+<li>Write the parameter count of a dense layer from n to m units. <em>Answer: n·m + m.</em></li>
+<li>Explain in one sentence why dropout rescales by 1/(1 − p). <em>Answer: so the expected activation in training equals the activation in eval mode.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] All 10 drills pass on my machine, and I wrote 5 more.
+- [ ] I can draw the Month 1 → 2 → 3 connections without notes.
+- [ ] I know my weakest 15 flashcards.</p>
+<h3 id="extra-notes-building-a-personal-error-log">Extra notes: building a personal error log</h3>
+<p>Keep a file, one line per mistake you made in Months 1-3, in the form <em>date, what I did, what was wrong, how I found out, the rule</em>. Examples from this course's own debugging: forgetting <code>model.eval()</code> (Day 69's BN demos show the symptom), normalising with test statistics (Day 65 computes the mean on train only for this reason), not zeroing gradients (today's drill), a learning rate too high for an unnormalised network (Day 87's no-BN row needed lr 0.01). Patterns emerge quickly: most bugs are about <strong>mode</strong> (train vs eval), <strong>data</strong> (leakage, wrong split, wrong normalisation) or <strong>state</strong> (gradients, hidden states, running statistics). Before the exam, read the log once and turn each rule into a flashcard. This is more valuable than any summary someone else wrote, because it targets the mistakes you actually make. It also makes a strong section in an interview portfolio: "here is how I debug".</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Redo one past weekly project from scratch, without looking at its code, and diff your version against the original.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Explain how logistic regression, a softmax classifier and a neural network classifier are related." All minimise cross-entropy; logistic regression is a one-layer network with a sigmoid; softmax regression extends it to C classes; a neural network adds learned nonlinear features before the same final layer and loss.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Reviewing by rereading. Use retrieval and recomputation.</li>
+<li>Skipping Month 1 because it feels easy. Most deep-learning debugging comes back to shapes, gradients and probabilities.</li>
+<li>Writing drills that cannot fail (no assertion).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 90 turns Days 86-88 into a report, then the checkpoint exam.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-088.html">← Day 88</a><a href="../weeks/week-13.html">Week 13</a><a rel="next" href="day-090.html">Day 90 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

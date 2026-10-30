@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 73 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="73">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-072.html">← Day 72</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-074.html">Day 74 →</a></nav>
+<h1>Day 73: Training a CNN on CIFAR-10 (CPU-sized)</h1>
+<p class="meta">Week 11 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-11.md">source: weeks/week-11.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-11/day73_cifar_cnn.py"><code>code/week-11/day73_cifar_cnn.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 72 (+1), Day 70 (+3), Day 66 (+7), Day 52 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The data.</strong> Ten classes of small colour photos (airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck). Objects vary in position, scale, pose and background. This is where the CNN's assumptions pay off.</p>
+<p><strong>A fair comparison.</strong> Same split, same epochs, same optimiser family, LR checked for each model. Report parameters and time per epoch, not just accuracy.</p>
+<p><strong>Augmentation for natural images.</strong> Random horizontal flips (a car facing left is still a car) and random crops after padding by 4 pixels (small translations). Never flip vertically for these classes.</p>
+<p><strong>Reading train vs validation.</strong> A large gap means overfitting; if both are low, the model or the training is too weak.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-11/day73_cifar_cnn.py</code> (about 3.5 minutes here). 10 epochs, SGD lr 0.01 with momentum for every model. <strong>Verified:</strong></p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>params</th>
+<th>train acc</th>
+<th>val acc</th>
+<th>time/epoch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MLP</td>
+<td>1,578,506</td>
+<td>0.7628</td>
+<td>0.5020</td>
+<td>0.2 s</td>
+</tr>
+<tr>
+<td>CNN</td>
+<td>307,498</td>
+<td>0.5912</td>
+<td>0.5516</td>
+<td>4.5 s</td>
+</tr>
+<tr>
+<td>CNN + BN</td>
+<td>308,394</td>
+<td>0.9372</td>
+<td><strong>0.7444</strong></td>
+<td>8.1 s</td>
+</tr>
+<tr>
+<td>CNN + BN + flip/crop aug</td>
+<td>308,394</td>
+<td>0.7928</td>
+<td>0.7268</td>
+<td>7.0 s</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:
+- The MLP has 5× the parameters of the CNN and overfits hard (0.76 train, 0.50 val).
+- BN made the CNN much better in 10 epochs. While building this lesson, BN at lr 0.05 was tried first and failed badly (val 0.22 after one epoch vs 0.48 at lr 0.01), so all models use lr 0.01.
+- Augmentation reduced the train/val gap from 0.19 to 0.07 but did not raise validation accuracy in 10 epochs. Augmentation usually needs longer training to pay off. The Day-86 capstone trains longer.
+- Per-class validation accuracy for CNN + BN: cat <strong>0.538</strong>, dog <strong>0.53</strong> and bird <strong>0.581</strong> are the hardest; automobile <strong>0.878</strong> is among the easiest.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(30 min) Build your own CNN: two conv blocks (conv-BN-ReLU-conv-BN-ReLU-pool), then global average pooling and a linear layer.</li>
+<li>(45 min) Train 10 epochs with and without augmentation; log to CSV.</li>
+<li>(25 min) Compute the per-class accuracy and the confusion matrix. Which pairs are confused?</li>
+<li>(20 min) Plot a training curve (train loss, val acc per epoch).</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Why is a vertical flip a bad augmentation here? <em>Answer: upside-down cars and ships don't occur in test data; it teaches invariances that are false.</em></li>
+<li>The MLP's 0.26 train/val gap vs the CNN+BN 0.19 gap: what does each say? <em>Answer: both overfit; the MLP generalises far worse despite (because of) more parameters.</em></li>
+<li>Why report time per epoch? <em>Answer: cost matters; a better model at 40× the time may not be the right choice.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Explain the four-row table to a colleague in five sentences. Self-check:
+- [ ] I can say why augmentation didn't help accuracy in 10 epochs.
+- [ ] I know which classes were hardest and can guess why.</p>
+<h3 id="extra-notes-what-a-fair-cpu-experiment-looks-like">Extra notes: what a fair CPU experiment looks like</h3>
+<p>Write down the protocol before you look at results. For this lesson: one fixed split (seed 0), normalisation statistics from the training images only, the same number of epochs (10), the same batch size, the same optimiser family (SGD with momentum) and one LR that was checked to be stable for every model (0.01). Record the parameter count, time per epoch, final training accuracy and validation accuracy, and never touch the 2,500 test images until a model is chosen. That protocol is why the table can be trusted for <em>comparison</em>, even though every number in it is far below published CIFAR-10 results.</p>
+<p>Notice the time column. The MLP is about 20-40 times faster per epoch than the CNNs on this CPU, because a convolution does many multiply-adds per parameter (the same 3×3 filter is applied at every position) while a dense layer does one per parameter. Parameter count therefore says little about compute. For a convolution layer, multiply-adds = K · C · k · k · H_out · W_out. For the first layer of our CNN (32 filters, 3 channels, 3×3, 32×32 output) that is 32 · 3 · 9 · 1,024 = 884,736 per image; you can check how that compares with the dense layer of the MLP (3,072 × 512 = 1,572,864) and then see why the deeper conv layers dominate. On a GPU these differences shrink because convolutions parallelise well, so always time on the hardware you will deploy on.</p>
+<p>Finally, BN changed the result most. BN normalises each channel with batch statistics during training and running averages during evaluation, so forgetting <code>model.eval()</code> changes test results; the Day-75 checklist tests exactly this.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Try <code>torch.optim.lr_scheduler.OneCycleLR</code> with 20 epochs (about 3 minutes per run). The capstone does this.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"You have a fixed compute budget of 10 epochs. Do you add augmentation?" Discuss the measured trade-off and how you would decide on validation.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Normalising with per-image statistics in training and dataset statistics at test.</li>
+<li>Applying augmentation at evaluation.</li>
+<li>Comparing an MLP at its best LR with a CNN at a bad LR.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 74 starts from a network that has already seen a million images.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-072.html">← Day 72</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-074.html">Day 74 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

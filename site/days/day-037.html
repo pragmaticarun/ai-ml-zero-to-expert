@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 37 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="37">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-036.html">← Day 36</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-038.html">Day 38 →</a></nav>
+<h1>Day 37: Naive Bayes; generative vs discriminative models</h1>
+<p class="meta">Week 6 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-06.md">source: weeks/week-06.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-06/day37_naive_bayes.py"><code>code/week-06/day37_naive_bayes.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 36 (+1), Day 34 (+3), Day 30 (+7), Day 16 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Two philosophies.</strong>
+- A <strong>discriminative</strong> model learns P(y | x) directly. Logistic regression asks "where is the boundary?"
+- A <strong>generative</strong> model learns how each class <em>produces</em> data, P(x | y), plus the class frequencies P(y). It then flips them with Bayes' rule (Day 18): P(y | x) ∝ P(x | y)·P(y).</p>
+<p><strong>The naive assumption.</strong> Within a class, features are independent: P(x | y) = Πⱼ P(xⱼ | y). That is almost never true, but it turns an impossible density estimate into n one-dimensional ones. <strong>Gaussian NB</strong> gives each feature a per-class mean and variance. <strong>Multinomial NB</strong> models word counts, with Laplace smoothing α (pretend every word appeared α extra times) so an unseen word does not zero out the product.</p>
+<p><strong>Work in logs.</strong> Multiplying 1000 small probabilities underflows to 0. Sum log-probabilities instead and compare classes by their <strong>log joint</strong>, log P(y) + Σ log P(xⱼ | y).</p>
+<p><strong>When does it shine?</strong> It needs very little data, trains in one pass, handles thousands of text features, and is a strong text baseline. A classic theoretical result (Ng &amp; Jordan, 2001) says generative models can approach their (higher) asymptotic error <em>faster</em>, so they may beat logistic regression at small m. Today you test that claim yourself rather than taking it on faith.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-06/day37_naive_bayes.py</code>. Verified:
+- <strong>Wine</strong> Gaussian NB, scratch vs scikit-learn: both <strong>0.9630</strong> test accuracy, with identical predictions. The first test row's log joint per class was [−13.25, −43.15, −100.06]. Class 0 wins by about 30 nats, so the posterior rounds to [1, 0, 0]. NB posteriors are often overconfident like this, because the double-counted correlated evidence multiplies up (Day 54 measures calibration).
+- <strong>Tiny spam filter</strong> (6 toy messages, MultinomialNB, α = 1): P(spam | "buy now") = 0.928, P(spam | "meeting tomorrow") = 0.107, P(spam | "cheap meeting") = 0.519. One spammy word and one hammy word cancel out.
+- <strong>NB vs logistic regression by training size</strong> (breast cancer, mean test accuracy over 30 random draws):</p>
+<table>
+<thead>
+<tr>
+<th>m</th>
+<th>GaussianNB</th>
+<th>LogReg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>0.8493</td>
+<td>0.8946</td>
+</tr>
+<tr>
+<td>20</td>
+<td>0.9237</td>
+<td>0.9265</td>
+</tr>
+<tr>
+<td>40</td>
+<td>0.9281</td>
+<td>0.9446</td>
+</tr>
+<tr>
+<td>80</td>
+<td>0.9288</td>
+<td>0.9542</td>
+</tr>
+<tr>
+<td>160</td>
+<td>0.9282</td>
+<td>0.9630</td>
+</tr>
+<tr>
+<td>340</td>
+<td>0.9338</td>
+<td>0.9655</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest finding:</strong> here NB did <em>not</em> win at small m. Logistic regression (on scaled features) led at every size. NB did plateau early (0.928 from m = 40 onwards), which matches the "reaches its asymptote faster" half of the theory. The "beats LR at small m" half did not show up on this dataset. Theory describes tendencies, not guarantees, and you should always measure.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Implement <code>GaussianNB</code> from scratch (class priors, per-class means and variances plus a small variance floor, log joint), and reproduce 0.9630 on wine.</li>
+<li>Implement multinomial NB with Laplace smoothing on the 6-message toy corpus. Verify P(spam | "buy now") = 0.928.</li>
+<li>Try to <em>make</em> NB win: repeat the m-sweep on wine, or on digits with <code>GaussianNB</code> vs unregularised logistic regression. Report what you find either way.</li>
+<li>Print the per-class posteriors for 10 test rows and count how many have max posterior &gt; 0.999. What does that tell you about the naive assumption?</li>
+<li>Stretch: <code>ComplementNB</code> vs <code>MultinomialNB</code> on <code>fetch_20newsgroups</code> with two categories (scikit-learn downloads it). Report accuracy and training time.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>P(spam) = 0.4, P("win" | spam) = 0.3, P("win" | ham) = 0.01. Compute P(spam | "win"). <em>(0.12/(0.12 + 0.006) ≈ 0.952.)</em></li>
+<li>Why does Laplace smoothing matter? <em>(Without it, one unseen word makes P(x | y) = 0 for that class.)</em></li>
+<li>Is logistic regression generative or discriminative? <em>(Discriminative.)</em></li>
+<li>Two perfectly duplicated features in NB. What happens? <em>(Their evidence counts twice, so the model is overconfident.)</em></li>
+<li>Gaussian NB with shared variances across classes has what kind of boundary? <em>(Linear.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. State the naive independence assumption.
+  2. Why compute in log space?
+  3. What is the difference between generative and discriminative models?
+  4. What did our m-sweep show, honestly?
+  5. What is Laplace smoothing?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>With shared covariance, Gaussian class-conditionals give exactly logistic regression's functional form for P(y | x) (linear discriminant analysis). The two then differ only in <em>how the parameters are fitted</em>: by maximising the joint P(x, y) or the conditional P(y | x). That is the cleanest way to see "generative vs discriminative" as a statement about the objective, not the model shape.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Zero variance for a constant feature gives division by zero. Add a variance floor (scikit-learn's <code>var_smoothing</code>).</li>
+<li>Feeding TF-IDF floats or negative values to MultinomialNB. It expects non-negative counts.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow: support vector machines, which focus on the points near the boundary and use kernels to bend it.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-036.html">← Day 36</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-038.html">Day 38 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 160 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="160">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-159.html">← Day 159</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-161.html">Day 161 →</a></nav>
+<h1>Day 160: A tiny inference engine in Rust (PyO3), checked against PyTorch and ONNX Runtime</h1>
+<p class="meta">Week 23 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-23.md">source: weeks/week-23.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Why write one (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The engine and the run (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: What the numbers teach (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (35 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-23/tiny_infer/src/lib.rs"><code>code/week-23/tiny_infer/src/lib.rs</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 159 (+1), Day 157 (+3), Day 153 (+7), Day 139 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-why-write-one-20-min">Block 1: Why write one (20 min)</h3>
+<p>You will rarely ship a hand-written engine. ORT, ExecuTorch and LiteRT exist for good reasons. Writing one, though, teaches what they do for you: weight layout, quantization arithmetic, accumulation types, threading, and the difference between matrix-vector and matrix-matrix work. Rust is a good fit for on-device native code: no garbage collector, memory safety, and it compiles for Android ABIs. It also connects to Week 22's PyO3 kernels (Day 153) and Week 17's int8 matmul crate.</p>
+<h3 id="block-2-the-engine-and-the-run-40-min">Block 2: The engine and the run (40 min)</h3>
+<p><code>code/week-23/tiny_infer/src/lib.rs</code> defines two Python classes:
+- <strong><code>MlpF32(ws, bs)</code>:</strong> copies the row-major [out, in] weights. <code>forward(x, parallel)</code> runs each input row through every layer as a dot product per output neuron (16 f32 accumulators, so the compiler can vectorise), then adds the bias and applies ReLU.
+- <strong><code>MlpInt8(ws, bs)</code>:</strong> quantizes the weights at construction time, per output row and symmetric: s = max|w_row|/127, q = round(w/s). At run time it quantizes each activation row symmetrically (scale = max|x|/127), accumulates in i32, then dequantizes with x_scale × w_scale[row] and adds the fp32 bias.
+- With <code>parallel=True</code>, rows are split across threads with rayon.</p>
+<p>It is built with <code>RUSTFLAGS="-C target-cpu=native" CARGO_NET_OFFLINE=true maturin develop --release</code>. The <code>day160_rust_engine.py</code> script checks the engine against PyTorch, against a NumPy re-implementation of the same int8 algorithm, and against ORT.</p>
+<p><strong>Verified (out/day160_rust_engine.log):</strong>
+- Rust fp32: max |diff| vs torch 1.14e-05, accuracy 0.9741, weights 1,204 kB.
+- Rust int8: max |diff| vs the NumPy same-algorithm version 0.00e+00. Serial and parallel outputs are identical (<code>True</code>). Max |Δlogit| vs fp32 is 0.162, accuracy 0.9741, argmax agreement with fp32 1.0000, weights 308 kB.
+- Rust int8 vs ORT dynamic int8 logits: max |diff| 0.180. They use different activation quantization schemes, so they are not bit-identical.
+- Median latency in µs/call:</p>
+<table>
+<thead>
+<tr>
+<th>engine</th>
+<th>batch 1</th>
+<th>batch 256</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>torch eager fp32 (1 thread)</td>
+<td>30.1</td>
+<td>782.9</td>
+</tr>
+<tr>
+<td>ORT fp32 (1 thread)</td>
+<td>14.7</td>
+<td>683.8</td>
+</tr>
+<tr>
+<td>ORT dynamic int8 (1 thread)</td>
+<td>10.8</td>
+<td>212.8</td>
+</tr>
+<tr>
+<td>Rust fp32 serial</td>
+<td>17.0</td>
+<td>4,279.5</td>
+</tr>
+<tr>
+<td>Rust int8 serial</td>
+<td>31.3</td>
+<td>8,058.8</td>
+</tr>
+<tr>
+<td>Rust fp32 rayon (8 threads)</td>
+<td>16.9</td>
+<td>642.7</td>
+</tr>
+<tr>
+<td>Rust int8 rayon (8 threads)</td>
+<td>31.3</td>
+<td>1,072.4</td>
+</tr>
+</tbody>
+</table>
+<h3 id="block-3-what-the-numbers-teach-35-min">Block 3: What the numbers teach (35 min)</h3>
+<p><strong>Numerics first, and they pass.</strong> Rust fp32 differs from torch by 1.14e-05. That is a different summation order (16 partial sums instead of a BLAS kernel's order), the normal fp32 reassociation error, and it would fail an exact-equality test for no good reason. Rust int8 matches the NumPy version of the same algorithm <em>exactly</em>. That is the strongest test for a quantized kernel: write the algorithm twice, independently, and require identical integers. Its error vs fp32 (0.162) is the quantization error itself, comparable to ORT dynamic's 0.132 on Day 156.</p>
+<p><strong>At batch 1, a simple engine is competitive.</strong> Rust fp32 at 17.0 µs beat eager torch (30.1) and came close to ORT fp32 (14.7). With one input row, the work is three matrix-vector products. Its speed is set by how fast the 1.2 MB of weights stream from cache, and by per-call overhead, both of which are small in a few hundred lines of Rust.</p>
+<p><strong>At batch 256, the simple engine loses badly, and the reason is the most important idea of the day.</strong> Rust fp32 serial took 4,279.5 µs, 6x slower than ORT fp32 at 683.8. The engine processes one row at a time, so it re-reads every weight from memory 256 times. A real GEMM <em>blocks</em> the computation: it loads a tile of weights into registers and cache, and reuses it across many rows. That turns a memory-bound loop into a compute-bound one, which is Week 22's roofline (Day 152) in practice. Rayon across 8 threads hid much of it (642.7 µs, slightly faster than 1-thread ORT), but only by spending 8 cores.</p>
+<p><strong>Our int8 was slower than our fp32 (31.3 vs 17.0 µs at batch 1).</strong> ORT's int8 was faster than its fp32. The difference is the kernel. Our i8×i8→i32 loop widens each element to i32 before multiplying. That vectorises poorly, and it does not reach the CPU's VNNI dot-product instructions (present on this box), which ORT's MLAS kernels are built to use. Quantization saves memory automatically, but it saves <em>time</em> only when the kernel uses the hardware's integer instructions. That is why you use a runtime and don't write your own.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why is "max |diff| 0.00 vs a NumPy re-implementation" a stronger test than "accuracy unchanged"? <em>It checks every integer and scale in every layer. Accuracy can hide large errors on an easy task.</em></li>
+<li>Why does a row-at-a-time engine lose at batch 256 but not at batch 1? <em>At batch 1 there is nothing to reuse. At batch 256 a blocked GEMM reuses each weight tile across many rows, while the row loop streams all the weights 256 times.</em></li>
+<li>Why could int8 be slower than fp32? <em>The inner loop's widening conversions, and no use of VNNI/dot-product instructions. Speed comes from the kernel, not the data type.</em></li>
+<li>Why was serial vs parallel output identical? <em>Each row is computed independently in the same order. Threads only change which core does a row, not the arithmetic within it.</em></li>
+</ol>
+<h3 id="block-5-practice-35-min">Block 5: Practice (35 min)</h3>
+<p>Add a <code>forward_batched</code> that processes 8 rows per weight-row pass, accumulating 8 dot products at once while each weight row is in cache. Measure batch 256 again. You should see the serial time drop. Then try an <code>i16</code> accumulation of pairs before widening to <code>i32</code> in <code>dot_q</code>, and check that the NumPy comparison still gives 0.00.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>On Android, a Rust crate is built per ABI (<code>aarch64-linux-android</code> etc.) and exposed to Kotlin through JNI. This needs the NDK and is <strong>UNTESTED</strong> here. The binding pattern (thin wrapper, no allocations in the hot path, release locks/threads during compute) is the same as PyO3's <code>allow_threads</code>.</li>
+<li><code>-C target-cpu=native</code> tunes for <em>this</em> CPU. For distribution you would target a baseline (e.g. armv8-a with dotprod) and pick kernels at run time, which llama.cpp's Android doc describes doing.</li>
+<li>Week 17's <code>rust_qmatmul</code> crate and this one use the same quantization idea; this one adds per-row scales and dynamic activation scales.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Read how a blocked GEMM is structured (any BLAS kernel explanation, or Week 22's roofline notes), then sketch the tile sizes that would fit this CPU's L2 for a 512×512 int8 weight matrix.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Why not just write our own inference code? It's only matrix multiplies." Answer with today's data: correct numerics are achievable (we matched to 0.00 against an independent version), but performance needs blocked, SIMD- and VNNI-aware kernels for every shape, plus threading, operator coverage, quantization schemes and per-device tuning. That took our engine from 6x slower to merely competitive only at batch 1. Custom code is justified for a small, fixed model with special constraints, or one unsupported operator. Otherwise, use a runtime.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Comparing floats for exact equality across engines.</li>
+<li>Concluding "int8 is slower" from a naive kernel.</li>
+<li>Benchmarking a parallel engine against single-threaded baselines without saying so.</li>
+<li>Forgetting <code>--release</code> (debug builds are many times slower).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 161 puts everything into one table under one budget, and picks what to ship.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-159.html">← Day 159</a><a href="../weeks/week-23.html">Week 23</a><a rel="next" href="day-161.html">Day 161 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

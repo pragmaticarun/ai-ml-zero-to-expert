@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 20 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="20">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-019.html">← Day 19</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-021.html">Day 21 →</a></nav>
+<h1>Day 20: Distributions, expectation, variance, LLN and CLT</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-03/day20_distributions_clt.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/day20_distributions_clt.py"><code>code/week-03/day20_distributions_clt.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 19 (+1), Day 17 (+3), Day 13 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> A distribution describes how a random quantity tends to behave. The <strong>expectation</strong> is its long-run average (the centre of mass). The <strong>variance</strong> is the average squared distance from that centre (its spread), and the standard deviation is the square root of the variance, back in the original units. Two laws make statistics work:
+- <strong>Law of large numbers (LLN):</strong> sample averages converge to the expectation.
+- <strong>Central limit theorem (CLT):</strong> averages of many independent things are approximately <strong>normal</strong>, whatever the original distribution, and their spread shrinks like <strong>σ/√n</strong>.</p>
+<p><strong>Concrete example (verified with 1M samples each):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Distribution</th>
+<th>sample mean (theory)</th>
+<th>sample var (theory)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bernoulli(0.3)</td>
+<td>0.2990 (0.3)</td>
+<td>0.2096 (0.21)</td>
+</tr>
+<tr>
+<td>Uniform(0, 1)</td>
+<td>0.5001 (0.5)</td>
+<td>0.0833 (1/12)</td>
+</tr>
+<tr>
+<td>Exponential(rate 2)</td>
+<td>0.5003 (0.5)</td>
+<td>0.2507 (0.25)</td>
+</tr>
+<tr>
+<td>Normal(3, 2²)</td>
+<td>3.0006 (3)</td>
+<td>4.0055 (4)</td>
+</tr>
+</tbody>
+</table>
+<p>CLT check, averaging n exponentials (σ = 1): the std of the mean is 0.990 for n = 1, <strong>0.449</strong> for n = 5 (theory 0.447) and <strong>0.141</strong> for n = 50 (theory 0.141). The histograms in <code>out/day20_clt.png</code> go from skewed to bell-shaped. For the normal distribution, P(|x| &lt; 1) ≈ 0.682 and P(|x| &lt; 2) ≈ 0.954: the famous 68-95 rule.</p>
+<p><strong>Plain-language maths.</strong>
+- E[X] = Σ x·p(x) (discrete) or ∫ x p(x) dx (continuous). It is linear: E[aX + b] = aE[X] + b.
+- Var[X] = E[(X − E[X])²] = E[X²] − E[X]². Var[aX + b] = a²Var[X].
+- For independent X, Y: Var[X + Y] = Var X + Var Y. Hence Var(mean of n) = σ²/n, so the std is σ/√n.
+- Bernoulli(p): mean p, variance p(1 − p). This is the model behind logistic regression's labels.
+- Normal N(μ, σ²): density ∝ exp(−(x − μ)²/(2σ²)). Tomorrow this exponent turns into squared error.</p>
+<p><strong>Why ML cares.</strong> Your test-set accuracy is a sample mean, so its uncertainty is about √(p(1 − p)/n). With 100 test examples and 90% accuracy, the std is about 3%, so "90% vs 92%" means nothing. SGD's mini-batch gradients are also sample means, and their noise shrinks like 1/√batch (Month 3).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>For a fair die, X ∈ {1, …, 6}: E[X] = 21/6 = 3.5. E[X²] = (1 + 4 + 9 + 16 + 25 + 36)/6 = 91/6 = 15.167, so Var = 15.167 − 12.25 = <strong>2.917</strong> and σ = 1.708.
+The mean of 100 rolls has std 1.708/10 = 0.171. So about 95% of the time the average of 100 rolls lands in 3.5 ± 0.34.
+Test-set example: a classifier gets 88 of 100 right. The std is √(0.88·0.12/100) = 0.0325, so a rough 95% interval is 88% ± 6.5%.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-03day20_distributions_cltpy">Block 3: Coding lab (2h): <code>code/week-03/day20_distributions_clt.py</code></h3>
+<p>Tasks:
+1. Verify the die numbers by simulation.
+2. Bootstrap: resample a test set of 100 correct/incorrect outcomes with replacement 10,000 times and compare the spread with the √(p(1 − p)/n) formula.
+3. Plot the Normal density on top of the n = 50 histogram using the theoretical μ and σ/√n.
+4. Find a distribution where the CLT fails or is very slow (Cauchy: <code>rng.standard_cauchy</code>). Watch sample means refuse to settle. (Heavy tails matter for outlier-robust losses.)</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>E[3X + 2] if E[X] = 4? <em>Answer:</em> 14.</li>
+<li>Var[3X + 2] if Var X = 4? <em>Answer:</em> 36.</li>
+<li>Bernoulli(0.1): mean and variance? <em>Answer:</em> 0.1 and 0.09.</li>
+<li>How many test samples do you need to get the std of an accuracy near 90% below 1%? <em>Answer:</em> 0.09/n &lt; 0.0001, so n &gt; 900.</li>
+<li>Why does averaging reduce noise? <em>Answer:</em> the variances add (n σ²), but you divide by n² when averaging.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 19 (+1):</strong> compute P(spam | word) for your own made-up numbers.</li>
+<li><strong>Day 17 (+3):</strong> backprop through f = (x·y)² at x = 1, y = 2. <em>Answer:</em> df/dx = 2·2·2 = 8 and df/dy = 2·2·1 = 4.</li>
+<li><strong>Day 13 (+7):</strong> project (3, 4) onto (1, 1).</li>
+<li><strong>Self-check:</strong>
+  1. Define E and Var.
+  2. Var[X + Y] for independent variables?
+  3. State the CLT in words.
+  4. Std of the mean of n samples?
+  5. What uncertainty does a 100-sample accuracy estimate have?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li><code>np.var</code> defaults to ddof=0 (divide by n). Use ddof=1 for the unbiased sample variance. It matters for small n.</li>
+<li>Comparing models with one small test set. Report intervals or use cross-validation (Day 33).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Get into the habit of attaching an error bar to every metric you report from now on.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-019.html">← Day 19</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-021.html">Day 21 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

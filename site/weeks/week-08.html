@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 8 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="8">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-07.html">← Week 7</a><a href="../syllabus.html">Syllabus</a><a href="week-09.html">Week 9 →</a></nav>
+<h1>Week 8 (Days 50-56): Dimensionality, anomalies, recommenders, time series, calibration, ML strategy, and Rust</h1><p class="meta"><a href="../../weeks/week-08.md">source: weeks/week-08.md</a> · <a href="../../pdf/week-08.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-050.html">Day 50: PCA in practice; t-SNE/UMAP for visualisation</a> <span class="st" data-st="50"></span></li><li><a href="../days/day-051.html">Day 51: Anomaly detection</a> <span class="st" data-st="51"></span></li><li><a href="../days/day-052.html">Day 52: Recommender systems: collaborative filtering, matrix factorisation</a> <span class="st" data-st="52"></span></li><li><a href="../days/day-053.html">Day 53: Time-series basics: lag features, leakage-safe validation</a> <span class="st" data-st="53"></span></li><li><a href="../days/day-054.html">Day 54: Interpretability and probability calibration</a> <span class="st" data-st="54"></span></li><li><a href="../days/day-055.html">Day 55: Systematic ML strategy: learning curves, error analysis, what to try next</a> <span class="st" data-st="55"></span></li><li><a href="../days/day-056.html">Day 56: PROJECT W8: Rust/PyO3 k-means kernel vs NumPy; Quiz 8</a> <span class="st" data-st="56"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-08"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>How do you get PCA components and their variances from the SVD?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Centre X, then Xc = UΣVᵀ. The components are the rows of Vᵀ, and the variances are σ²/(m − 1).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What did the PCA reconstruction error equal in our run?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The sum of the dropped eigenvalues divided by 64 (e.g. 4.914 at k=10).</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Name two things t-SNE plots do not preserve.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Between-cluster distances, cluster sizes (also axes and density).</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Why did the multivariate Gaussian beat independent Gaussians on Day 51?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The features are strongly correlated, and only the full covariance models that.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Write the biased MF prediction formula.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>r̂ = μ + bᵤ + bᵢ + pᵤ·qᵢ.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>What did unregularised MF's test RMSE do between epochs 10 and 30?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>It rose from 0.9524 to 1.0173 (overfitting).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>Why does <code>y.rolling(24).mean()</code> leak, and what is the fix?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The window includes yₜ itself. Fix: <code>y.shift(1).rolling(24).mean()</code>.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Shuffled vs time-split MAE for calendar + weather features?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>26.5 (shuffled) vs 48.7 (time split).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Two calibration methods, and when to use each.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Platt/sigmoid for small data and S-shaped distortion. Isotonic for more data and arbitrary monotone distortion.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>LinearSVC and logreg had the same AUC. What did Platt scaling change?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Brier went from 0.1142 to 0.0777 (calibration). AUC was unchanged.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>Define avoidable bias and variance (Ng style).</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Avoidable bias = train error − reference error. Variance = dev error − train error.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>In the Rust project, which implementation won the assignment step, and which won the full Lloyd loop?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Rust + rayon won the assignment step (8.3 ms). scikit-learn won the full loop (0.22 s vs Rust 0.70 s).</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full. Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Compress data with PCA (built from the SVD), and visualise it with t-SNE, knowing what each view preserves.</li>
+<li>Detect anomalies with density models and isolation forests, with thresholds tuned on validation data.</li>
+<li>Build a recommender from biases plus matrix factorisation on MovieLens 100K.</li>
+<li>Forecast with lag features without leaking the future.</li>
+<li>Check whether probabilities mean what they say, and explain effects with partial dependence.</li>
+<li>Diagnose a model systematically (learning curves, error analysis) and decide what to try next.</li>
+<li>Write a Rust/PyO3 k-means kernel and benchmark it honestly against NumPy and scikit-learn.</li>
+</ol>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  PCA[PCA / t-SNE] --&gt; AN[Anomaly detection]
+  AN --&gt; RS[Recommenders: MF]
+  RS --&gt; TS[Time series: lags]
+  TS --&gt; CAL[Calibration &amp; PDP]
+  CAL --&gt; ST[ML strategy: learning curves]
+  ST --&gt; RU[Project: Rust k-means kernel]
+</code></pre></div>
+
+<p><strong>New dataset:</strong> <strong>MovieLens 100K</strong> (GroupLens Research: 100,000 ratings from 943 users on 1,682 films). We use its official <code>u1.base</code>/<code>u1.test</code> split (80k/20k). Download URL is in <code>data/README.md</code>; the data comes with its own usage licence (read the README inside the zip).</p>
+<hr />
+<h2 id="weekly-quiz-week-8">Weekly quiz: Week 8</h2>
+<ol>
+<li>How do you get PCA components and their variances from the SVD?</li>
+<li>What did the PCA reconstruction error equal in our run?</li>
+<li>Name two things t-SNE plots do not preserve.</li>
+<li>Why did the multivariate Gaussian beat independent Gaussians on Day 51?</li>
+<li>Write the biased MF prediction formula.</li>
+<li>What did unregularised MF's test RMSE do between epochs 10 and 30?</li>
+<li>Why does <code>y.rolling(24).mean()</code> leak, and what is the fix?</li>
+<li>Shuffled vs time-split MAE for calendar + weather features?</li>
+<li>Two calibration methods, and when to use each.</li>
+<li>LinearSVC and logreg had the same AUC. What did Platt scaling change?</li>
+<li>Define avoidable bias and variance (Ng style).</li>
+<li>In the Rust project, which implementation won the assignment step, and which won the full Lloyd loop?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>Centre X, then Xc = UΣVᵀ. The components are the rows of Vᵀ, and the variances are σ²/(m − 1).</li>
+<li>The sum of the dropped eigenvalues divided by 64 (e.g. 4.914 at k=10).</li>
+<li>Between-cluster distances, cluster sizes (also axes and density).</li>
+<li>The features are strongly correlated, and only the full covariance models that.</li>
+<li>r̂ = μ + bᵤ + bᵢ + pᵤ·qᵢ.</li>
+<li>It rose from 0.9524 to 1.0173 (overfitting).</li>
+<li>The window includes yₜ itself. Fix: <code>y.shift(1).rolling(24).mean()</code>.</li>
+<li>26.5 (shuffled) vs 48.7 (time split).</li>
+<li>Platt/sigmoid for small data and S-shaped distortion. Isotonic for more data and arbitrary monotone distortion.</li>
+<li>Brier went from 0.1142 to 0.0777 (calibration). AUC was unchanged.</li>
+<li>Avoidable bias = train error − reference error. Variance = dev error − train error.</li>
+<li>Rust + rayon won the assignment step (8.3 ms). scikit-learn won the full loop (0.22 s vs Rust 0.70 s).</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

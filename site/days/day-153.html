@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 153 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="153">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-152.html">← Day 152</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-154.html">Day 154 →</a></nav>
+<h1>Day 153: Rust extensions with PyO3: vectorisation and threads</h1>
+<p class="meta">Week 22 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Why Rust, and how the binding works (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The run (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Reading it against the roofline (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 152 (+1), Day 150 (+3), Day 146 (+7), Day 132 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-why-rust-and-how-the-binding-works-30-min">Block 1: Why Rust, and how the binding works (30 min)</h3>
+<p>When numpy has no single call for what you need, Python loops are 800× too slow (Day 152), so you write the kernel in a compiled language. The syllabus suggests C++ with pybind11; this box has no C++ compiler, so the course uses Rust, which has three advantages for this job: memory safety without a garbage collector, a package manager (cargo) that builds with one command, and <strong>PyO3</strong>, which generates the Python binding from annotated Rust functions. <strong>maturin</strong> builds the crate into a Python wheel and installs it into the venv (<code>maturin develop --release</code>). The <code>numpy</code> crate gives zero-copy read access to numpy arrays as Rust slices, and <code>py.allow_threads</code> releases Python's GIL while the kernel runs so other Python threads can continue.</p>
+<p>The crate <code>rust_kernels/src/lib.rs</code> has three families:
+- <strong>dot products:</strong> <code>dot_naive</code> (one accumulator, indexed loop), <code>dot_simd</code> (16 independent accumulators over <code>chunks_exact(16)</code>), <code>dot_par</code> (rayon splits the array into 64K-element chunks over 8 threads, each using the SIMD kernel).
+- <strong>row softmax:</strong> a 3-pass version (max; exp and sum; scale) and an "online" version (running max and rescaled running sum in one read pass, then one write pass), each serial or rayon-parallel over rows.
+- <strong>BM25 top-k</strong> over a sparse matrix, used tomorrow.</p>
+<p><strong>Why the naive dot cannot vectorise.</strong> Floating-point addition is not associative, so the compiler must add the products in exactly the order written: one long dependency chain, one addition at a time. The 16-accumulator version gives the compiler 16 independent sums it may place in SIMD lanes, and <code>chunks_exact</code> removes bounds checks from the loop. Rust will not reorder float sums on its own (there is no equivalent of <code>-ffast-math</code> by default), so you write the reordering yourself.</p>
+<h3 id="block-2-the-run-60-min">Block 2: The run (60 min)</h3>
+<p><code>day153_rust_kernels.py</code> builds the crate twice with maturin, once for portable x86-64 and once with <code>RUSTFLAGS="-C target-cpu=native"</code> (allowing AVX-512 on this CPU), and benchmarks each build in a fresh process. numpy is pinned to one BLAS thread; rayon uses 8.</p>
+<p><strong>Verified (out/day153_rust_kernels.log):</strong>
+- Builds: portable exit 0 in 1 s (cached), native exit 0 in 8 s.
+- Portable build, dot product, µs (GFLOP/s):
+  - n=65,536 (0.5 MB): numpy 6.2 (21.1); naive 35.2 (3.7); simd 6.3 (20.7); rayon 6.5 (20.1).
+  - n=1,048,576 (8 MB): numpy 248.5 (8.4); naive 528.7 (4.0); simd 233.5 (9.0); rayon 42.7 (49.1).
+  - n=16,777,216 (128 MB): numpy 3,972.0 (8.4); naive 8,492.7 (4.0); simd 3,684.9 (9.1); rayon 520.4 (64.5).
+- Native build: simd 5.4 µs (24.4) at 0.5 MB; 253.4 µs (8.3) at 8 MB; 4,004.1 µs (8.4) at 128 MB; rayon 38.6 µs (54.3) at 8 MB and 567.0 µs (59.2) at 128 MB; naive unchanged (4.0 GFLOP/s).
+- Relative error vs a float64 reference at 128 MB: naive 5.3e-05, simd 4.3e-06, numpy 7.4e-06.
+- Softmax 4096×1024 float32, portable build: numpy 7.72 ms; rust 3-pass 10.38 ms; rust online 18.70 ms; 3-pass rayon 2.07 ms; online rayon 3.46 ms. Native: numpy 7.82; 3-pass 9.87; online 18.90; 3-pass rayon 1.83; online rayon 3.14. Max error vs float64: numpy 3.1e-07, all Rust versions 4.7e-06.</p>
+<h3 id="block-3-reading-it-against-the-roofline-45-min">Block 3: Reading it against the roofline (45 min)</h3>
+<p><strong>Accumulators matter more than compiler flags.</strong> The single-accumulator loop runs at 3.7-4.0 GFLOP/s at every size and with either build: it is latency-bound on its dependency chain, not memory-bound. Sixteen accumulators give 5-6× (20.7 vs 3.7 at 0.5 MB), equal to numpy's hand-tuned BLAS. <code>target-cpu=native</code> added a little only when the data sat in L2 (20.7 → 24.4 GFLOP/s at 0.5 MB) and nothing at larger sizes.</p>
+<p><strong>Once data leaves the core's cache, one thread hits the memory roof.</strong> At 8 MB and 128 MB, numpy and the SIMD kernel both sit at 8.3-9.1 GFLOP/s, which at 8 bytes per 2 FLOPs is about 34-36 GB/s, the same range as Day 152's single-thread bandwidth. No amount of SIMD helps past that. <strong>Threads</strong> add memory parallelism: rayon reached 49-64.5 GFLOP/s, about 6-8× one thread. (Both large arrays fit in the 320 MB L3, so this is L3 bandwidth across cores, not DRAM.) At 0.5 MB, rayon gave nothing, since the work is only microseconds and threading overhead eats the gain.</p>
+<p><strong>Accuracy improves with more accumulators.</strong> The naive sum's relative error (5.3e-05 at 16M elements) is about 12× the SIMD version's (4.3e-06): 16 partial sums each add fewer terms, which acts like a partial pairwise summation. Faster and more accurate here.</p>
+<p><strong>The online softmax lost, and that is the honest lesson.</strong> In 1-D it reads the input once instead of twice, but it computes <code>exp</code> twice per element (once in the running sum, once for the output), plus a data-dependent branch. Each row is 4 KB, which stays in L1 cache, so the saved memory pass was nearly free anyway; the extra <code>exp</code> work is what showed up, 18.7 vs 10.4 ms. Online softmax pays off when memory traffic is the real cost: in FlashAttention on a GPU, where it lets attention be computed in tiles without writing the full score matrix to slow memory.</p>
+<p><strong>numpy's softmax beat serial Rust</strong> (7.72 vs 10.38 ms) because numpy's <code>exp</code> is a vectorised SIMD implementation, while Rust's <code>f32::exp</code> calls the scalar libm routine. Rayon over rows was 3.7-4.3× faster than numpy. The fair comparison would be numpy with threads too, but numpy's element-wise ufuncs are single-threaded.</p>
+<p><strong>CPU vs GPU.</strong> A GPU runs this softmax with one thread block per row and thousands of rows at once; the UNTESTED Triton file in Day 154 shows that form. Nothing here measured a GPU.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why does <code>-C target-cpu=native</code> not speed up <code>dot_naive</code>? <em>Its limit is the serial add chain, which no instruction set removes.</em></li>
+<li>Why do numpy and <code>dot_simd</code> tie at 128 MB? <em>Both are bandwidth-bound at about 34 GB/s on one thread.</em></li>
+<li>Why was online softmax slower? <em>Twice the exp work, and the saved pass was over L1-resident data.</em></li>
+<li>What does <code>py.allow_threads</code> do? <em>It releases the GIL so other Python threads run during the kernel.</em></li>
+</ol>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Add a <code>saxpy</code> (y = a·x + y, in place on a writable numpy array) kernel, predict its GFLOP/s from Day 152's roofline before running, then measure the serial and rayon versions at 1M and 16M elements.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>Correctness tests come first: every kernel here was compared with a float64 numpy reference before timing. Benchmarks used the minimum of 7 runs after a warm-up, in a fresh process per build so the two builds cannot mix.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>The PyO3 guide's sections on the GIL and on numpy interop, and the rayon docs on work stealing (all linked in <code>docs/resources.md</code>).</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"You rewrote a numpy function in Rust and it is slower. Why might that be?" <em>Expected: numpy was already calling vectorised C/BLAS; scalar math functions in Rust; bounds checks or a serial dependency chain; copies at the Python boundary; measuring the first call; memory-bound so no compute gain possible.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Expecting compiled code to beat BLAS by default.</li>
+<li>One accumulator in a reduction.</li>
+<li>Benchmarking threads on microsecond-sized work.</li>
+<li>Comparing builds in the same process.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow's project uses the BM25 kernel to speed up the capstone's retrieval end to end, and shows GPU kernels as UNTESTED reading material.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-152.html">← Day 152</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-154.html">Day 154 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 13 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="13">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-12.html">← Week 12</a><a href="../syllabus.html">Syllabus</a><a href="week-14.html">Week 14 →</a></nav>
+<h1>Week 13 (Days 85-91): Tuning, the Month-3 capstone, and the first step into attention</h1><p class="meta"><a href="../../weeks/week-13.md">source: weeks/week-13.md</a> · <a href="../../pdf/week-13.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-085.html">Day 85: Hyperparameter tuning and experiment tracking for deep learning</a> <span class="st" data-st="85"></span></li><li><a href="../days/day-086.html">Day 86: Month-3 capstone build: small ResNet on CIFAR-10-small with baselines</a> <span class="st" data-st="86"></span></li><li><a href="../days/day-087.html">Day 87: Month-3 capstone: ablations</a> <span class="st" data-st="87"></span></li><li><a href="../days/day-088.html">Day 88: Month-3 capstone: error analysis</a> <span class="st" data-st="88"></span></li><li><a href="../days/day-089.html">Day 89: Cumulative review Months 1-3 (10 runnable drills)</a> <span class="st" data-st="89"></span></li><li><a href="../days/day-090.html">Day 90: MONTH-3 CAPSTONE delivery (report) + checkpoint exam</a> <span class="st" data-st="90"></span></li><li><a href="../days/day-091.html">Day 91: PROJECT W13: attention from scratch (Q, K, V); Quiz 13</a> <span class="st" data-st="91"></span></li></ul><h3>Exams this week</h3><ul><li><a href="../exams/w13-d90.html">Day 90: Month-3 checkpoint exam (Coding lab (2h))</a></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-13"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Why does random search beat grid search on the same budget? Use the Day-85 numbers.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>With only 3 × 3 values, a grid tries just 3 learning rates; random search tried 9. Grid best 0.9382, random best 0.9434 (at lr 2.58e-3, a value the grid could not try).</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>What was the Day-85 seed-noise standard deviation, and which comparison did it make meaningful?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.0007 over 5 seeds; it showed that the 0.0052 gap between random and grid winners (about 7 std) is probably real.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Give the two baselines and the capstone's validation accuracy on Day 86.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Majority class 0.1016, logistic regression 0.3688, small ResNet 0.7656.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>What happened at epoch 8 of the capstone run, and why was it not a reason to stop?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Val acc fell from 0.6152 to 0.3728 while train loss kept falling; it was a one-epoch wobble near the one-cycle peak, and it recovered to 0.7656.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Which single ablation cost the most, and by how much?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Removing batch norm: −0.3508 (val acc 0.3536).</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>Which two ablations scored slightly <em>higher</em> than the full model, and how should the report describe them?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>No augmentation (+0.0068) and no residual connections (+0.0064): "no measurable effect at an 8-epoch budget with one seed".</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What did the half-data ablation suggest about where to invest next?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Half data cost 0.0864, twice the half-width cost (0.0432): more data, or augmentation as its proxy, should help most.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>Give the test accuracy, with and without flip-TTA.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.7736 without and 0.7816 with flip-TTA.</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>Name the top confusion pair and the share of errors explained by the top five pairs.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>cat → dog (74 errors); the top five explain 39% of the 566 errors.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Define ECE and give its Day-88 value.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Bin predictions by confidence and take the size-weighted mean of |accuracy − confidence|; 0.0203 with 10 bins.</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>At an abstention threshold of 0.9, what coverage and accuracy did the model get?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Coverage 41.5%, accuracy 0.9730.</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>Why is attention divided by √d_k? Give one measured value.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The variance of q · k grows with d_k, which saturates the softmax; e.g. the std was 31.25 at d_k = 1024 and 0.98 after scaling.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full (Phase 3). Titles match <code>SYLLABUS.md</code>. Every number below was printed by a script in <code>code/week-13/</code> on this box (Python 3.13.5, torch 2.15.0+cpu, 8 CPU threads, no GPU). Wall-clock times were measured while other jobs shared the CPU, so treat them as rough. Accuracies are deterministic for a fixed seed.</p>
+<h2 id="week-goals">Week goals</h2>
+<ul>
+<li>Run a hyperparameter search you can defend: a fixed budget, a log file, a validation set, and a measured seed-noise floor.</li>
+<li>Build a Month-3 capstone image classifier (a small ResNet on CIFAR-10-small) and beat two baselines by a clear margin.</li>
+<li>Run ablations that change one thing at a time, and report the surprising rows honestly.</li>
+<li>Do a full error analysis: per-class accuracy, confusion pairs, input slices, calibration, abstention, and a hand-tagged error sheet.</li>
+<li>Review Months 1-3 with runnable drills, then deliver a written capstone report and sit the checkpoint exam.</li>
+<li>Start Month 4 by writing scaled dot-product attention from scratch (weekly project).</li>
+</ul>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  A[Day 85 tuning + tracking] --&gt; B[Day 86 capstone build]
+  B --&gt; C[Day 87 ablations]
+  C --&gt; D[Day 88 error analysis]
+  D --&gt; E[Day 89 cumulative review]
+  E --&gt; F[Day 90 report + exam]
+  F --&gt; G[Day 91 attention project + quiz]
+</code></pre></div>
+
+<p><strong>Compute note.</strong> CPU-only. The capstone trains in about 3 minutes for 15 epochs on 15,000 images. The ablations take about 30 minutes in total; run them while you read.</p>
+<p><strong>Datasets:</strong> MNIST (Day 85, via <code>code/week-10/_mnist.py</code>) and CIFAR-10-small from OpenML dataset 40926 (Days 86-90, see <code>data/README.md</code> for why OpenML is used). The split is fixed with seed 0: 15,000 train, 2,500 validation, 2,500 test. The test set is used <strong>once</strong>, on Day 88, after every choice is frozen.</p>
+<hr />
+<h2 id="weekly-quiz-week-13">Weekly quiz: Week 13</h2>
+<ol>
+<li>Why does random search beat grid search on the same budget? Use the Day-85 numbers.</li>
+<li>What was the Day-85 seed-noise standard deviation, and which comparison did it make meaningful?</li>
+<li>Give the two baselines and the capstone's validation accuracy on Day 86.</li>
+<li>What happened at epoch 8 of the capstone run, and why was it not a reason to stop?</li>
+<li>Which single ablation cost the most, and by how much?</li>
+<li>Which two ablations scored slightly <em>higher</em> than the full model, and how should the report describe them?</li>
+<li>What did the half-data ablation suggest about where to invest next?</li>
+<li>Give the test accuracy, with and without flip-TTA.</li>
+<li>Name the top confusion pair and the share of errors explained by the top five pairs.</li>
+<li>Define ECE and give its Day-88 value.</li>
+<li>At an abstention threshold of 0.9, what coverage and accuracy did the model get?</li>
+<li>Why is attention divided by √d_k? Give one measured value.</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>With only 3 × 3 values, a grid tries just 3 learning rates; random search tried 9. Grid best 0.9382, random best 0.9434 (at lr 2.58e-3, a value the grid could not try).</li>
+<li>0.0007 over 5 seeds; it showed that the 0.0052 gap between random and grid winners (about 7 std) is probably real.</li>
+<li>Majority class 0.1016, logistic regression 0.3688, small ResNet 0.7656.</li>
+<li>Val acc fell from 0.6152 to 0.3728 while train loss kept falling; it was a one-epoch wobble near the one-cycle peak, and it recovered to 0.7656.</li>
+<li>Removing batch norm: −0.3508 (val acc 0.3536).</li>
+<li>No augmentation (+0.0068) and no residual connections (+0.0064): "no measurable effect at an 8-epoch budget with one seed".</li>
+<li>Half data cost 0.0864, twice the half-width cost (0.0432): more data, or augmentation as its proxy, should help most.</li>
+<li>0.7736 without and 0.7816 with flip-TTA.</li>
+<li>cat → dog (74 errors); the top five explain 39% of the 566 errors.</li>
+<li>Bin predictions by confidence and take the size-weighted mean of |accuracy − confidence|; 0.0203 with 10 bins.</li>
+<li>Coverage 41.5%, accuracy 0.9730.</li>
+<li>The variance of q · k grows with d_k, which saturates the softmax; e.g. the std was 31.25 at d_k = 1024 and 0.98 after scaling.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

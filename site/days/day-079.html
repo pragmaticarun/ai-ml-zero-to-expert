@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 79 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="79">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-078.html">← Day 78</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-080.html">Day 80 →</a></nav>
+<h1>Day 79: LSTMs and GRUs</h1>
+<p class="meta">Week 12 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-12.md">source: weeks/week-12.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-12/day79_lstm_gru.py"><code>code/week-12/day79_lstm_gru.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 78 (+1), Day 76 (+3), Day 72 (+7), Day 58 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Instead of overwriting the memory each step, keep a <em>cell state</em> c that is changed by addition, and let learned gates decide what to forget, what to write and what to show.</p>
+<p><strong>LSTM.</strong> With σ the sigmoid and [h, x] concatenated:
+- forget f = σ(W_f [h_{t−1}, x_t] + b_f), input i = σ(…), output o = σ(…), candidate g = tanh(…)
+- c_t = f ⊙ c_{t−1} + i ⊙ g, h_t = o ⊙ tanh(c_t).</p>
+<p>When f ≈ 1 and i ≈ 0, c passes through unchanged and so does its gradient: the "constant error carousel". A common trick is to <strong>initialise the forget-gate bias to 1</strong>, so the network starts by remembering.</p>
+<p><strong>GRU.</strong> Two gates (update z, reset r), no separate cell: h_t = (1 − z) ⊙ h_{t−1} + z ⊙ h̃_t. Fewer parameters, often similar results.</p>
+<p><strong>Parameter counts.</strong> PyTorch stacks the gates: weight_ih has shape (G·H, input) with G = 1 (RNN), 3 (GRU), 4 (LSTM). Each layer has two bias vectors (b_ih and b_hh). Params = G·(H·I + H·H + 2H).</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-12/day79_lstm_gru.py</code> (about 50 s). Task: a sequence of T random tokens from 4 symbols; at the end, output the first token (chance 0.25). Hidden 32, Adam 3e-3, gradient clipping 1, 1,500 steps. <strong>Verified:</strong>
+- Params: RNN <strong>1,408</strong>, GRU <strong>4,224</strong>, LSTM <strong>5,632</strong>; weight_ih shapes (32, 10), (96, 10), (128, 10).
+- Accuracy recalling the first token:</p>
+<table>
+<thead>
+<tr>
+<th>T</th>
+<th>RNN</th>
+<th>GRU</th>
+<th>LSTM</th>
+<th>LSTM, forget bias 1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>20</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>0.7520</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>50</td>
+<td>0.2520</td>
+<td>0.2380</td>
+<td>0.2600</td>
+<td>0.2525</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A hand-written LSTM step matches <code>nn.LSTMCell</code> exactly (max diff <strong>0.0</strong>).</li>
+</ul>
+<p><strong>Read this honestly.</strong> At T = 20, the plain LSTM was slower to learn than the GRU and RNN in this budget; forget-bias 1 fixed it. At T = 50, <em>every</em> model stayed at chance after 1,500 steps. Gates make long memory <em>possible</em>, not automatic: the learning signal from a single target at the end is weak, and more steps, curricula or attention are needed. (In an earlier version of this script with fewer steps, the LSTM at T = 20 reached only 0.49.)</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Write an LSTM cell from the equations; check it against <code>nn.LSTMCell</code>.</li>
+<li>(45 min) Re-run T = 50 with 5,000 steps for the GRU. Does it leave chance? Record time.</li>
+<li>(30 min) Verify the parameter formula for an LSTM with I = 64, H = 256.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>LSTM params for I = 10, H = 32? <em>Answer: 4·(320 + 1024 + 64) = 5,632.</em></li>
+<li>GRU for the same sizes? <em>Answer: 3·1408 = 4,224.</em></li>
+<li>Why does forget bias 1 help early training? <em>Answer: f starts near σ(1) ≈ 0.73 rather than 0.5, so information and gradient decay more slowly.</em></li>
+<li>What does the T = 50 row tell you about claims that LSTMs "solve" long dependencies? <em>Answer: they help, but optimisation can still fail; measure.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can write the LSTM equations from memory.
+- [ ] I can count GRU/LSTM parameters.</p>
+<h3 id="extra-notes-why-the-gradient-survives-in-an-lstm">Extra notes: why the gradient survives in an LSTM</h3>
+<p>Differentiate the cell update along the cell path only: ∂c_t/∂c_{t−1} = f_t (element-wise). Over k steps this becomes the product of the forget gates, f_t ⊙ f_{t−1} ⊙ …, with no weight matrix and no tanh derivative in between. If the network learns f ≈ 1 for a unit, that unit's memory and gradient pass through many steps almost unchanged. Compare the RNN, where every step multiplies by W_hᵀ diag(1 − h²). This is why forget-bias initialisation matters: with bias 0, f starts near 0.5 and 0.5²⁰ ≈ 1e-6, so the early gradient from step 20 is tiny; with bias 1, f ≈ 0.73 and 0.73²⁰ ≈ 2e-3, about 2,000 times larger. Our T = 20 result (0.7520 → 1.0) matches this reasoning.</p>
+<p>The T = 50 failure has a different cause. The target depends on the first token only, and the network receives one supervised signal per sequence. Early in training, before the gates have learned to hold that token, the gradient that would teach them to hold it is weak, and the 49 distractor tokens add noise. Remedies that are known to help: curriculum learning (start with T = 5, then increase), more steps, larger hidden size, or architectures with direct access to the past, which is attention (Day 81, Day 91).</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Chris Olah's blog post "Understanding LSTM Networks" (linked in <code>docs/resources.md</code>) is the clearest diagram-based explanation.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"LSTM or GRU?" Similar quality on many tasks; GRU is smaller and faster; try both on validation; today transformers often replace both for long text.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Confusing <code>batch_first=True</code> and the default (T, B, I) layout.</li>
+<li>Using the last time step's output when sequences are padded: use <code>pack_padded_sequence</code> or index the true last step.</li>
+<li>Forgetting that <code>nn.LSTM</code> returns (output, (h, c)).</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 80 turns words into vectors.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-078.html">← Day 78</a><a href="../weeks/week-12.html">Week 12</a><a rel="next" href="day-080.html">Day 80 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

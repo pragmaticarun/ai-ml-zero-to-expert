@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 76 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="76">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-075.html">← Day 75</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-077.html">Day 77 →</a></nav>
+<h1>Day 76: Audio/image pipelines for multimedia devs (spectrograms, augmentation)</h1>
+<p class="meta">Week 11 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-11.md">source: weeks/week-11.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-11/day76_audio_image_pipelines.py"><code>code/week-11/day76_audio_image_pipelines.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 75 (+1), Day 73 (+3), Day 69 (+7), Day 55 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> If you have worked with media codecs or DSP, you already know the short-time Fourier transform (STFT): cut the signal into overlapping windows and take the FFT of each. The magnitude over time × frequency is a <strong>spectrogram</strong>, an image. CNNs are good at images, so many audio classifiers are CNNs on (log-)spectrograms.</p>
+<p><strong>Parameters you choose.</strong>
+- <strong>Sample rate</strong> fs: here 8,000 Hz (1-second clips = 8,000 samples).
+- <strong>n_fft</strong> (window length): 256 → frequency resolution fs/n_fft = <strong>31.25 Hz</strong> per bin, and n_fft/2 + 1 = <strong>129</strong> bins.
+- <strong>hop length</strong>: 128 samples = <strong>16 ms</strong> between frames.
+- <strong>log magnitude</strong>: loudness perception is roughly logarithmic and the log compresses the dynamic range so the CNN sees structure, not a few huge values. Mel scaling (not used here) warps frequency to match hearing.</p>
+<p><strong>Audio augmentation.</strong> Time shift, added noise, gain, and <strong>SpecAugment</strong>-style masking (zero a random band of frequencies or a random span of time frames).</p>
+<p><strong>Image pipelines.</strong> <code>torchvision.transforms.v2</code> composes resize, crop, flip, colour jitter and normalisation and applies them consistently to images (and boxes/masks if needed).</p>
+<p><strong>Honesty note.</strong> No audio dataset is downloaded. The script <strong>generates</strong> four classes of 1-second clips (steady tone, up-chirp, beeps, tone + harmonic) with heavy noise (std 2.0), so the labels are known exactly. It teaches the pipeline, not real-world audio performance.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-11/day76_audio_image_pipelines.py</code> (about 11 s). <strong>Verified:</strong>
+- 1,600 waveforms of 8,000 samples → spectrograms of shape <strong>(1600, 129, 63)</strong>: 129 frequency bins, 63 frames.
+- It saves <code>out/day76_spectrograms.png</code> with one example per class.
+- Small CNN on spectrograms, 400 held-out clips: <strong>0.8775</strong>; with SpecAugment <strong>0.8850</strong>.
+- Baseline, logistic regression on the time-averaged spectrum: <strong>0.7500</strong>; per class tone <strong>0.58</strong>, chirp <strong>0.88</strong>, beeps <strong>0.81</strong>, harmonic <strong>0.73</strong>. Averaging over time throws away exactly what distinguishes a tone from its pulsed (beeps) and swept (chirp) versions, so the time-frequency CNN wins.
+- A <code>transforms.v2</code> pipeline on a CIFAR image outputs shape <strong>(3, 32, 32)</strong>.</p>
+<p>When the noise was lower while building the lesson, every model reached 1.0 accuracy, which teaches nothing; the noise was raised to make the comparison informative.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Compute a spectrogram with <code>torch.stft</code> yourself; verify the shape for n_fft 512 and hop 256.</li>
+<li>(40 min) Add time-shift and gain augmentation to the waveform before the STFT. Does accuracy change?</li>
+<li>(40 min) Optional real audio: record a few seconds of your own voice saying two different words (your own data, no download), compute spectrograms and look at them. Do not train on 4 clips; just look.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>fs = 16,000, n_fft = 512. Bin width and number of bins? <em>Answer: 31.25 Hz, 257 bins.</em></li>
+<li>Hop 160 at 16 kHz is how many ms? <em>Answer: 10 ms.</em></li>
+<li>Why log-magnitude? <em>Answer: compresses dynamic range; closer to perception; more stable inputs.</em></li>
+<li>Why did the time-averaged baseline confuse tones and beeps? <em>Answer: their average spectra are similar; the difference is in time.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can choose n_fft and hop for a target time and frequency resolution.
+- [ ] I can explain SpecAugment.
+- [ ] I can state honestly what a synthetic benchmark can and cannot show.</p>
+<h3 id="extra-notes-designing-the-time-frequency-trade-off">Extra notes: designing the time-frequency trade-off</h3>
+<p>The STFT cannot be sharp in both time and frequency at once. A longer window (larger n_fft) gives finer frequency bins but blurs events in time; a shorter one does the opposite. Speech systems often use 25 ms windows with a 10 ms hop at 16 kHz (n_fft 400, hop 160), which is short enough to follow phonemes and long enough to resolve the harmonics of a voice. Our clips use 32 ms windows (256 samples at 8 kHz) and a 16 ms hop, giving 63 frames per second of audio. Work out these numbers for any pipeline you build and write them in the config, because a model trained on one setting will see shifted, stretched "images" under another.</p>
+<p>The window function matters too. Cutting a sine wave abruptly makes its energy leak into neighbouring bins. A Hann window tapers the ends, trading slightly wider peaks for much less leakage; <code>torch.stft(..., window=torch.hann_window(n_fft))</code> applies it. Because the window tapers, consecutive frames must overlap (here by 50%) so that no part of the signal is ignored.</p>
+<p>For image pipelines the same discipline applies: decide the resize policy (shorter side, centre crop, or letterbox), the colour space and the normalisation, and apply the same deterministic transforms at evaluation. Random augmentations belong only in training. The <code>transforms.v2</code> API makes this explicit by building two separate pipelines, one with random ops for training and one without for validation and test.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Look at <code>torchaudio.transforms.MelSpectrogram</code> and the SpecAugment paper (Park et al., 2019, linked in <code>docs/resources.md</code>).</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"How would you build a keyword-spotting model for a device?" Log-mel features, small CNN, augmentation (noise, shift, SpecAugment), quantisation, latency budget, false-accept vs false-reject trade-off.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Mixing sample rates between training and inference.</li>
+<li>Forgetting the window function, causing spectral leakage.</li>
+<li>Normalising each clip separately at training and globally at inference.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 77 is the weekly project: a classifier with honest model selection and error analysis.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-075.html">← Day 75</a><a href="../weeks/week-11.html">Week 11</a><a rel="next" href="day-077.html">Day 77 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

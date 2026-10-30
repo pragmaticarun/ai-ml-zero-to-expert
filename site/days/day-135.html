@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 135 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="135">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-134.html">← Day 134</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-136.html">Day 136 →</a></nav>
+<h1>Day 135: A ReAct loop, and an honest look at a 135M policy</h1>
+<p class="meta">Week 20 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-20.md">source: weeks/week-20.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 134 (+1), Day 132 (+3), Day 128 (+7), Day 114 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>ReAct in one paragraph.</strong> ReAct (Yao et al., "ReAct: Synergizing Reasoning and Acting in Language Models", https://arxiv.org/abs/2210.03629) interleaves free-text <em>reasoning</em> with <em>actions</em>. Each model turn is <code>Thought: …</code> followed by either <code>Action: &lt;tool call&gt;</code> or <code>Final: &lt;answer&gt;</code>. The harness runs the action and replies with <code>Observation: &lt;result&gt;</code>. The thought gives the model room to decompose the task ("I need the population of Avalon first"). The observation grounds the next step in real data rather than in the model's memory. Compare plain chain-of-thought, which reasons but cannot check facts, and blind tool use, which acts but cannot plan.</p>
+<p><strong>The synthetic task suite.</strong> <code>_agent.suite()</code> has 24 tasks over the fictional city table, 6 of each of four kinds:
+- <em>sum</em>: "What is the combined population of Avalon and Brindle?" (2 lookups and an add);
+- <em>diff</em>: "How many degrees warmer is Avalon than Brindle?" (2 lookups and a subtract);
+- <em>same</em>: "Are Avalon and Brindle in the same country? Answer yes or no." (2 lookups and a comparison);
+- <em>double</em>: "What is twice the population of Avalon?" (1 lookup and a multiply).</p>
+<p>Each task stores its gold answer <em>and</em> structured fields (cities, field, op). This lets us write an oracle policy that never parses text. Because the cities are invented, a model cannot pass by memorisation.</p>
+<p><strong>Four policies, from weakest assumption to strongest.</strong>
+- (a) SmolLM2 answering <strong>directly, without tools</strong>. This is the "no agent" baseline.
+- (b) SmolLM2 in a <strong>ReAct loop</strong>, with a 1-example transcript for invented cities Zeta and Omer, greedy decoding and a 6-step limit.
+- (c) A <strong>scripted text-parsing policy</strong>. It uses regexes over the question plus a list of known city names (a gazetteer). No model is involved. It is a reference for "what simple deterministic parsing achieves".
+- (d) The <strong>structured oracle</strong>, which reads the task's fields. This is the upper bound, and it checks that the harness and the suite are correct.</p>
+<p>Why include (c) and (d)? If (d) scored less than 24/24, the bug would be in our harness or gold labels, not in the model. Always run an oracle through a new harness first.</p>
+<p><strong>Metrics worth logging, not just accuracy:</strong> mean steps, how often the step limit was hit, tool errors (schema or runtime), and parse errors (no usable <code>Action:</code> or <code>Final:</code>). These are the raw signals for Day 138's failure taxonomy.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day135_react.py</code> builds the chat messages as: system prompt (format plus tool specs), the example transcript, <code>Task: …</code>, then the alternating <code>Action:</code> / <code>Observation:</code> turns. It decodes up to 60 new tokens. <code>smol_react</code> takes whichever comes first in the output, <code>Action:</code> (JSON-parsed) or <code>Final:</code>. Failed calls are fed back as <code>Observation: ERROR &lt;message&gt;</code>. The script exports <code>smol_react</code> and <code>text_scripted</code> behind a <code>__main__</code> guard, so Day 138 can import them without re-running this file.</p>
+<p><strong>Verified (out/day135_react.log):</strong>
+- (a) Direct, no tools: <strong>3/24</strong> correct, 0.49 s/task. Example: "combined population of Avalon and Brindle" → "100,000." (gold 165000).
+- (b) SmolLM2 ReAct: <strong>0/24</strong> correct; mean steps 5.1; step limit hit 18 times; 95 tool errors; 11 parse errors; 3.96 s/task. The traces show three distinct failures:
+  - On the Avalon+Brindle task it <em>made both lookups correctly</em> (observations 120000 and 45000) and then answered <code>45000</code>: right evidence, wrong final step.
+  - On a <em>same</em> task it copied the example's city <code>Zeta</code> and used <code>country</code> as an argument key.
+  - On a <em>double</em> task it sent <code>{'expression': '2*500'}</code> to <code>lookup</code> three times, ignoring the schema error each time.
+- (c) Scripted text-parsing: <strong>24/24</strong>, mean 3.5 steps, 0 errors.
+- (d) Oracle: <strong>24/24</strong>, mean 3.5 steps. So the harness and the gold labels are consistent.</p>
+<p>So with this model, adding a loop made things <em>worse</em> than answering directly (0/24 vs 3/24). The loop multiplies the chances to go wrong. A model that can't use error feedback just burns steps.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Replace the 1-example transcript with 4 examples, one per task kind. Re-run (b) once (about 2 minutes) and record your own numbers.</li>
+<li>Add a "repeat detector": if the same action is emitted twice in a row with the same error, stop early. How do mean steps change?</li>
+<li>Make (c) fail: write three paraphrases ("Avalon plus Brindle, population?") that its regexes miss. That is the brittleness a learned policy is supposed to remove.</li>
+<li>Read the raw outputs saved in <code>RAW</code>. Count how many contain <code>Thought:</code> at all.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>What does the observation step add over chain-of-thought? <em>Real data from tools, so later reasoning is grounded and checkable.</em></li>
+<li>Why run an oracle policy through the harness? <em>To separate harness or label bugs from policy failures. The oracle must score 24/24.</em></li>
+<li>Why can a ReAct loop score below direct answering? <em>Each step is another chance to fail. A weak model wastes steps on repeated invalid calls and may still garble the final step.</em></li>
+<li>What does "copied Zeta from the example" tell you? <em>The model is pattern-matching the prompt surface, not following the task. Few-shot examples can leak into answers.</em></li>
+<li>Which measured failure mode would a bigger model most likely fix first? <em>Probably the schema errors (key/value confusion). That is a prediction, not something we measured.</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>Write two sentences: when would you prefer the deterministic policy (c) in production over an LLM policy?</p>
+<p><strong>Extra notes.</strong> The text-scripted policy is not "cheating" as a baseline. Many production "agents" are mostly deterministic workflows with a model only at a few decision points. That design is easier to test and cheaper to run.</p>
+<p><strong>Going deeper.</strong> Read the ReAct paper's comparison of reasoning-only, acting-only and interleaved prompting. Then design the same three-way comparison for our suite: what would "acting-only" look like with SmolLM2?</p>
+<p><strong>Interview-style question (15 min).</strong> "Your ReAct agent hits the step limit 40% of the time. Diagnose." Look at the traces: are steps spent on repeated invalid calls (feed back better errors, add repeat detection), on loops between the same two tools (add a planner or memory of what was tried), or on useful but slow work (raise the limit)? Measure each with a taxonomy (Day 138) before changing anything.</p>
+<p><strong>Common mistakes.</strong> Reporting only accuracy. Not saving raw traces. Letting the few-shot example use the same entities as the test set. Not capping steps. Treating "Final:" text as trusted when it contradicts the observations.</p>
+<p><strong>What to do next.</strong> Day 136 removes the model (it can't carry the loop) and asks what planning and memory buy a policy that <em>can</em>.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-134.html">← Day 134</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-136.html">Day 136 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 112 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="112">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-111.html">← Day 111</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-113.html">Day 113 →</a></nav>
+<h1>Day 112: PROJECT W16: SFT vs DPO vs DPO+NLL; Quiz 16</h1>
+<p class="meta">Week 16 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-16.md">source: weeks/week-16.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-16/day112_project.py"><code>code/week-16/day112_project.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 111 (+1), Day 109 (+3), Day 105 (+7), Day 91 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>The question.</strong> Given preference pairs, is it better to (a) do SFT on the chosen answers only, (b) do DPO, or (c) do DPO plus an NLL (SFT) term on the chosen answer? Option (c) is a common fix for DPO lowering the chosen likelihood: the NLL term explicitly keeps the chosen answer probable.</p>
+<p><strong>When does DPO add something over SFT?</strong> DPO uses information SFT ignores: <em>what is wrong</em>. That matters when the chosen and rejected answers are both plausible and differ in a subtle way, and when the chosen answers are not good enough to imitate outright but are better than the alternative. When the chosen answer is simply the correct answer (as in our synthetic task), SFT gets the full signal and DPO is mostly a less direct way to reach it.</p>
+<p><strong>Fair comparison.</strong> Same 240 pairs, same LoRA (r=16, all linear), same lr (1e-4), same 60 steps × 4 pairs, same 40 test prompts, same metric (exact match, greedy, training wording) and the same forgetting probe (Shakespeare ppl, instruct reference 32.05). The DPO numbers come from the Day 109 run with these settings (β 0.1).</p>
+<p><strong>Project steps.</strong>
+1. Run <code>code/week-16/day112_project.py</code> (SFT and DPO+NLL; about 1.5 minutes).
+2. Put the Day 109 β = 0.1 result beside it.
+3. Add the Day 110 lesson: compute or at least state the uncertainty.
+4. Write a short report: question, setup, table, interpretation, limitations, what a GPU would change.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><strong>Verified (out/day112_project.log and out/day109_dpo_sweep.log):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Objective (60 steps × 4 pairs, lr 1e-4, LoRA r=16)</th>
+<th>Train time</th>
+<th>Exact match (n = 40)</th>
+<th>Shakespeare ppl</th>
+<th>Example output for "spring orange lemon cloud"</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SFT on chosen</td>
+<td>18 s</td>
+<td><strong>0.70</strong></td>
+<td>32.13</td>
+<td>"cloud lemon orange spring" (correct)</td>
+</tr>
+<tr>
+<td>DPO, β 0.1 (Day 109)</td>
+<td>36 s</td>
+<td>0.23</td>
+<td>32.35</td>
+<td>"clouds orange spring"</td>
+</tr>
+<tr>
+<td>DPO + NLL on chosen, β 0.1</td>
+<td>35 s</td>
+<td><strong>0.70</strong></td>
+<td>32.17</td>
+<td>"cloud lemon orange spring" (correct)</td>
+</tr>
+</tbody>
+</table>
+<p>SFT and DPO+NLL both reach 0.70 and keep perplexity near the instruct model's 32.05. Plain DPO reaches only 0.23. Here the difference between 0.70 and 0.23 is about 19 items out of 40, far outside the noise level measured on Day 110. SFT is also twice as fast per step, because DPO needs the rejected answer too. Adding DPO to SFT did not help on this task (0.70 vs 0.70), which fits the concept lesson: our chosen answers are exactly correct, so imitation captures the full signal.</p>
+<h3 id="block-3-lab-2h">Block 3: Lab (2h)</h3>
+<p>Write the project report (<code>code/week-16/out/report.md</code> or your notes) with:
+1. The table above, reproduced from your own run.
+2. A paired bootstrap CI for SFT − DPO (Day 110 lab 5).
+3. One experiment of your choice: (a) make chosen answers only <em>partly</em> correct (e.g. right order but one word misspelled) and see whether DPO+NLL beats SFT; (b) use 120 steps; (c) vary the NLL weight (0.1, 1, 10).
+4. Limitations: synthetic task, one seed, 40 test items, 135M model, CPU-sized budget.
+5. What a GPU would change: thousands of real pairs, 1-8B models, multiple seeds, online DPO or PPO with a learned RM, and human or held-out-judge evaluation.</p>
+<h3 id="block-4-practice-1h">Block 4: Practice (1h)</h3>
+<ol>
+<li>Why is SFT twice as fast per step as DPO here?</li>
+<li>Why would you expect DPO to help more when chosen answers are imperfect?</li>
+<li>Why is the NLL term a natural fix for Day 108's falling-mass problem?</li>
+<li>Name one thing this project cannot tell you about real preference tuning.</li>
+</ol>
+<p><strong>Answers.</strong> (1) Each DPO step processes the chosen and rejected sequences; SFT processes only the chosen (measured 18 s vs 35-36 s). (2) SFT would copy their flaws; DPO learns only the <em>direction</em> "more like chosen, less like rejected". (3) It directly rewards high likelihood for the chosen answer, so the loss cannot be satisfied by only lowering the rejected answer. (4) Behaviour with noisy, subjective human preferences at scale; anything about large models.</p>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can design a fair comparison of preference-tuning objectives.
+- [ ] I can reproduce the project table and explain each row.
+- [ ] I can say when DPO should and should not beat SFT.
+- [ ] I completed Quiz 16 below.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<p>This week's honest summary: on a clean synthetic task with a 135M model, preference accuracy was a poor guide to quality; DPO alone was worse than SFT; DPO+NLL matched SFT; reward models and implicit rewards were exploitable. These are known qualitative patterns, reproduced at toy scale; the specific numbers say nothing about large models.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<ul>
+<li>Read the Zephyr technical report for a real SFT-then-DPO recipe with AI-labelled preferences (search by title).</li>
+<li>Search the TRL documentation for the DPO trainer's options for adding an SFT loss term and compare with <code>day112_project.py</code>.</li>
+</ul>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"You have 10k preference pairs. Do you SFT on the chosen answers, run DPO, or both?" Points: start with SFT on chosen (cheap, strong baseline); add DPO, ideally with an NLL term, when the rejected answers carry information and chosen ones are not ideal; evaluate both with CIs, forgetting probes and human or judge checks; watch chosen log-probs and length.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Comparing objectives with different steps, learning rates or data.</li>
+<li>Leaving SFT out as a baseline.</li>
+<li>Claiming one method is better from a 1-2 item difference.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Week 17 continues Month 4 with the topics moved out of this week (see <code>SYLLABUS.md</code>).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-111.html">← Day 111</a><a href="../weeks/week-16.html">Week 16</a><a rel="next" href="day-113.html">Day 113 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 100 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="100">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-099.html">← Day 99</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-101.html">Day 101 →</a></nav>
+<h1>Day 100: Fine-tuning a small pretrained model</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day100_full_finetune.py"><code>code/week-15/day100_full_finetune.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 99 (+1), Day 97 (+3), Day 93 (+7), Day 79 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Why fine-tune?</strong> Pretraining on trillions of tokens is far beyond our budget. A pretrained model already knows language; fine-tuning on a small domain corpus moves it towards that domain's style and vocabulary. This is transfer learning (Day 75) for language models.</p>
+<p><strong>Full fine-tuning</strong> updates every weight with the same next-token loss used in pretraining, at a much smaller learning rate (around 1e-5 to 1e-4 rather than ~1e-3), so the model does not destroy what it knows.</p>
+<p><strong>Memory.</strong> With AdamW in fp32, each parameter needs 4 bytes (weight) + 4 (gradient) + 8 (two Adam moments) = 16 bytes, plus activations. For 134.5M parameters that is about <strong>2.0 GiB</strong> before activations. For a 7B model it would be about 112 GB, which is why full fine-tuning of large models needs several GPUs, mixed precision, and sharded optimiser states (ZeRO / FSDP), and why Day 101's LoRA exists.</p>
+<p><strong>Risks.</strong>
+- <em>Catastrophic forgetting:</em> the model gets better on the new domain and worse elsewhere (measured on Day 105).
+- <em>Over-fitting</em> small datasets after a few epochs.
+- <em>Learning-rate sensitivity:</em> too high wrecks the pretrained features quickly.</p>
+<p><strong>Recipe.</strong> Small learning rate, gradient clipping, a short warmup, evaluation on a held-out split before and after, and a probe set from the <em>original</em> domain to measure forgetting.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day100_full_finetune.py</code> (<strong>96 s</strong>). Settings: 100 steps, batches of 4 × 128 tokens, AdamW lr 5e-5, clip 1.0. <strong>Verified:</strong>
+- 134,515,008 parameters; fp32 weights + gradients + Adam ≈ <strong>2.00 GiB</strong>.
+- Validation perplexity (8 windows): <strong>26.29 → 21.38</strong> after 100 steps (0.88 s/step), from only 51,200 training tokens.
+- Training loss is noisy because each batch is only 512 tokens: 3.671 at step 0, 3.005 at step 40, 3.748 at step 90, 3.073 at step 99. Use the validation number, not single-batch training losses.
+- Sample after fine-tuning (prompt "ROMEO:"): "I will find you again. LADY CAPULET: That's well: 'tis not I, as I have been heard say, That 'tis a common thing". Compare with the Day 95 model: real words, grammatical lines, a correct character name from the same play.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(45 min) Run with lr 5e-4 and 5e-6. Which helps validation perplexity in 100 steps, and does the higher one damage the sample quality?</li>
+<li>(45 min) Freeze all but the last 4 layers and compare validation perplexity and speed.</li>
+<li>(30 min) Measure peak memory with <code>resource.getrusage</code> for full fine-tuning vs inference only.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Adam memory for 1B parameters in fp32? <em>Answer: ~16 GB plus activations.</em></li>
+<li>Why a smaller lr than pretraining? <em>Answer: to make small changes that preserve pretrained knowledge.</em></li>
+<li>Perplexity 26.29 → 21.38 is what change in loss? <em>Answer: ln 26.29 − ln 21.38 ≈ 3.269 − 3.062 = 0.207 nats/token.</em></li>
+<li>Name two ways to cut full fine-tuning memory. <em>Answer: bf16/mixed precision; 8-bit optimisers; gradient checkpointing; sharding.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can estimate fine-tuning memory from the parameter count.
+- [ ] I evaluate on held-out data before and after.
+- [ ] I know what catastrophic forgetting is and how to measure it.</p>
+<h3 id="extra-notes-gradient-checkpointing">Extra notes: gradient checkpointing</h3>
+<p>Activations for a long sequence through 30 layers can exceed the weights' memory. Gradient checkpointing stores only some layer inputs and recomputes the rest during the backward pass, trading about a third more compute for much less memory. In transformers it is <code>model.gradient_checkpointing_enable()</code>.</p>
+<p><strong>How much data is enough?</strong> Here 100 steps used 51,200 tokens, about one sixth of the 305,111-token training split, and perplexity still fell by 19%. Domain style is cheap to learn because the pretrained model already has the words; the fine-tune mostly shifts probabilities toward archaic forms, verse line breaks and speaker tags. New <em>facts</em> are much harder to add by fine-tuning and are better supplied at inference time with retrieval (Day 108).</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the Hugging Face <code>Trainer</code> documentation and map its arguments (learning rate, warmup, gradient accumulation, eval strategy) onto our hand-written loop.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your fine-tuned model is great on the target task but worse at everything else. What happened and what can you do?" Catastrophic forgetting; lower lr, fewer steps, mix in general data, use LoRA (smaller, removable changes), evaluate on a broad probe set.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Leaving the model in <code>eval()</code> mode, or forgetting <code>train()</code> after an evaluation.</li>
+<li>Judging progress from single-batch training loss.</li>
+<li>Saving only the weights and not the tokenizer.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 101: get most of the benefit while training 0.34% of the parameters.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-099.html">← Day 99</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-101.html">Day 101 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

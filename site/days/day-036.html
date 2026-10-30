@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 36 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="36">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-035.html">← Day 35</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-037.html">Day 37 →</a></nav>
+<h1>Day 36: k-nearest neighbours; distance metrics; curse of dimensionality</h1>
+<p class="meta">Week 6 · Month 2 · <span id="planned"></span> · <a href="../../weeks/week-06.md">source: weeks/week-06.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-06/day36_knn.py"><code>code/week-06/day36_knn.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 35 (+1), Day 33 (+3), Day 29 (+7), Day 15 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> "Tell me who your neighbours are and I'll tell you who you are." k-NN has no training step. It stores the data, and to predict a new point it finds the k closest training points and takes a majority vote (classification) or an average (regression). The model <em>is</em> the data.</p>
+<p><strong>The knobs.</strong>
+- <strong>k:</strong> k = 1 follows every noisy point (low bias, high variance). Large k smooths everything towards the overall majority (high bias).
+- <strong>Distance:</strong> Euclidean ‖a − b‖₂ is the default. Manhattan Σ|aᵢ − bᵢ| is more robust to one huge coordinate difference. Cosine distance compares directions (useful for text counts).
+- <strong>Weights:</strong> <code>weights="distance"</code> lets closer neighbours count more.</p>
+<p><strong>Scaling is not optional.</strong> Distance adds up squared differences across features. If one feature ranges over 1,400 units and another over 2, the first one decides everything.</p>
+<p><strong>The curse of dimensionality.</strong> In high dimensions, random points become almost equally far from each other. "Nearest" stops meaning "similar", because the nearest and farthest neighbours have nearly the same distance. k-NN (and anything distance-based) degrades unless the data really lives on a low-dimensional surface.</p>
+<p><strong>Cost.</strong> Training is O(1). Prediction is O(m·n) per query with brute force. KD-trees and ball trees help in low dimensions, and approximate nearest-neighbour indexes (Month 4's vector databases) help at scale.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p><code>code/week-06/day36_knn.py</code>. Verified:
+- <strong>Digits</strong> (75/25 stratified split), k = 3: scratch test accuracy <strong>0.9867</strong> (about 10–20 ms, a vectorised NumPy distance matrix via ‖a‖² + ‖b‖² − 2a·b), scikit-learn 0.9867 (about 110 ms). Predictions agree on 100% of rows.
+- <strong>k sweep</strong> (5-fold CV on the training split): k=1 0.9881, 3 0.9837, 5 0.9829, 11 0.9792, 25 0.9659, 51 0.9347. On clean digit images, small k is best, because neighbours are reliable.
+- <strong>Wine</strong> (13 chemistry features), k = 5: unscaled CV accuracy <strong>0.6913</strong> against <strong>0.9494</strong> with <code>StandardScaler</code>. The proline feature spans 1402 units while most others span under 20, so without scaling, k-NN is effectively "nearest proline value".
+- <strong>Curse of dimensionality</strong>, as the ratio of nearest to farthest distance for one query among 1000 uniform points: d=2 0.014, d=10 0.279, d=100 0.702, d=1000 0.874. At d=1000 the nearest neighbour is 87% as far as the farthest.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>Implement <code>knn_predict(Xtr, ytr, Xq, k)</code> with a fully vectorised distance matrix and <code>np.argpartition</code> (O(m) per row rather than a full sort). Match <code>KNeighborsClassifier</code>.</li>
+<li>Add <code>weights="distance"</code> voting and compare on digits for k = 5 and 25.</li>
+<li>Re-run the wine experiment with <code>MinMaxScaler</code> and with only the proline feature removed. Which matters more: scaling, or dropping the dominant feature?</li>
+<li>Run k-NN <em>regression</em> on California (scaled), sweeping k over 1–50 with CV MAE. Compare with Day 35's linear baseline (0.5289).</li>
+<li>Stretch: time brute force against <code>algorithm="kd_tree"</code> at n = 2, 8 and 64 features with 20,000 points. When does the tree stop helping?</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Points A(0, 0) label 0, B(1, 0) label 1, C(0, 3) label 0. Query (0.6, 0). Predictions for k = 1 and k = 3? <em>(k=1: B → 1. k=3: votes 0, 1, 0 → 0.)</em></li>
+<li>A feature in metres is rescaled to millimetres. What happens to unscaled k-NN? <em>(That feature's influence grows 1000×.)</em></li>
+<li>Why does k = 1 always give 100% training accuracy (with no duplicate points)? <em>(Each point is its own nearest neighbour.)</em></li>
+<li>Name two ways to fight the curse of dimensionality. <em>(Dimensionality reduction such as PCA on Day 50; feature selection; learned embeddings.)</em></li>
+<li>Prediction cost for 1M stored points, 100 features and 1000 queries, by brute force? <em>(About 10¹¹ multiply-adds.)</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li>Do the spaced reviews listed at the top.</li>
+<li><strong>Self-check:</strong>
+  1. How does k control bias and variance?
+  2. Why must features be scaled, and what did wine show?
+  3. State the curse of dimensionality in one sentence, with our d=1000 number.
+  4. What are the training and prediction costs of brute-force k-NN?
+  5. When would you use cosine distance?</li>
+</ul>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p><strong>1-NN's error is at most twice the Bayes error, asymptotically.</strong> The classic Cover–Hart result says that with infinite data, 1-NN's error is at most twice the best possible error. It explains why such a "dumb" method is a respectable baseline. <strong>Metric learning</strong> learns a distance (for example a linear map before Euclidean distance) so that same-class points come closer together. Siamese networks and contrastive learning in Month 3 are its deep descendants.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Fitting the scaler on all data before splitting. Use a pipeline.</li>
+<li>An even k in binary problems allows ties. Pick odd k, or use distance weights.</li>
+<li>Memory blow-up from an m×m distance matrix. Process queries in chunks.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Tomorrow's model is the opposite of k-NN: naive Bayes compresses each class into a few numbers, and it is <em>generative</em>.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-035.html">← Day 35</a><a href="../weeks/week-06.html">Week 6</a><a rel="next" href="day-037.html">Day 37 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

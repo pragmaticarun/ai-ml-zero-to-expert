@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 67 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="67">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-066.html">← Day 66</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-068.html">Day 68 →</a></nav>
+<h1>Day 67: Optimisers: SGD, momentum, RMSProp, Adam; LR schedules</h1>
+<p class="meta">Week 10 · Month 3 · <span id="planned"></span> · <a href="../../weeks/week-10.md">source: weeks/week-10.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-10/day67_optimisers.py"><code>code/week-10/day67_optimisers.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 66 (+1), Day 64 (+3), Day 60 (+7), Day 46 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Gradient descent in a long narrow valley zig-zags across it and creeps along it. Momentum averages recent gradients so the zig-zags cancel and the along-valley component builds up. Adaptive methods (RMSProp, Adam) rescale each coordinate by its recent gradient magnitude, so steep and flat directions get comparable steps.</p>
+<p><strong>Update rules (per parameter, g = gradient).</strong>
+- SGD: θ ← θ − η g.
+- Momentum: v ← βv + g; θ ← θ − η v (β ≈ 0.9).
+- RMSProp: s ← ρs + (1−ρ) g²; θ ← θ − η g / (√s + ε).
+- Adam: m ← β1 m + (1−β1) g; s ← β2 s + (1−β2) g²; bias-correct both (m̂ = m/(1−β1^t), ŝ = s/(1−β2^t)); θ ← θ − η m̂ / (√ŝ + ε). Defaults β1 0.9, β2 0.999.
+- AdamW: Adam with <em>decoupled</em> weight decay (θ ← θ − η λ θ applied separately), which behaves better than adding λθ to the gradient inside Adam.</p>
+<p><strong>Stability.</strong> On a quadratic with curvature h, plain GD diverges once η &gt; 2/h. That is why a too-large LR blows up rather than "just learning faster".</p>
+<p><strong>Schedules.</strong> Start larger to make progress, end smaller to settle. Step decay (divide by 10 at fixed epochs), cosine annealing, and one-cycle (warm-up then anneal) are the common shapes. <strong>LR range test:</strong> increase the LR exponentially over a few hundred steps, plot loss vs LR, and pick a value somewhat below where the loss is lowest, well below where it blows up.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-10/day67_optimisers.py</code>. <strong>Verified on a 2-D ill-conditioned quadratic (f after 50 steps):</strong> SGD lr 0.03 → <strong>0.380</strong>; SGD lr 0.085 → <strong>1.63e6</strong> (past the stability limit); momentum → <strong>4.97e-2</strong>; RMSProp → <strong>0.457</strong>; Adam lr 0.1 → <strong>2.67e-2</strong>.</p>
+<p><strong>MNIST, 10k training images, 5 epochs, test accuracy:</strong></p>
+<table>
+<thead>
+<tr>
+<th>optimiser</th>
+<th>test acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SGD</td>
+<td>0.9193</td>
+</tr>
+<tr>
+<td>SGD + momentum</td>
+<td>0.9559</td>
+</tr>
+<tr>
+<td>RMSProp</td>
+<td>0.9529</td>
+</tr>
+<tr>
+<td>Adam (1e-3)</td>
+<td>0.9474</td>
+</tr>
+<tr>
+<td>Adam (1e-1)</td>
+<td>0.5647</td>
+</tr>
+<tr>
+<td>AdamW</td>
+<td>0.9472</td>
+</tr>
+</tbody>
+</table>
+<p>Adam is not magic: at lr 0.1 it is far worse than plain SGD. Momentum SGD was best here, which is not a general law; it is one run, one seed.</p>
+<p><strong>Schedules over 10 epochs:</strong> constant <strong>0.9650</strong>, step <strong>0.9634</strong>, cosine <strong>0.9639</strong>, one-cycle <strong>0.9672</strong>. These differences are small; on Day 85 you will measure seed noise and see whether they mean anything. <strong>LR range test:</strong> lowest loss near lr <strong>0.0498</strong>; loss blew up at <strong>1.23</strong>.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Implement momentum and Adam yourself as <code>torch.optim.Optimizer</code> subclasses (only <code>step</code>). Check they match the built-ins on 20 steps to 1e-6.</li>
+<li>(30 min) Reproduce the optimiser table with 3 seeds and report mean ± std.</li>
+<li>(30 min) Run your own LR range test for Adam. Where does it say to start?</li>
+<li>(20 min) Plot the LR over steps for step, cosine and one-cycle schedulers to be sure you know what you configured.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Curvature h = 20. Largest stable GD learning rate? <em>Answer: 2/20 = 0.1.</em></li>
+<li>Why does Adam need bias correction? <em>Answer: m and s start at zero, so early averages are biased towards 0; dividing by (1−β^t) removes it.</em></li>
+<li>Difference between Adam with L2 and AdamW? <em>Answer: in Adam+L2 the decay gradient is rescaled by the adaptive denominator; AdamW applies decay directly to weights, independent of gradient scale.</em></li>
+<li>Momentum β = 0.9. Effective averaging window? <em>Answer: about 1/(1−β) = 10 steps.</em></li>
+<li>When should a scheduler step per batch instead of per epoch? <em>Answer: when it is defined in steps, like OneCycleLR or warm-up schedules.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Write the four update rules from memory. Self-check:
+- [ ] I can explain why lr 0.085 diverged on the quadratic.
+- [ ] I know when to pick AdamW over SGD+momentum and why I would still test both.
+- [ ] I can run and read an LR range test.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read the AdamW paper ("Decoupled Weight Decay Regularization", Loshchilov &amp; Hutter) and the one-cycle report by Leslie Smith; both are linked in <code>docs/resources.md</code>.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"Your loss is NaN after 200 steps with Adam. What do you try?" Lower LR, check data for NaNs/infs, gradient clipping, check for log(0) or division by zero in custom losses, check mixed-precision overflow (Day 82), and warm-up.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Calling <code>scheduler.step()</code> before <code>optimizer.step()</code> (PyTorch warns; the first LR value is skipped).</li>
+<li>Comparing optimisers at one learning rate each: every optimiser needs its own LR search.</li>
+<li>Forgetting that AdamW's default weight decay is 0.01 while Adam's is 0.</li>
+<li>Reading tiny accuracy differences between schedules as real without seeds.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 68 fights overfitting: the gap you saw between 20 and 60 epochs on Day 64.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-066.html">← Day 66</a><a href="../weeks/week-10.html">Week 10</a><a rel="next" href="day-068.html">Day 68 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

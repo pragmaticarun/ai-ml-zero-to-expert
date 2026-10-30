@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 102 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="102">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-101.html">← Day 101</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-103.html">Day 103 →</a></nav>
+<h1>Day 102: PEFT configurations and QLoRA concepts</h1>
+<p class="meta">Week 15 · Month 4 · <span id="planned"></span> · <a href="../../weeks/week-15.md">source: weeks/week-15.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-15/day102_peft_qlora.py"><code>code/week-15/day102_peft_qlora.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 101 (+1), Day 99 (+3), Day 95 (+7), Day 81 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Choosing a LoRA configuration.</strong> Three knobs: rank r, scale α, and target modules. For a Llama-style block the linear layers are q, k, v, o (attention) and gate, up, down (SwiGLU MLP). Adapting more modules adds parameters roughly linearly; raising r does too.</p>
+<p><strong>QLoRA</strong> (Dettmers et al., 2023, "QLoRA: Efficient Finetuning of Quantized LLMs"). Key ideas:
+1. Store the frozen base in <strong>4-bit</strong> (their NF4 data type, designed for normally distributed weights), with <strong>double quantisation</strong> of the scale factors.
+2. Dequantise blocks on the fly to bf16 for each matmul.
+3. Train LoRA adapters (in bf16) on <strong>all linear layers</strong>.
+4. Use <strong>paged optimisers</strong> to survive memory spikes.
+The paper reports fine-tuning a 65B model on a single 48 GB GPU while matching 16-bit fine-tuning quality on their benchmarks.</p>
+<p><strong>Why it works.</strong> Gradients flow <em>through</em> the quantised weights to the adapters, but the quantised weights are never updated. The adapters can partly compensate for quantisation error, because they are trained with the quantised base in the loop.</p>
+<p><strong>Group-wise quantisation in one paragraph</strong> (Day 110 goes deeper). Split a weight matrix into groups of g values. For each group store a scale s = max|w| / 7 and integers q = round(w / s) clipped to [−8, 7] (4 bits). Dequantise as q·s. Memory: half a byte per weight plus a 16-bit scale per group (for g = 64, 0.53 bytes per weight vs 4 for fp32).</p>
+<p><strong>CPU honesty.</strong> The bitsandbytes 4-bit kernels used by QLoRA in practice target GPUs. Here we <strong>simulate</strong> 4-bit: we replace each frozen weight with its quantise-dequantise round trip (the same numerical error, but stored in fp32, so no memory is saved on this box). This shows the quality effects, not the memory savings.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Run <code>code/week-15/day102_peft_qlora.py</code> (<strong>43 s</strong>). <strong>Verified:</strong></p>
+<p>Trainable parameters with <code>peft</code> (of 134,515,008):</p>
+<table>
+<thead>
+<tr>
+<th>targets per layer</th>
+<th>r = 4</th>
+<th>r = 16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>q, v</td>
+<td>230,400 (0.17%)</td>
+<td>921,600 (0.69%)</td>
+</tr>
+<tr>
+<td>q, k, v, o</td>
+<td>460,800 (0.34%)</td>
+<td>1,843,200 (1.37%)</td>
+</tr>
+<tr>
+<td>all 7 linear</td>
+<td>1,221,120 (0.91%)</td>
+<td>4,884,480 (3.63%)</td>
+</tr>
+</tbody>
+</table>
+<p>Simulated 4-bit (absmax, group 64) on the 7 linear layers of every block:
+- <strong>106,168,320</strong> weights quantised (78.9% of parameters; the embedding table stays fp32).
+- Their memory: fp32 <strong>405 MiB</strong>, bf16 <strong>202 MiB</strong>, int4 with an fp16 scale per 64 <strong>54 MiB</strong>.
+- Validation perplexity: fp32 base <strong>26.29</strong>, 4-bit base <strong>36.89</strong>. Naive round-to-nearest 4-bit hurts a small model noticeably (larger models usually tolerate it better, and better methods such as NF4, GPTQ and AWQ lose less; Day 110).
+- QLoRA-style: LoRA r = 8 on all linear layers (<strong>2,442,240</strong> trainable) over the frozen 4-bit base, 60 steps (33 s): perplexity <strong>25.46</strong>. That is better than the <em>unquantised</em> base (26.29). The adapters both undid the quantisation damage and adapted to Shakespeare. We did not run the fp32 + LoRA comparison at 60 steps here, so we cannot say how much quality the 4-bit base cost after training; that is lab exercise 1.</p>
+<h3 id="block-3-coding-lab-2h">Block 3: Coding lab (2h)</h3>
+<ol>
+<li>(40 min) Run the same LoRA (all linear, r = 8, 60 steps) on the fp32 base and compare with 25.46.</li>
+<li>(40 min) Try group sizes 32, 128 and per-row (one scale per output row) and plot base perplexity against bytes per weight.</li>
+<li>(40 min) Implement NF4-style levels: place the 16 levels at quantiles of a standard normal instead of evenly, and compare perplexity.</li>
+</ol>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>Memory of a 7B base at 4-bit with fp16 scales per 64? <em>Answer: 7e9 × (0.5 + 2/64) bytes ≈ 3.7 GB.</em></li>
+<li>Why can't we update the 4-bit weights directly? <em>Answer: they are discrete; tiny gradient steps round away. Adapters stay in high precision.</em></li>
+<li>Why does adapting all linear layers cost 2.65× the parameters of q,k,v,o at the same r? <em>Answer: the MLP matrices are larger (576 ↔ 1,536).</em></li>
+<li>Why might the quantised model + LoRA beat the fp32 base? <em>Answer: the adapters were trained on the target domain; the base was not.</em></li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<p>Self-check:
+- [ ] I can list QLoRA's four ingredients.
+- [ ] I can compute memory for a quantised base.
+- [ ] I can say exactly what my CPU simulation does and does not show.</p>
+<h3 id="extra-notes-other-peft-methods">Extra notes: other PEFT methods</h3>
+<p>Prefix/prompt tuning learns virtual tokens prepended to every layer's keys and values; IA³ learns per-channel scaling vectors; adapters (Houlsby et al., 2019) insert small bottleneck MLPs. LoRA dominates in practice because it merges away at inference and is simple to apply.</p>
+<h3 id="going-deeper-optional">Going deeper (optional)</h3>
+<p>Read Dettmers et al. (2023), section 3, on NF4 and double quantisation.</p>
+<h3 id="interview-style-question-15-min-written">Interview-style question (15 min, written)</h3>
+<p>"You need to fine-tune a 13B model on one 24 GB GPU. Plan it." 4-bit base (~7 GB), LoRA on all linear layers, bf16 compute, gradient checkpointing, small micro-batch with gradient accumulation, paged optimiser.</p>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Target-module names that match nothing: peft errors out or you train zero parameters; always print trainable parameters.</li>
+<li>Quantising the embedding/head (often kept in higher precision).</li>
+<li>Expecting memory savings from a <em>simulated</em> quantisation.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 103: teach a base model to follow instructions.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-101.html">← Day 101</a><a href="../weeks/week-15.html">Week 15</a><a rel="next" href="day-103.html">Day 103 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 170 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="170">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-169.html">← Day 169</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-171.html">Day 171 →</a></nav>
+<h1>Day 170: Data, corpus index and LoRA baseline</h1>
+<p class="meta">Week 25 · Month 6 · <span id="planned"></span> · <a href="../../weeks/week-25.md">source: weeks/week-25.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Chunking and labelling (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Build the index and train LoRA (40 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Why LoRA-alone fails here (35 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Practice (30 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/capstone/corpus_qa.py"><code>code/capstone/corpus_qa.py</code></a></li><li><a href="../../code/capstone/out/"><code>code/capstone/out/</code></a></li><li><a href="../../code/capstone/adapters/course_lora"><code>code/capstone/adapters/course_lora</code></a></li><li><a href="../../code/capstone/out/embeddings.npy"><code>code/capstone/out/embeddings.npy</code></a></li><li><a href="../../code/capstone/adapters/"><code>code/capstone/adapters/</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 169 (+1), Day 166 (+3), Day 162 (+7), Day 149 (+21).</p>
+<h3 id="block-1-chunking-and-labelling-30-min">Block 1: Chunking and labelling (30 min)</h3>
+<p>Retrieval quality starts with chunks, not with the LM. <code>_dep.chunk_weeks</code> splits each <code>week-XX.md</code> on <code>##</code> headers, then packs into ≤800-char pieces with ids like <code>week-14.md#4-0</code>. Labels for eval are <strong>week file substrings</strong> on 25 hand-written pairs in <code>code/capstone/corpus_qa.py</code> (gradient descent → week-01, RAG → week-17, demographic parity → week-24, …).</p>
+<h3 id="block-2-build-the-index-and-train-lora-40-min">Block 2: Build the index and train LoRA (40 min)</h3>
+<div class="codehilite"><pre><span></span><code>python<span class="w"> </span>day170_data_model.py
+</code></pre></div>
+
+<p><strong>Verified (<code>out/day170_data_model.log</code>, <code>day170_stats.json</code>):</strong>
+- Chunks: <strong>1467</strong>. Full embed: <strong>16.11 s</strong> for 1467×384; L2-normalised; <code>embeddings.npy</code> ≈ <strong>2.3 MB</strong>; <code>chunks.json</code> saved under <code>code/capstone/out/</code>.
+- Retrieval recall@3 by week-tag: <strong>18/25 = 0.720</strong> (clears ≥0.70).
+- LoRA: 60 steps in <strong>14.8 s</strong> (<strong>0.25 min</strong> ≪ 15 min budget). Loss <strong>3.791 → 0.961</strong> (logged end); intermediate steps 20/40/60: 2.957 / 1.504 / 1.351.
+- Adapter saved to <code>code/capstone/adapters/course_lora</code>.</p>
+<h3 id="block-3-why-lora-alone-fails-here-35-min">Block 3: Why LoRA-alone fails here (35 min)</h3>
+<p>Ask the LoRA model "What is RAG?" without retrieval. Logged answer: <em>"A recursive algorithm for finding a path from a root to a leaf in a tree."</em> Demographic parity becomes sibling-counting nonsense. Teaching point: on a 135M base with 60 CPU steps and no label masking of the prompt, <strong>adapters do not replace RAG</strong>. Day 171 makes retrieval mandatory in the answer path.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Is 16.11 s under the embed budget? <em>Yes (≤120 s).</em></li>
+<li>Recall@3 = 0.720 — pass or fail? <em>Pass (≥0.70).</em></li>
+<li>Why is a low training loss not enough? <em>The generations are still factually wrong without context.</em></li>
+<li>Where do embeddings live? <em><code>code/capstone/out/embeddings.npy</code>.</em></li>
+</ol>
+<h3 id="block-5-practice-30-min">Block 5: Practice (30 min)</h3>
+<p>Add two more QA pairs for a week that scored a miss in the 7/25 failures. Re-run only the recall loop (or the full Day 170 script) and record the new fraction. Do not tune on the test pairs if you later promote them into the freeze set.</p>
+<h3 id="extra-notes">Extra notes</h3>
+<ul>
+<li>peft 0.21.x LoRA r=8 on q_proj/v_proj keeps the adapter small.</li>
+<li>Full-precision SmolLM2 weights stay in HF cache; only adapters are under <code>code/capstone/adapters/</code>.</li>
+</ul>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Mask prompt tokens in the LoRA loss (labels = -100 on the instruction span) and compare a 60-step run. Expect better parroting of answers, still weak open-ended behaviour — then return to RAG.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Loss went from 3.8 to 0.96 — we are done fine-tuning." Reply: show the RAG and demographic-parity generations. Loss without a frozen behavioural eval is vanity.</p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Embedding without L2 normalisation then using dot-product as cosine.</li>
+<li>Training LoRA on GPU assumptions you cannot verify on this box.</li>
+<li>Deleting the 7 miss cases instead of analysing chunk boundaries.</li>
+</ul>
+<h3 id="build-tasks-student">Build tasks (student)</h3>
+<ol>
+<li>Print five random chunks; check that no chunk mid-cuts a code fence in a way that makes the text unreadable. Adjust <code>max_chars</code> if needed and re-embed.</li>
+<li>Compute recall@1 and recall@5 on the same 25 pairs; record all three. Does @5 saturate?</li>
+<li>Open one LoRA adapter weight file size (<code>du -h adapters/course_lora</code>); confirm it is far smaller than the base model.</li>
+</ol>
+<p>Chunk identity (<code>week-14.md#4-0</code>) is part of the groundedness story later. If you re-chunk with different parameters, every id changes and Day 171's "cite chunk ids" instruction becomes a moving target. Treat chunking parameters as frozen once the index is built for the freeze-set run — or version the index directory (<code>out/index-v1/</code>).</p>
+<p>Why week-tag recall instead of exact answer match? Because the generator is a 135M instruct model on CPU with 40 new tokens. Exact-match answer grading would mostly measure generation luck. Retrieving the right week is a property of the embedding index and the question wording, which is what you can actually improve this week with chunking and query phrasing.</p>
+<p>The LoRA run is deliberately short. Sixty steps on 25 short pairs is enough to drop training loss and to produce confident wrong answers. That combination — low loss, wrong answers — is the pedagogical payload. Students who stop at the loss curve ship a regression. Students who read the two sample generations keep RAG in the critical path and treat LoRA as an optional flavour.</p>
+<p>If you insist on improving LoRA: mask the instruction tokens, raise steps carefully inside the 15-minute budget, and still evaluate with the Day 173 harness under <code>use_lora=True</code>. Do not replace the RAG path in <code>Agent.run</code> until the harness says the LoRA path matches grounded ≥0.60 on the freeze set — which it did not on Day 170's bare generations.</p>
+<h3 id="timed-6-hour-schedule-suggested">Timed 6-hour schedule (suggested)</h3>
+<ul>
+<li>0:00–0:20 Review (+1/+3/+7/+21) and skim <code>corpus_qa.py</code>.</li>
+<li>0:20–1:00 Block 1–2: chunk + embed + recall.</li>
+<li>1:00–1:40 LoRA train and read the bad generations aloud.</li>
+<li>1:40–2:20 Block 3 write-up in your notes: "loss ≠ behaviour".</li>
+<li>2:20–3:00 Self-check + practice recall@1/@5.</li>
+<li>3:00–4:00 Going deeper optional mask-loss experiment (time-box).</li>
+<li>4:00–5:00 Interview answer + common mistakes journal.</li>
+<li>5:00–6:00 Commit artefacts: embeddings.npy, chunks.json, adapters/, day170_stats.json, log.</li>
+</ul>
+<p>The index artefacts are the capstone's real "model weights" for retrieval. Lose them and Days 171-175 become expensive. Prefer checking <code>embeddings.npy</code> shape <code>(1467, 384)</code> after every re-embed. If the shape changes, every downstream p50 and recall number must be re-frozen.</p>
+<p>Data hygiene: week files still being edited elsewhere in the course will drift the corpus. For Week 25, treat <code>weeks/week-01.md</code> … <code>week-26.md</code> as the corpus inputs; rebuild the index if any week file changes. If you must fix a typo in a week file, rebuild the index and re-run Days 170-173 as a chain — never mix an old <code>embeddings.npy</code> with new <code>chunks.json</code>.</p>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Day 171 wires retrieve → generate and the tool agent with guards.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-169.html">← Day 169</a><a href="../weeks/week-25.html">Week 25</a><a rel="next" href="day-171.html">Day 171 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

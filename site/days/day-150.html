@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 150 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="150">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-149.html">← Day 149</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-151.html">Day 151 →</a></nav>
+<h1>Day 150: MONTH-5 CAPSTONE: a monitored, tested, tool-using service, plus the Month-5 checkpoint exam</h1>
+<p class="meta">Week 22 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-22.md">source: weeks/week-22.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: The system (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: The run (60 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: The honest verdict (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (20 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Exercise (45 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 149 (+1), Day 147 (+3), Day 143 (+7), Day 129 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-the-system-30-min">Block 1: The system (30 min)</h3>
+<p><code>day150_capstone.py</code> joins Month 5 into one service:
+- <strong>Router:</strong> a regex sends arithmetic and city questions to the agent, everything else to the notes path.
+- <strong>Notes path (RAG):</strong> BM25 over the course notes for Weeks 1-16 (112 days, 1,099 section chunks), returning the top chunks with their day as a citation.
+- <strong>Tool path (agent):</strong> the Week 20 SmolLM2-135M tool caller with Day 149's guards.
+- <strong>Eval harness:</strong> 58 in-domain notes questions, 12 tool tasks, 5 attacks, and release gates written <em>before</em> the run.
+- <strong>Monitor:</strong> the top BM25 score of each query is logged; a window of 40 queries is compared with the in-domain reference by PSI (population stability index, the drift statistic from Day 145).
+- <strong>Tracing:</strong> every step is a span in <code>out/traces150.jsonl</code>.
+- <strong>Tests:</strong> <code>test_capstone.py</code>, 7 pytest tests, including two that pin <em>known</em> bugs so that a fix shows up as a test change.</p>
+<p>The question the capstone answers is not "is it good?" but "would the release process let it ship, and does the monitor notice when the world changes?"</p>
+<h3 id="block-2-the-run-60-min">Block 2: The run (60 min)</h3>
+<p><strong>Verified (out/day150_capstone.log, out/day150_tests.log):</strong>
+- Index: 112 days, 1,099 section chunks, built in 0.1 s. Eval: 58 in-domain queries plus 14 from Weeks 18-21 that are <em>not</em> indexed.
+- Notes recall@1 0.43, recall@3 0.53 over 58 (13.0 ms/query); 1 query misrouted to tools: "You have a fixed compute budget of 10 epochs. Do you add augmentation?"
+- Tool tasks: 0.50 of 12. Attacks: refused, refused, refused, answered, answered; side effects executed 0.
+- Gates: notes recall@3 ≥ 0.60 <strong>False</strong>; tool accuracy ≥ 0.50 True; no side effects True; no misrouting <strong>False</strong> → <strong>BLOCK</strong>.
+- Monitor: top-score median in-domain 17.5, new topics 14.7; PSI alert threshold 1.027 (99th percentile of 200 resampled in-domain windows of 40).
+  - In-domain window: PSI 0.165, no alert; 8% flagged low-confidence (score &lt; 11.2).
+  - 50/50 mix with new topics: PSI 1.491, alert; 12% flagged.
+  - All new topics: PSI 3.263, alert; 8% flagged.
+- 13 of 14 new-topic queries were answered with a citation into Weeks 1-16, which cannot be right; the other went to the tool path.
+- Latency: notes p50 1.8 ms / p95 3.0 ms (n=72); tool p50 643.1 ms / p95 710.0 ms (n=14). 278 spans; whole run 11 s.
+- Iteration 2, word chunks: 128/32 (1,037 chunks) recall@1 0.41, recall@3 0.57; 256/64 (550 chunks) recall@1 0.45, recall@3 0.60.
+- Tests: 7 passed in 0.87 s.</p>
+<h3 id="block-3-the-honest-verdict-45-min">Block 3: The honest verdict (45 min)</h3>
+<p><strong>The release is blocked, and that is the system working.</strong> Two gates failed. Retrieval found the right day in the top 3 for only 53% of questions, and the router sent a conceptual question to the calculator because it contained the word "compute". The second is a classic regex-router bug; the test suite now contains <code>test_router_known_bug</code>, which asserts the current (wrong) behaviour, so whoever fixes the router has to change the test on purpose.</p>
+<p><strong>Iteration 2 reached the gate, but read it with suspicion.</strong> Switching to 256-word chunks with 64-word overlap gave recall@3 of exactly 0.60. That passes, but it was chosen by looking at the same 58 questions the gate uses. One tuning step on the eval set is a mild sin; ten would make the gate meaningless. The fix is a second, untouched question set for the final check, the same seen/held-out split as Day 148.</p>
+<p><strong>The monitor result is the most useful lesson.</strong> A per-query rule ("flag answers whose top score is below 11.2") flagged 8% of in-domain queries and also only 8% of entirely new-topic queries: it cannot tell them apart, because BM25 always finds <em>some</em> overlapping words. The window-level PSI on the score distribution could: 0.165 in-domain against an alert threshold of 1.027, then 1.491 for a half-new window and 3.263 for an all-new window. Distribution shift is visible in aggregate long before any single request looks suspicious. Meanwhile, 13 of 14 out-of-scope questions got confident wrong citations: the service needs an "I don't know" path, and the monitor is what tells you to build it.</p>
+<p><strong>Safety:</strong> 0 side effects from 5 attacks, but 2 attacks were "answered" through the notes path (the router sent them to retrieval, which simply returned notes). That is harmless here and worth a test anyway.</p>
+<p><strong>Compute:</strong> tool calls cost about 640 ms each on the CPU; the notes path costs 2 ms. A GPU would cut the tool latency by a large factor and allow a bigger model, which would probably raise tool accuracy above 0.50 and make attacks <em>more</em> dangerous, because a capable model follows injected instructions.</p>
+<h3 id="block-4-self-check-20-min">Block 4: Self-check (20 min)</h3>
+<ol>
+<li>Why write gates before the run? <em>So the threshold cannot be moved to fit the result.</em></li>
+<li>Why does the per-query low-confidence flag fail? <em>In-domain and new-topic top scores overlap, so one threshold flags about the same share of both (8% vs 8%).</em></li>
+<li>Why is 0.60 after iteration 2 weak evidence? <em>It was tuned on the gate's own eval set.</em></li>
+<li>Why keep a test that asserts a bug? <em>It documents the known behaviour and forces a deliberate change when fixed.</em></li>
+</ol>
+<h3 id="block-5-exercise-45-min">Block 5: Exercise (45 min)</h3>
+<p>Fix the router (e.g. require a digit or operator near "compute"), update the known-bug test, rerun the gates, and add an "I don't know" answer when the window monitor alerts <em>and</em> the top score is low. Report recall on a fresh set of 10 questions you write first.</p>
+<h3 id="month-5-checkpoint-exam-15-questions-60-minutes-covers-days-121-150">Month-5 checkpoint exam (15 questions; 60 minutes; covers Days 121-150)</h3>
+<ol>
+<li>Write the Bellman expectation equation for V^π and say what changes in the optimality equation.</li>
+<li>Why does value iteration converge for γ &lt; 1?</li>
+<li>Q-learning vs SARSA: which is off-policy, and why does SARSA learn a safer path on a cliff?</li>
+<li>What two tricks stabilise DQN, and what failure does each address?</li>
+<li>In REINFORCE, why does subtracting a baseline not bias the gradient?</li>
+<li>What does PPO's clipped objective prevent?</li>
+<li>Give one example of reward hacking and one defence.</li>
+<li>In RLHF with PPO, what is the KL penalty against, and why is it there? How does DPO avoid a reward model?</li>
+<li>UCB vs Thompson sampling: how does each balance exploration?</li>
+<li>Why validate an agent's tool call against a JSON schema before executing it?</li>
+<li>Define pass^k for agents and why it is stricter than pass@k.</li>
+<li>What is indirect prompt injection, and which defence does not depend on detecting it?</li>
+<li>Name three things that can cause training/serving skew.</li>
+<li>What does PSI measure, and why choose its alert threshold from resampled reference windows?</li>
+<li>A prompt change raises the pass rate but fails the regression gate. What do you do?</li>
+</ol>
+<h3 id="exam-answers">Exam answers</h3>
+<ol>
+<li>V^π(s) = Σ_a π(a|s) Σ_{s'} P(s'|s,a)[r + γV^π(s')]. The optimality equation replaces the average over π with a max over actions.</li>
+<li>The Bellman optimality operator is a γ-contraction in the max norm, so repeated application converges to its unique fixed point.</li>
+<li>Q-learning is off-policy (its target uses max over next actions); SARSA uses the action actually taken, including exploratory ones, so it values cliff-edge states lower under ε-greedy and learns the safer path.</li>
+<li>A replay buffer (breaks correlation between consecutive samples) and a target network (stops the target moving with every update).</li>
+<li>The expected score-function gradient of a baseline that does not depend on the action is zero, since Σ_a ∇π(a|s) = 0.</li>
+<li>Policy updates that move the probability ratio far from 1 in one step, which destabilises training.</li>
+<li>E.g. an agent looping to collect a shaping bonus instead of finishing; defence: potential-based shaping, or reward only the true goal and audit behaviour.</li>
+<li>Against the reference (SFT) policy, to stop the policy drifting into reward-model exploits and losing fluency. DPO optimises a closed-form loss on preference pairs that implicitly defines the reward via the policy/reference log-ratio.</li>
+<li>UCB adds an optimism bonus that shrinks with visit count; Thompson samples from the posterior and acts greedily on the sample.</li>
+<li>Model outputs are untrusted; validation catches malformed or out-of-range arguments before any side effect.</li>
+<li>pass^k: the task succeeds in all k independent trials; it measures reliability, while pass@k (any of k) measures capability.</li>
+<li>Instructions hidden in retrieved or tool content that the model follows. An allow-list plus human approval for side-effect actions works without detection.</li>
+<li>Different preprocessing code, feature staleness or leakage, different library versions or dtypes (any three).</li>
+<li>Shift between binned distributions; resampling in-domain windows gives the natural PSI spread for that window size, so the threshold has a known false-alarm rate (Day 150: 99th percentile, 1.027).</li>
+<li>Read the per-case diff; decide whether the regressions matter; fix the prompt or explicitly accept and document; grow the eval set; never just ship on the aggregate.</li>
+</ol>
+<h3 id="extra-notes">Extra notes</h3>
+<p>A capstone that passes every gate on the first run usually has gates that are too loose. The useful output here is the list of failures with a test attached to each.</p>
+<h3 id="going-deeper">Going deeper</h3>
+<p>Compare PSI with a two-sample KS test on the same windows, and think about which one alerts sooner for a slow drift.</p>
+<h3 id="interview-style-question-15-min">Interview-style question (15 min)</h3>
+<p>"Your RAG service answers out-of-scope questions confidently. How do you detect and handle it?" <em>Expected: window-level drift on retrieval scores and query embeddings; an abstain path; an out-of-scope eval slice; do not rely on a single per-query score threshold.</em></p>
+<h3 id="common-mistakes">Common mistakes</h3>
+<ul>
+<li>Moving a gate after seeing the result.</li>
+<li>Tuning repeatedly on the gate set.</li>
+<li>Per-request thresholds as the only drift detection.</li>
+<li>No test for known bugs.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Month 6 starts tomorrow: performance engineering, beginning with profiling the retrieval path you just built.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-149.html">← Day 149</a><a href="../weeks/week-22.html">Week 22</a><a rel="next" href="day-151.html">Day 151 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

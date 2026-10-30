@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 17 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="17">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-016.html">← Day 16</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-018.html">Day 18 →</a></nav>
+<h1>Day 17: The chain rule and a tiny autograd</h1>
+<p class="meta">Week 3 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-03.md">source: weeks/week-03.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Worked example (45 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Coding lab (2h): `code/week-03/day17_chain_rule_autograd.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Practice problems (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-03/day17_chain_rule_autograd.py"><code>code/week-03/day17_chain_rule_autograd.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 16 (+1), Day 14 (+3), Day 10 (+7).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Intuition.</strong> Picture a pipeline of gears. Gear A turns gear B 3× as fast, and gear B turns gear C 2× as fast, so A turns C 6× as fast. The chain rule says the rates <em>multiply</em> along a path. A neural network is a long pipeline of simple functions, so the derivative of the loss with respect to an early weight is the product of the local derivatives along the path. When paths branch and merge, their contributions <em>add</em>.</p>
+<p><strong>Computational graph.</strong> Write f(x, y) = (x·y + eˣ)² as nodes: a = x·y, c = eˣ, u = a + c, f = u².</p>
+<div class="codehilite"><pre><span></span><code> x ──┬──(*)── a ──┐
+ y ──┘            (+)── u ──(²)── f
+ x ────(exp)── c ─┘
+</code></pre></div>
+
+<p><strong>Reverse mode (backprop):</strong> go forward computing the values, then go backward from f with df/df = 1. At each node, multiply the incoming gradient by the local derivative and send it to the parents, <em>accumulating</em> (+=) when a variable is used more than once (x is used twice here).</p>
+<p><strong>Plain-language maths.</strong> df/du = 2u, du/da = 1, du/dc = 1, da/dx = y, dc/dx = eˣ, da/dy = x.
+So df/dx = 2u·(y + eˣ) and df/dy = 2u·x.
+At x = 0.5, y = −1.2: u = −0.6 + 1.6487 = 1.0487, so df/dx = 2·1.0487·(−1.2 + 1.6487) = <strong>0.94117</strong> and df/dy = 2·1.0487·0.5 = <strong>1.04872</strong>. The lab's autograd prints exactly these ✓.</p>
+<p><strong>Why reverse mode?</strong> One backward pass gives the derivative of a scalar loss with respect to <em>all</em> parameters, at about the cost of 2-3 forward passes. Forward mode would need one pass per parameter. For a model with millions of parameters, reverse mode is the only option. PyTorch's autograd (Month 3) is this same idea, industrial-strength and over tensors.</p>
+<h3 id="block-2-worked-example-45-min">Block 2: Worked example (45 min)</h3>
+<p>Backprop by hand through J = (w·x + b − y)² with x = 2, y = 7, w = 1, b = 1.
+Forward: p = wx = 2, q = p + b = 3, e = q − y = −4, J = 16.
+Backward: dJ/de = 2e = −8, dJ/dq = −8, dJ/db = −8, dJ/dp = −8, dJ/dw = −8·x = <strong>−16</strong>.
+Check against the formula 2(wx + b − y)x = 2·(−4)·2 = −16 ✓.</p>
+<h3 id="block-3-coding-lab-2h-codeweek-03day17_chain_rule_autogradpy">Block 3: Coding lab (2h): <code>code/week-03/day17_chain_rule_autograd.py</code></h3>
+<p>The <code>Value</code> class (written from scratch) supports +, *, −, ** and exp, with topological-sort backprop. It then trains w, b on the Day-1 flats. Verified: the loss goes from 4456.9 (after step 0) to <strong>0.435</strong> by step 500, with <strong>w = 4.681, b = 3.336</strong>. That matches Day 10's least squares (4.6814, 3.3363) ✓.
+Notice the hack in the code: b's step is scaled 25× because x (size) is about 10× larger than 1, so the two parameters have very different curvature. Day 25 explains this and fixes it properly with feature scaling.
+Tasks:
+1. Add <code>tanh</code> and <code>log</code> operations with their backward rules, and gradient-check them numerically.
+2. Remove the 25× hack and use one learning rate. How many steps does convergence take now, and what is the largest stable rate?
+3. Draw the graph (print parents recursively) for f = (x·y + eˣ)².
+4. Systems thought: this <code>Value</code> creates one Python object per scalar op. How many objects does one training step of the 7-point loss create? Why do real frameworks work on <em>tensors</em>?</p>
+<h3 id="block-4-practice-problems-1h">Block 4: Practice problems (1h)</h3>
+<ol>
+<li>d/dx of sin(x²)? <em>Answer:</em> 2x·cos(x²).</li>
+<li>d/dx of σ(wx + b)? <em>Answer:</em> σ(1 − σ)·w.</li>
+<li>If x feeds two nodes with local gradients 3 and 5 (with upstream gradient 1 for each), what is df/dx? <em>Answer:</em> 8 (contributions add).</li>
+<li>Why must gradients be zeroed between steps in our code and in PyTorch? <em>Answer:</em> <code>backward</code> accumulates with +=.</li>
+<li>Forward vs reverse mode for f: ℝ¹⁰⁰⁰⁰⁰⁰ → ℝ? <em>Answer:</em> reverse.</li>
+</ol>
+<h3 id="block-5-review-1h">Block 5: Review (1h)</h3>
+<ul>
+<li><strong>Day 16 (+1):</strong> gradient-check ∇(x² + y²) by hand at (1, 1).</li>
+<li><strong>Day 14 (+3):</strong> why doesn't noise compress under the SVD?</li>
+<li><strong>Day 10 (+7):</strong> solve the 2 × 2 system [[1, 1], [1, −1]]x = [3, 1]. <em>Answer:</em> (2, 1).</li>
+<li><strong>Self-check:</strong>
+  1. The chain rule in words.
+  2. Why do gradients accumulate at shared nodes?
+  3. Give the cost of reverse mode.
+  4. What does topological order guarantee? (each node's gradient is complete before it is propagated)
+  5. Which numbers did the autograd training reach?</li>
+</ul>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Overwriting (<code>=</code>) instead of accumulating (<code>+=</code>) gradients breaks any variable used twice.</li>
+<li>Forgetting to zero gradients causes them to grow every step, so the loss explodes.</li>
+<li>Recursion depth limits on huge graphs (Python), which is one more reason to use tensors.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>If backprop still feels magical, redo the worked example with x used twice (for example J = (wx + x − y)²). Then spend 30 min reading the PyTorch autograd docs page (https://pytorch.org/docs/stable/index.html).</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-016.html">← Day 16</a><a href="../weeks/week-03.html">Week 3</a><a rel="next" href="day-018.html">Day 18 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

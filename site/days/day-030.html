@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 30 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="30">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-029.html">← Day 29</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-031.html">Day 31 →</a></nav>
+<h1>Day 30: Month-1 checkpoint exam and review</h1>
+<p class="meta">Week 5 · Month 1 · <span id="planned"></span> · <a href="../../weeks/week-05.md">source: weeks/week-05.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Written exam, closed book (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Coding checkpoint (45 min): `code/week-05/day30_checkpoint.py`)</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Mini-project under time pressure (2h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Gap analysis (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Review and plan (1h))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li><a href="../../code/week-05/day30_checkpoint.py"><code>code/week-05/day30_checkpoint.py</code></a></li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 29 (+1), Day 27 (+3), Day 23 (+7), Day 9 (+21).</p>
+<h3 id="block-1-written-exam-closed-book-1h15">Block 1: Written exam, closed book (1h15)</h3>
+<p>Answer on paper, then mark against the answers at the end of this day.
+1. A float32 array of shape (1000, 256). What are its bytes and strides?
+2. Why is <code>X @ w</code> faster than a Python loop of dot products? Give two reasons.
+3. Name two ways information can leak from test to train, and how to prevent each.
+4. Cosine similarity of (1, 2, 2) and (2, 1, 2)?
+5. Why prefer <code>lstsq</code>/QR over the normal equation with an explicit inverse?
+6. Explain PCA as an SVD in 3 sentences. What does "explained variance" mean?
+7. Derive the gradient of J = (1/2m)‖Xw − y‖².
+8. What is the stable learning-rate bound for a quadratic with Hessian eigenvalues 1 and 50, and how many times slower is progress along the flat direction?
+9. Prevalence 2%, sensitivity 90%, FPR 10%. What is P(condition | +)?
+10. Why is MSE the MLE under Gaussian noise, and log-loss the MLE for Bernoulli labels?
+11. Train error 1%, val error 12%. Name the diagnosis and three remedies.
+12. At which threshold would you deploy the Day-27 cancer model, and why?</p>
+<h3 id="block-2-coding-checkpoint-45-min-codeweek-05day30_checkpointpy">Block 2: Coding checkpoint (45 min): <code>code/week-05/day30_checkpoint.py</code></h3>
+<p>The file holds five self-checking exercises (vectorised MSE, its gradient checked numerically, sigmoid, precision/recall, Bayes). Reference solutions run by default. Verified: <strong>5/5 PASS</strong>.
+Protocol: copy it to <code>notes/day30_mine.py</code>, delete every function body (replace it with <code>raise NotImplementedError</code>), re-implement each one from memory, and run. Target 5/5 in 30 minutes without notes.</p>
+<h3 id="block-3-mini-project-under-time-pressure-2h">Block 3: Mini-project under time pressure (2h)</h3>
+<p>Without looking at earlier code, using only NumPy and pandas:
+1. Load California housing (<code>python data/download.py california</code>, cached to <code>data/cache/</code>, shape (20640, 9)).
+2. Split 80/20 with a fixed seed. Standardise on train.
+3. Fit linear regression with <em>your</em> <code>mlscratch.LinearRegressionGD</code>, and with <code>sklearn.linear_model.LinearRegression</code>.
+4. Report test MAE and R² for both, plus the predict-the-mean baseline.
+5. Do a 10-minute error analysis: residuals by <code>MedInc</code> quintile. Write down one hypothesis to test later (Day 35 revisits this dataset with cross-validation).
+Record your numbers in <code>notes/day30_checkpoint.md</code>. This course doesn't give expected values here, because the point is that you produce and sanity-check them yourself. Do check that scratch and sklearn agree to about 3 decimals.</p>
+<h3 id="block-4-gap-analysis-1h">Block 4: Gap analysis (1h)</h3>
+<p>Score yourself on each Month-1 goal (0 = can't, 1 = with notes, 2 = from memory):</p>
+<table>
+<thead>
+<tr>
+<th>skill</th>
+<th>score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NumPy broadcasting and vectorisation</td>
+<td></td>
+</tr>
+<tr>
+<td>matrix shapes and matmul cost</td>
+<td></td>
+</tr>
+<tr>
+<td>least squares and conditioning</td>
+<td></td>
+</tr>
+<tr>
+<td>eigen/SVD/PCA</td>
+<td></td>
+</tr>
+<tr>
+<td>derivatives, gradient checking, backprop by hand</td>
+<td></td>
+</tr>
+<tr>
+<td>GD learning-rate diagnosis</td>
+<td></td>
+</tr>
+<tr>
+<td>Bayes and CLT reasoning</td>
+<td></td>
+</tr>
+<tr>
+<td>MLE derivations</td>
+<td></td>
+</tr>
+<tr>
+<td>linear/logistic regression from scratch</td>
+<td></td>
+</tr>
+<tr>
+<td>metrics, thresholds, bias/variance</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>For every 0 or 1, schedule 45 minutes in the first review block of Week 5 and redo that day's practice problems.</p>
+<h3 id="block-5-review-and-plan-1h">Block 5: Review and plan (1h)</h3>
+<ul>
+<li><strong>Day 29 (+1):</strong> your benchmark conclusions.</li>
+<li><strong>Day 27 (+3):</strong> the bias/variance recipe.</li>
+<li><strong>Day 23 (+7):</strong> learning-curve shapes.</li>
+<li><strong>Day 9 (+21):</strong> matmul FLOPs, and why BLAS is fast.</li>
+<li>Export your Anki stats and note your retention rate on the Month-1 deck in <code>PROGRESS.md</code>.</li>
+<li><strong>Self-check:</strong>
+  1. Which week was hardest, and why?
+  2. Which concept would you explain to a colleague tomorrow?
+  3. Which bug cost you the most time this month?
+  4. Is your <code>run_all.sh</code> green?
+  5. What is your goal for Month 2?</li>
+</ul>
+<h3 id="exam-answers">Exam answers</h3>
+<ol>
+<li>1000·256·4 = 1,024,000 bytes. Strides (1024, 4).</li>
+<li>Compiled, SIMD, cache-friendly BLAS kernels, and no per-element interpreter overhead (plus multithreading).</li>
+<li>Fitting the scaler/encoder on all the data (fit on train only), and target-derived features such as price_per_sqft (drop them). Also duplicate or grouped entities across splits (use a group split).</li>
+<li>(2 + 2 + 4)/(3·3) = 8/9 ≈ 0.889.</li>
+<li>The normal equation squares the condition number, and inverting is slower and less accurate (Hilbert example: error 0.28 vs 5.7).</li>
+<li>Centre X, then X = UΣVᵀ. The rows of Vᵀ are directions of maximal variance, and the scores are XV. Explained variance of component i = σᵢ²/Σσⱼ².</li>
+<li>∇J = Xᵀ(Xw − y)/m, by the chain rule on the squared norm.</li>
+<li>α &lt; 2/50 = 0.04. The flat direction contracts by (1 − α·1) per step vs the steep one's (1 − α·50), so it is about κ = 50 times slower.</li>
+<li>0.018/(0.018 + 0.098) = 0.155.</li>
+<li>The Gaussian log-likelihood is −Σ(y − ŷ)²/(2σ²) + const. The Bernoulli log-likelihood is Σ[y log p + (1 − y) log(1 − p)].</li>
+<li>Overfitting (variance). More data, regularisation, a simpler model or fewer features (early stopping too).</li>
+<li>Probably t ≈ 0.1 (recall 1.0, with 11 false positives out of 143) in screening, where missing cancer is costlier. Choose it on validation data, and confirm on test only once.</li>
+</ol>
+<h3 id="common-mistakes-how-to-debug">Common mistakes / how to debug</h3>
+<ul>
+<li>Peeking at answers before finishing the exam turns it into reading practice, not testing.</li>
+<li>Skipping the gap analysis: it is the whole point of a checkpoint.</li>
+</ul>
+<h3 id="what-to-do-next">What to do next</h3>
+<p>Month 2 starts with Day 31: regularisation (ridge and lasso) builds directly on Day 27's Ridge experiment and Day 10's conditioning.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-029.html">← Day 29</a><a href="../weeks/week-05.html">Week 5</a><a rel="next" href="day-031.html">Day 31 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

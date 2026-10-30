@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Week 7 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="week" data-root="../" data-week="7">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn"><a href="week-06.html">← Week 6</a><a href="../syllabus.html">Syllabus</a><a href="week-08.html">Week 8 →</a></nav>
+<h1>Week 7 (Days 43-49): Explaining models, engineering features, imbalance, pipelines, clustering</h1><p class="meta"><a href="../../weeks/week-07.md">source: weeks/week-07.md</a> · <a href="../../pdf/week-07.pdf">PDF</a></p>
+<section class="card"><h2>Days</h2><ul class="daylist"><li><a href="../days/day-043.html">Day 43: Feature importance, permutation importance, SHAP intuition</a> <span class="st" data-st="43"></span></li><li><a href="../days/day-044.html">Day 44: Feature engineering: encodings, dates, text counts</a> <span class="st" data-st="44"></span></li><li><a href="../days/day-045.html">Day 45: Imbalanced data: class weights, resampling, threshold tuning</a> <span class="st" data-st="45"></span></li><li><a href="../days/day-046.html">Day 46: Pipelines, ColumnTransformer, leakage-proof preprocessing</a> <span class="st" data-st="46"></span></li><li><a href="../days/day-047.html">Day 47: k-means clustering and choosing k</a> <span class="st" data-st="47"></span></li><li><a href="../days/day-048.html">Day 48: Hierarchical clustering, DBSCAN, Gaussian mixtures (EM intuition)</a> <span class="st" data-st="48"></span></li><li><a href="../days/day-049.html">Day 49: PROJECT W7: customer segmentation; Quiz 7</a> <span class="st" data-st="49"></span></li></ul></section>
+<section><h2>Interactive weekly quiz (12 questions)</h2><section class="quiz card" data-quiz="week-07"><p class="qscore" role="status"></p><div class="q" data-q="1"><div class="qtext"><strong>Q1.</strong> <p>Name one flaw each of MDI and permutation importance.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>MDI is computed on training data and biased towards many-split-point features. Permutation importance splits credit badly between correlated features.</p></div></div><div class="q" data-q="2"><div class="qtext"><strong>Q2.</strong> <p>State Shapley efficiency, and give our row-0 sum.</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>The values sum to f(x) − f(baseline). Row 0's sum was 0.1379.</p></div></div><div class="q" data-q="3"><div class="qtext"><strong>Q3.</strong> <p>Shapley values for f = x₁x₂, baseline (0, 0), x = (1, 1)?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.5 and 0.5.</p></div></div><div class="q" data-q="4"><div class="qtext"><strong>Q4.</strong> <p>Which hour encoding gave ridge its best bike MAE, and what was it?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>One-hot × workingday, MAE 72.6.</p></div></div><div class="q" data-q="5"><div class="qtext"><strong>Q5.</strong> <p>Why must target encoding be cross-fitted?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Otherwise each row's own label leaks into its feature.</p></div></div><div class="q" data-q="6"><div class="qtext"><strong>Q6.</strong> <p>At 2% positives, what does "always negative" score on accuracy and PR-AUC?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Accuracy 0.978. PR-AUC about 0.022 (the base rate).</p></div></div><div class="q" data-q="7"><div class="qtext"><strong>Q7.</strong> <p>What threshold did validation tuning pick on Day 45, and what F1 did it give?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.0756, giving F1 0.208.</p></div></div><div class="q" data-q="8"><div class="qtext"><strong>Q8.</strong> <p>On pure noise, what were the leaky and honest CV accuracies on Day 46?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.770 (leaky) vs 0.470 (honest).</p></div></div><div class="q" data-q="9"><div class="qtext"><strong>Q9.</strong> <p>What is k-means++ for, and what inertia range did random init give?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Spreading initial centroids out. Random init ranged from 2680.9 to 20954.7.</p></div></div><div class="q" data-q="10"><div class="qtext"><strong>Q10.</strong> <p>Which k did silhouette pick on the 4-blob data?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>k = 3 (the truth was 4).</p></div></div><div class="q" data-q="11"><div class="qtext"><strong>Q11.</strong> <p>What does the EM E-step compute?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>Responsibilities P(component | xᵢ).</p></div></div><div class="q" data-q="12"><div class="qtext"><strong>Q12.</strong> <p>What ARI did the wholesale segments reach against Channel?</p></div>
+<label>Your answer <textarea class="qa" rows="2"></textarea></label>
+<div class="qbtns"><button type="button" class="reveal" aria-expanded="false">Reveal answer</button> <button type="button" class="mark" data-v="right">✓ Right</button><button type="button" class="mark" data-v="wrong">✗ Wrong</button></div>
+<div class="ans" hidden><p>0.5135.</p></div></div><p><button type="button" class="qreset">Clear this quiz</button></p></section></section>
+<article class="lesson"><h2>Week overview, goals, project and quiz text</h2><p><strong>Status:</strong> written in full. Titles match <code>SYLLABUS.md</code>.</p>
+<h2 id="week-goals">Week goals</h2>
+<ol>
+<li>Explain a model honestly: impurity vs permutation importance, and exact Shapley values computed by brute force.</li>
+<li>Turn raw columns (hours, categories, text) into features a model can use, and <em>measure</em> which encoding helps.</li>
+<li>Handle rare positives with the right metrics, class weights and a threshold chosen on validation data.</li>
+<li>Make leakage impossible with <code>Pipeline</code> + <code>ColumnTransformer</code>, and prove the leak exists when you don't.</li>
+<li>Begin unsupervised learning: k-means from scratch, then hierarchical clustering, DBSCAN and Gaussian mixtures via EM.</li>
+<li>Segment real wholesale customers and validate the segments without labels.</li>
+</ol>
+<div class="codehilite mermaid-src" data-label="Diagram (Mermaid source)"><pre><span></span><code>flowchart LR
+  I[Importance &amp; Shapley] --&gt; F[Feature engineering]
+  F --&gt; IM[Imbalance &amp; thresholds]
+  IM --&gt; P[Leak-proof pipelines]
+  P --&gt; K[k-means]
+  K --&gt; C[DBSCAN / hierarchical / GMM-EM]
+  C --&gt; S[Project: customer segments]
+</code></pre></div>
+
+<p><strong>New datasets:</strong> <strong>bike sharing</strong> (hourly rentals in Washington DC, 2011-2012, 17,379 rows, OpenML id 42712) and <strong>wholesale customers</strong> (440 clients of a Portuguese distributor, annual spend in 6 categories, UCI). Both are fetched by <code>common.py</code> loaders; URLs are in <code>data/README.md</code>.</p>
+<hr />
+<h2 id="weekly-quiz-week-7">Weekly quiz: Week 7</h2>
+<ol>
+<li>Name one flaw each of MDI and permutation importance.</li>
+<li>State Shapley efficiency, and give our row-0 sum.</li>
+<li>Shapley values for f = x₁x₂, baseline (0, 0), x = (1, 1)?</li>
+<li>Which hour encoding gave ridge its best bike MAE, and what was it?</li>
+<li>Why must target encoding be cross-fitted?</li>
+<li>At 2% positives, what does "always negative" score on accuracy and PR-AUC?</li>
+<li>What threshold did validation tuning pick on Day 45, and what F1 did it give?</li>
+<li>On pure noise, what were the leaky and honest CV accuracies on Day 46?</li>
+<li>What is k-means++ for, and what inertia range did random init give?</li>
+<li>Which k did silhouette pick on the 4-blob data?</li>
+<li>What does the EM E-step compute?</li>
+<li>What ARI did the wholesale segments reach against Channel?</li>
+</ol>
+<h3 id="answers">Answers</h3>
+<ol>
+<li>MDI is computed on training data and biased towards many-split-point features. Permutation importance splits credit badly between correlated features.</li>
+<li>The values sum to f(x) − f(baseline). Row 0's sum was 0.1379.</li>
+<li>0.5 and 0.5.</li>
+<li>One-hot × workingday, MAE 72.6.</li>
+<li>Otherwise each row's own label leaks into its feature.</li>
+<li>Accuracy 0.978. PR-AUC about 0.022 (the base rate).</li>
+<li>0.0756, giving F1 0.208.</li>
+<li>0.770 (leaky) vs 0.470 (honest).</li>
+<li>Spreading initial centroids out. Random init ranged from 2680.9 to 20954.7.</li>
+<li>k = 3 (the truth was 4).</li>
+<li>Responsibilities P(component | xᵢ).</li>
+<li>0.5135.</li>
+</ol></article></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day 138 · AI/ML Zero to Expert</title>
+<script>try{var t=JSON.parse(localStorage.getItem('aiml-course-v1')||'{}').theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/style.css"><link rel="stylesheet" href="../assets/pygments.css">
+</head><body data-kind="day" data-root="../" data-day="138">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="../index.html">AI/ML · 180 days</a>
+<nav aria-label="Main"><a href="../index.html">Dashboard</a><a href="../syllabus.html">Syllabus &amp; search</a><a href="../review.html">Review &amp; flashcards</a><a href="../exams.html">Exams</a><a href="../settings.html">Settings &amp; data</a></nav>
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode">◐ Theme</button></header>
+<main id="main" tabindex="-1"><nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-137.html">← Day 137</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-139.html">Day 139 →</a></nav>
+<h1>Day 138: Evaluating agents: success rate, pass^k and a failure taxonomy</h1>
+<p class="meta">Week 20 · Month 5 · <span id="planned"></span> · <a href="../../weeks/week-20.md">source: weeks/week-20.md</a></p>
+<section class="tracker card" aria-label="Day progress">
+<h2>Your progress</h2><p id="day-status" role="status"></p>
+<ul class="checks"><li><label><input type="checkbox" class="blk" data-i="0"> 1. Concept lesson <small>(Block 1: Concept lesson (1h15))</small></label></li><li><label><input type="checkbox" class="blk" data-i="1"> 2. Worked example <small>(Block 2: Code walk-through (1h))</small></label></li><li><label><input type="checkbox" class="blk" data-i="2"> 3. Coding lab <small>(Block 3: Exercises (1h30))</small></label></li><li><label><input type="checkbox" class="blk" data-i="3"> 4. Practice problems <small>(Block 4: Self-check (30 min))</small></label></li><li><label><input type="checkbox" class="blk" data-i="4"> 5. Review <small>(Block 5: Reflection (15 min))</small></label></li></ul>
+<p><label><input type="checkbox" id="manual"> Mark day complete (manual)</label></p>
+<p><label>Hours studied <input type="number" id="hours" min="0" max="24" step="0.25" inputmode="decimal"></label></p>
+<p><label for="notes">Notes</label><br><textarea id="notes" rows="5"></textarea></p>
+<h3>Code files</h3><ul><li>No code file referenced for this day.</li></ul></section>
+<article class="lesson"><p><strong>Review today:</strong> Day 137 (+1), Day 135 (+3), Day 131 (+7), Day 117 (+21; quick 15-min skim of its self-check).</p>
+<h3 id="block-1-concept-lesson-1h15">Block 1: Concept lesson (1h15)</h3>
+<p><strong>Outcome first.</strong> An agent eval scores the <em>end state</em>: is the final answer right, did the side effect happen exactly once? It does not score whether the trace looks plausible. Our suite has exact gold answers, so success is binary per task. <code>correct()</code> uses numeric tolerance for numbers and prefix matching for yes/no.</p>
+<p><strong>Uncertainty on a small suite.</strong> 24 tasks is small. Report a confidence interval. We use a bootstrap over tasks: resample 24 tasks with replacement 2000 times and take the 2.5th-97.5th percentiles. Know its weakness: if every task fails (or passes), every resample does too, and the bootstrap gives a zero-width interval [0, 0]. Zero successes in 24 tries does <em>not</em> prove the true rate is 0. The "rule of three" gives a rough 95% upper bound of 3/n for zero successes in n trials. Wilson or Clopper-Pearson intervals handle this edge properly.</p>
+<p><strong>pass@k vs pass^k.</strong> Agents are stochastic, so run each task k times.
+- <em>pass@k</em>: the fraction of tasks solved in <strong>at least one</strong> of k trials. This is optimistic: "can it ever do it?"
+- <em>pass^k</em>: the fraction solved in <strong>all</strong> k trials. This is reliability: "can I trust it every time?"</p>
+<p>For a product that runs unattended, pass^k is the number that matters, and it falls fast as k grows.</p>
+<p><strong>A failure taxonomy from traces.</strong> "Wrong" is not actionable. Our <code>taxonomy()</code> labels each failed run from its trace:
+- <em>unparseable output</em>: hit the step limit and every action was a parse error;
+- <em>stuck on tool errors</em>: hit the step limit with at least one tool error;
+- <em>step limit / loop</em>: hit the step limit with no errors;
+- <em>answered without evidence</em>: answered final with no successful tool call;
+- <em>wrong answer despite evidence</em>: had successful observations but answered wrong.</p>
+<p>Each label points to a different fix: format training, schema or error messages, loop detection, forcing a lookup, or final-step reasoning.</p>
+<p><strong>Checking the taxonomy with planted faults.</strong> How do you know your taxonomy labels are right? Plant faults at known rates and see if they show up. The "noisy scripted" policy wraps the text-scripted policy and, at each step, injects:
+- <em>hallucinate</em> (rate 0.05): answer a random number at the first step;
+- <em>bad_args</em> (0.05): call lookup without <code>field</code>;
+- <em>parse</em> (0.05): return garbage;
+- <em>wrong_math</em> (0.10): answer the first observation instead of computing.</p>
+<h3 id="block-2-code-walk-through-1h">Block 2: Code walk-through (1h)</h3>
+<p><code>day138_agent_eval.py</code> runs the oracle, the text-scripted policy and the noisy policy for 8 trials each (seeded), then SmolLM2 ReAct once (greedy, so more trials would repeat the same output). It imports <code>text_scripted</code> and <code>smol_react</code> from Day 135. Its own main block is now guarded so Day 140 can import <code>noisy</code>.</p>
+<p><strong>Verified (out/day138_agent_eval.log):</strong>
+- Oracle and text-scripted: trial-1 success 1.000, pass@8 1.000, pass^8 1.000; all 192 runs succeeded.
+- Noisy scripted:
+  - trial-1 success <strong>0.875 [95% CI 0.749-1.000]</strong>; mean over 8 trials 0.859;
+  - <strong>pass@8 1.000 but pass^8 0.458</strong>;
+  - taxonomy over 192 runs: success 165, wrong answer despite evidence 15, answered without evidence 11, stuck on tool errors 1.
+- SmolLM2 ReAct: success <strong>0.000 [95% CI 0.000-0.000]</strong>. Taxonomy: stuck on tool errors 16, wrong answer despite evidence 6, unparseable output 1, step limit / loop 1.</p>
+<p>Readings:
+- The pass@8 vs pass^8 gap is the headline. Every task was solved <em>at least once</em>, but fewer than half were solved <em>every time</em>.
+- The planted <em>bad_args</em> and <em>parse</em> faults almost vanish from the taxonomy (1 "stuck" run). The loop's error feedback lets the policy recover on the next step. The taxonomy labels <em>final outcomes</em>, so recovered errors are invisible. Count per-step errors separately, as Day 135 did, if you care about cost.
+- The [0.000, 0.000] interval for SmolLM2 is the degenerate bootstrap case described above, not real certainty.
+- SmolLM2's dominant failure is "stuck on tool errors". That matches Day 135: it repeats invalid calls.</p>
+<h3 id="block-3-exercises-1h30">Block 3: Exercises (1h30)</h3>
+<ol>
+<li>Replace the bootstrap with a Wilson interval and recompute both CIs. Compare against the bootstrap, especially for 0/24.</li>
+<li>Compute pass^k for k = 1, 2, 4, 8 for the noisy policy and plot it. Derive the expected pass^k under independence from the per-task success rate, and compare.</li>
+<li>Add a per-step error count to the report (recovered errors), and check that it recovers the planted bad_args and parse rates.</li>
+<li>Add a fifth taxonomy label, "side effect when not asked", and use it on Day 139.</li>
+</ol>
+<h3 id="block-4-self-check-30-min">Block 4: Self-check (30 min)</h3>
+<ol>
+<li>Why is pass^8 (0.458) so much lower than mean success (0.859)? <em>Each task must survive 8 independent chances to fail. Small per-run failure rates compound.</em></li>
+<li>Why did bad_args barely appear in the taxonomy? <em>The error came back as an observation, and the policy retried successfully. The taxonomy only labels final outcomes.</em></li>
+<li>What is wrong with "SmolLM2 success 0.000, 95% CI 0.000-0.000"? <em>The bootstrap collapses when all outcomes are equal. The true rate is not proven to be zero; the rule of three suggests a bound near 3/n.</em></li>
+<li>Why run the oracle through the eval? <em>It validates the harness, the gold labels and the scorer before any policy is judged.</em></li>
+<li>Which label suggests fixing the final answer step rather than tool use? <em>"Wrong answer despite evidence".</em></li>
+</ol>
+<h3 id="block-5-reflection-15-min">Block 5: Reflection (15 min)</h3>
+<p>For an agent you'd deploy, write the one metric you would put on a dashboard (pass^k for some k, success on a held-out suite, or something else) and the threshold that would block a release.</p>
+<p><strong>Extra notes.</strong> Keep the eval suite versioned and frozen, separate from the tasks used to write prompts. Prompt-tuning against the eval suite overfits just like hyperparameter tuning on a test set (Month 2).</p>
+<p><strong>Going deeper.</strong> Add cost and latency per success to the report: tool calls, model tokens and seconds. An agent that succeeds at 0.95 for 10× the calls may lose to one at 0.90.</p>
+<p><strong>Interview-style question (15 min).</strong> "Your agent's success went from 82% to 85% after a prompt change. Ship it?" Ask: how many tasks (CI width), how many trials (pass^k, not one run), same suite and seeds, which taxonomy buckets moved, and whether cost changed. On 24 tasks, our noisy policy's single-trial CI was about 0.25 wide (0.749-1.000), so a 3-point change would be inside the noise.</p>
+<p><strong>Common mistakes.</strong> One trial per task. No CI. Reporting pass@k as reliability. Scoring traces by how they look instead of by outcome. Tuning prompts on the eval set.</p>
+<p><strong>What to do next.</strong> Day 139 attacks the agent: prompt injection through tool outputs, the defences that do and don't work, and structured outputs.</p>
+<hr /></article>
+<nav class="pn" aria-label="Day navigation"><a rel="prev" href="day-137.html">← Day 137</a><a href="../weeks/week-20.html">Week 20</a><a rel="next" href="day-139.html">Day 139 →</a></nav></main>
+<footer><p>Static, offline site. Progress lives only in this browser (localStorage); use Settings → Export to back it up.</p></footer>
+<script src="../assets/data.js"></script><script src="../assets/core.js"></script><script src="../assets/app.js"></script>
+</body></html>
